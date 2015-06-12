@@ -1,0 +1,8 @@
+# default config.yml
+
+# Database
+host: localhost
+database: minecraft
+port: 3306
+username: root
+password: potato
