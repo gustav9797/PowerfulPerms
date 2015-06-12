@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.SimplePerms;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +24,33 @@ public class SimplePerms extends JavaPlugin implements Listener {
 	this.saveDefaultConfig();
 	getServer().getPluginManager().registerEvents(this, this);
 	this.sql = new SQL(getConfig().getString("host"), getConfig().getString("database"), getConfig().getInt("port"), getConfig().getString("username"), getConfig().getString("password"));
+
+	try {
+	    sql.getConnection().prepareStatement("SELECT 1 FROM groups LIMIT 1;").execute();
+	} catch (SQLException e) {
+	    String groupsTable = "CREATE TABLE `groups` (" + "`id` int(10) unsigned NOT NULL AUTO_INCREMENT," + "`name` varchar(255) NOT NULL," + "`permissions` longtext NOT NULL,"
+		    + "`parents` longtext NOT NULL," + "`prefix` text NOT NULL," + "`suffix` text NOT NULL," + "PRIMARY KEY (`id`)," + "UNIQUE KEY `id_UNIQUE` (`id`),"
+		    + "UNIQUE KEY `name_UNIQUE` (`name`)" + ") ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8";
+	    try {
+		sql.getConnection().prepareStatement(groupsTable).execute();
+	    } catch (SQLException e1) {
+		e1.printStackTrace();
+	    }
+	}
+
+	try {
+	    sql.getConnection().prepareStatement("SELECT 1 FROM players LIMIT 1;").execute();
+	} catch (SQLException e) {
+	    String groupsTable = "CREATE TABLE `players` (`uuid` varchar(36) NOT NULL DEFAULT '',`name` varchar(32) NOT NULL,`group` int(10) unsigned NOT NULL,"
+		    + "`permissions` longtext NOT NULL,`prefix` text NOT NULL,`suffix` text NOT NULL,PRIMARY KEY (`name`,`uuid`),UNIQUE KEY `uuid_UNIQUE` (`uuid`)"
+		    + ") ENGINE=InnoDB DEFAULT CHARSET=utf8";
+	    try {
+		sql.getConnection().prepareStatement(groupsTable).execute();
+	    } catch (SQLException e1) {
+		e1.printStackTrace();
+	    }
+	}
+
 	permissionManager = new PermissionManager(this, sql);
     }
 
