@@ -20,6 +20,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.permissions.PermissionAttachment;
@@ -68,6 +69,11 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	LoadPlayer(e.getPlayer());
     }
 
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onPlayerChat(AsyncPlayerChatEvent e) {
+	e.setFormat(getPlayerPrefix(e.getPlayer()) + e.getPlayer().getDisplayName() + getPlayerSuffix(e.getPlayer()) + e.getMessage());
+    }
+
     public void reloadPlayers() {
 	for (Player p : Bukkit.getOnlinePlayers()) {
 	    if (players.containsKey(p.getUniqueId())) {
@@ -114,13 +120,13 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		    Player p = Bukkit.getPlayer(playerName);
 		    if (p != null) {
 			LoadPlayer(p);
-			//p.sendMessage("Your rank has been changed. Please relog when convenient.");
-			Bukkit.getLogger().info("Received player reload packet for player " + playerName + " and reloaded successfully");
-		    } else
-			Bukkit.getLogger().info("Received player reload packet for offline player " + playerName);
+			// p.sendMessage("Your rank has been changed. Please relog when convenient.");
+			Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Reloaded permissions for player " + playerName);
+		    } // else
+		      // Bukkit.getLogger().info("Received player reload packet for offline player " + playerName);
 		} else if (somedata.equals("ReloadGroups")) {
 		    LoadGroups();
-		    Bukkit.getLogger().info("Received groups reload packet");
+		    Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Reloaded permissions for groups");
 		}
 	    } catch (IOException e) {
 		e.printStackTrace();
@@ -130,8 +136,8 @@ public class PermissionManager implements Listener, PluginMessageListener {
 
     public void setPrefix(Player p) {
 	String prefix = getPlayerPrefix(p);
-	prefix = prefix.substring(prefix.length() - 2, prefix.length());
-	String name = prefix + p.getDisplayName();
+	// prefix = prefix.substring(prefix.length() - 2, prefix.length());
+	String name = prefix + " " + p.getDisplayName();
 	if (name.length() >= 16) {
 	    name = name.substring(0, 15);
 	}
@@ -159,9 +165,9 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    out.writeShort(msgbytes.toByteArray().length);
 	    out.write(msgbytes.toByteArray());
 	    ((PluginMessageRecipient) Bukkit.getServer().getOnlinePlayers().toArray()[0]).sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
-	    Bukkit.getLogger().info("Sent reload player packet");
+	    Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Sent packet to reload permissions for player " + playerName);
 	} else
-	    Bukkit.getLogger().info("Could not send player reload message to other servers, there is no player online!");
+	    Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Could not send player reload message to other servers, there is no player online!");
     }
 
     private void NotifyReloadGroups() {
@@ -184,7 +190,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    out.writeShort(msgbytes.toByteArray().length);
 	    out.write(msgbytes.toByteArray());
 	    ((PluginMessageRecipient) Bukkit.getOnlinePlayers().toArray()[0]).sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
-	    Bukkit.getLogger().info("Sent reload groups packet");
+	    Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Sent packet to reload group permissions");
 	} else
 	    Bukkit.getLogger().info("Could not send groups reload message to other servers, there is no player online!");
     }
@@ -207,6 +213,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    int group_loaded = 1;
 	    String permissions_loaded = "";
 	    String prefix_loaded = "";
+	    String suffix_loaded = ": "; // Default suffix
 
 	    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM Players WHERE `uuid`=?");
 	    s.setString(1, p.getUniqueId().toString());
@@ -217,6 +224,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		group_loaded = result.getInt("group");
 		permissions_loaded = result.getString("permissions");
 		prefix_loaded = result.getString("prefix");
+		suffix_loaded = result.getString("suffix");
 
 		// Check if name mismatch, update player name
 		String playerName_loaded = result.getString("name");
@@ -248,9 +256,13 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		} else {
 		    // Player does not exist in database. Create a new player.
 		    s.close();
-		    s = sql.getConnection().prepareStatement("INSERT INTO Players SET `uuid`=?, `name`=?;");
+		    s = sql.getConnection().prepareStatement("INSERT INTO Players SET `uuid`=?, `name`=?, `group`=?, `permissions`=?, `prefix`=?, `suffix`=?;");
 		    s.setString(1, p.getUniqueId().toString());
 		    s.setString(2, p.getName());
+		    s.setInt(3, 1);
+		    s.setString(4, "");
+		    s.setString(5, "");
+		    s.setString(6, "");
 		    s.execute();
 		    s.close();
 		}
@@ -268,7 +280,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		    toRemove.remove();
 	    }
 	    Group playerGroup = groups.get(group_loaded);
-	    players.put(p.getUniqueId(), new PermissionsPlayer(p, playerGroup, betterPerms, pa, prefix_loaded));
+	    players.put(p.getUniqueId(), new PermissionsPlayer(p, playerGroup, betterPerms, pa, prefix_loaded, suffix_loaded));
 
 	} catch (SQLException ex) {
 	    ex.printStackTrace();
@@ -292,9 +304,10 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		String permissionsString = result.getString("permissions");
 		String parents = result.getString("parents");
 		String prefix = result.getString("prefix");
+		String suffix = result.getString("suffix");
 
 		tempParents.put(groupId, parents);
-		Group group = new Group(groupId, name, getPermissionsMap(permissionsString), prefix);
+		Group group = new Group(groupId, name, getPermissionsMap(permissionsString), prefix, suffix);
 		groups.put(groupId, group);
 	    }
 	} catch (SQLException ex) {
@@ -378,8 +391,13 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    if (rs.next())
 		return rs;
 	    else {
-		s = sql.getConnection().prepareStatement("INSERT INTO Players SET `name`=?");
-		s.setString(1, playerName);
+		s = sql.getConnection().prepareStatement("INSERT INTO Players SET `uuid`=?, `name`=?, `group`=?, `permissions`=?, `prefix`=?, `suffix`=?");
+		s.setString(1, "");
+		s.setString(2, playerName);
+		s.setInt(3, 1);
+		s.setString(4, "");
+		s.setString(5, "");
+		s.setString(6, "");
 		s.execute();
 
 		s = sql.getConnection().prepareStatement("SELECT * FROM Players WHERE `name`=?");
@@ -388,7 +406,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		rs = s.getResultSet();
 		if (rs.next())
 		    return rs;
-		Bukkit.getLogger().severe("Player didn't insert into database properly!");
+		Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Player didn't insert into database properly!");
 	    }
 	} catch (SQLException e) {
 	    e.printStackTrace();
@@ -469,7 +487,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		    temp.putAll(getPermissionsMap(ownPerms));
 		    return temp;
 		} else
-		    Bukkit.getLogger().severe("Attempted to get permissions of a non-loaded player (Group null. ID:" + groupId);
+		    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get permissions of a non-loaded player (Group is null. Group ID:" + groupId + ")");
 
 	    } catch (SQLException e) {
 		e.printStackTrace();
@@ -490,7 +508,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    String prefix = gp.getPrefix();
 	    return prefix;
 	}
-	Bukkit.getLogger().severe("Attempted to get prefix of a non-loaded player");
+	Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get prefix of a non-loaded player");
 	return null;
     }
 
@@ -509,7 +527,45 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    if (result.next()) {
 		return result.getString("prefix");
 	    } else
-		Bukkit.getLogger().severe("Tried to get prefix of a player that doesn't exist.");
+		Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get prefix of a player that doesn't exist.");
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	}
+	return "";
+    }
+
+    public String getPlayerSuffix(Player p) {
+	/**
+	 * Gets the prefix of a player. If the player doesn't have a prefix, return the top inherited group's prefix.
+	 * 
+	 * @param p
+	 *            The player to get prefix from.
+	 */
+	PermissionsPlayer gp = players.get(p.getUniqueId());
+	if (gp != null) {
+	    String suffix = gp.getSuffix();
+	    return suffix;
+	}
+	Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get suffix of a non-loaded player");
+	return null;
+    }
+
+    public String getPlayerSuffix(String playerName) {
+	/**
+	 * Gets the prefix of a player. If the player doesn't have a prefix, return the top inherited group's prefix.
+	 * 
+	 * @param p
+	 *            The player to get prefix from.
+	 */
+	try {
+	    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM Players WHERE `name`=?");
+	    s.setString(1, playerName);
+	    s.execute();
+	    ResultSet result = s.getResultSet();
+	    if (result.next()) {
+		return result.getString("suffix");
+	    } else
+		Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get suffix of a player that doesn't exist.");
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
@@ -521,11 +577,24 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	 * Gets the prefix of a group.
 	 * 
 	 * @param groupName
-	 *            The player to get prefix from.
+	 *            The group to get prefix from.
 	 */
 	Group g = getGroup(groupName);
 	if (g != null)
 	    return g.getPrefix();
+	return "";
+    }
+
+    public String getGroupSuffix(String groupName) {
+	/**
+	 * Gets the suffix of a group.
+	 * 
+	 * @param groupName
+	 *            The group to get suffix from.
+	 */
+	Group g = getGroup(groupName);
+	if (g != null)
+	    return g.getSuffix();
 	return "";
     }
 
@@ -534,8 +603,6 @@ public class PermissionManager implements Listener, PluginMessageListener {
     // ------------PLAYER PERMISSION MODIFYING FUNCTIONS BELOW------------//
     // //
     // -------------------------------------------------------------------//
-
-    // AddPlayerPermission
 
     public PMR AddPlayerPermission(String playerName, String permission) {
 	return AddPlayerPermission(playerName, permission, "");
@@ -571,8 +638,6 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    return new PMR(false, "SQL error code " + e.getErrorCode());
 	}
     }
-
-    // RemovePlayerPermission
 
     public PMR RemovePlayerPermission(String playerName, String permission) {
 	return RemovePlayerPermission(playerName, permission, "");
@@ -612,8 +677,6 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	}
     }
 
-    // setPlayerPrefix
-
     public void setPlayerPrefix(Player p, String prefix) {
 	setPlayerPrefix(p.getName(), prefix);
     }
@@ -626,8 +689,9 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    s.execute();
 	    Player p = Bukkit.getPlayer(playerName);
 	    // If player is online, reload his permissions
-	    if (p != null)
+	    if (p != null) {
 		LoadPlayer(p);
+	    }
 	    NotifyReloadPlayer(playerName);
 	    return new PMR("Player prefix set.");
 	} catch (SQLException e) {
@@ -636,7 +700,28 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	}
     }
 
-    // setPlayerGroup
+    public void setPlayerSuffix(Player p, String suffix) {
+	setPlayerSuffix(p.getName(), suffix);
+    }
+
+    public PMR setPlayerSuffix(String playerName, String suffix) {
+	try {
+	    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE Players SET `suffix`=? WHERE `name`=?");
+	    s.setString(1, suffix);
+	    s.setString(2, playerName);
+	    s.execute();
+	    Player p = Bukkit.getPlayer(playerName);
+	    // If player is online, reload his permissions
+	    if (p != null) {
+		LoadPlayer(p);
+	    }
+	    NotifyReloadPlayer(playerName);
+	    return new PMR("Player suffix set.");
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    return new PMR(false, "SQL error code " + e.getErrorCode());
+	}
+    }
 
     public PMR setPlayerGroup(Player p, int groupId) {
 	return setPlayerGroup(p.getName(), groupId);
@@ -655,7 +740,16 @@ public class PermissionManager implements Listener, PluginMessageListener {
     }
 
     private PMR setPlayerGroup(String playerName, String groupName, int groupId) {
-	int groupId_new = (groupName.isEmpty() ? groupId : getGroup(groupName).getId());
+	int groupId_new;
+	if (groupName.isEmpty())
+	    groupId_new = groupId;
+	else {
+	    Group group = getGroup(groupName);
+	    if (group != null)
+		groupId_new = group.getId();
+	    else
+		return new PMR(false, "Group does not exist.");
+	}
 	try {
 	    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE Players SET `group`=? WHERE `name`=?");
 	    s.setInt(1, groupId_new);
@@ -681,24 +775,48 @@ public class PermissionManager implements Listener, PluginMessageListener {
     // //
     // -------------------------------------------------------------------//
 
-    // CreateGroup
-
     public PMR CreateGroup(String name) {
+	Iterator<Entry<Integer, Group>> it = this.groups.entrySet().iterator();
+	while (it.hasNext()) {
+	    Entry<Integer, Group> e = it.next();
+	    if (e.getValue().getName().equals(name)) {
+		// Group already exists
+		return new PMR(false, "Group already exists.");
+	    }
+	}
+
 	try {
-	    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO Groups SET `name`=?");
+	    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO Groups SET `name`=?, `permissions`=?, `parents`=?, `prefix`=?, `suffix`=?");
 	    s.setString(1, name);
+	    s.setString(2, "");
+	    s.setString(3, "");
+	    s.setString(4, "");
+	    s.setString(5, "");
 	    s.execute();
 	    // Reload groups
 	    LoadGroups();
 	    NotifyReloadGroups();
-	    return new PMR("Successfully created group.");
+	    return new PMR("Created group.");
 	} catch (SQLException e) {
 	    e.printStackTrace();
-	    return new PMR(false, "Could not create group: SQL error code " + e.getErrorCode());
+	    return new PMR(false, "Could not create group: SQL error code: " + e.getErrorCode());
 	}
     }
 
-    // AddGroupPermission
+    public PMR DeleteGroup(String groupName) {
+	try {
+	    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM Groups WHERE `name`=?;");
+	    s.setString(1, groupName);
+	    s.execute();
+	    // Reload groups
+	    LoadGroups();
+	    NotifyReloadGroups();
+	    return new PMR("Deleted group.");
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    return new PMR(false, "Could not delete group: SQL error code: " + e.getErrorCode());
+	}
+    }
 
     public PMR AddGroupPermission(String groupName, String permission) {
 	return AddGroupPermission(groupName, permission, "");
@@ -721,13 +839,11 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		return new PMR("Added permission to group.");
 	    } catch (SQLException e) {
 		e.printStackTrace();
-		return new PMR(false, "SQL error code " + e.getErrorCode());
+		return new PMR(false, "SQL error code: " + e.getErrorCode());
 	    }
 	} else
-	    return new PMR(false, "Group does not exist");
+	    return new PMR(false, "Group does not exist.");
     }
-
-    // RemoveGroupPermission
 
     public PMR RemoveGroupPermission(String groupName, String permission) {
 	return RemoveGroupPermission(groupName, permission, "");
@@ -753,13 +869,11 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		return new PMR("Removed permission from group.");
 	    } catch (SQLException e) {
 		e.printStackTrace();
-		return new PMR(false, "SQL error code " + e.getErrorCode());
+		return new PMR(false, "SQL error code: " + e.getErrorCode());
 	    }
 	} else
-	    return new PMR(false, "Group does not exist");
+	    return new PMR(false, "Group does not exist.");
     }
-
-    // AddGroupParent
 
     public PMR AddGroupParent(String groupName, String parentGroupName) {
 	Group group = getGroup(groupName);
@@ -787,8 +901,6 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    return new PMR(false, "Group does not exist.");
     }
 
-    // RemoveGroupParent
-
     public PMR RemoveGroupParent(String groupName, String parentGroupName) {
 	Group group = getGroup(groupName);
 	if (group != null) {
@@ -810,7 +922,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		    return new PMR("Removed parent from group.");
 		} catch (SQLException e) {
 		    e.printStackTrace();
-		    return new PMR(false, "SQL error code " + e.getErrorCode());
+		    return new PMR(false, "SQL error code: " + e.getErrorCode());
 		}
 	    } else
 		return new PMR(false, "Parent group does not exist.");
@@ -818,12 +930,9 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    return new PMR(false, "Group does not exist.");
     }
 
-    // SetGroupPrefix
-
     public PMR setGroupPrefix(String groupName, String prefix) {
 	try {
 	    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE Groups SET `prefix`=? WHERE `name`=?");
-	    Bukkit.getLogger().info("Prefix is \"" + prefix + "\"");
 	    s.setString(1, prefix);
 	    s.setString(2, groupName);
 	    s.execute();
@@ -831,6 +940,22 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    LoadGroups();
 	    NotifyReloadGroups();
 	    return new PMR("Set group prefix.");
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    return new PMR(false, "SQL error code " + e.getErrorCode());
+	}
+    }
+
+    public PMR setGroupSuffix(String groupName, String suffix) {
+	try {
+	    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE Groups SET `suffix`=? WHERE `name`=?");
+	    s.setString(1, suffix);
+	    s.setString(2, groupName);
+	    s.execute();
+	    // Reload groups
+	    LoadGroups();
+	    NotifyReloadGroups();
+	    return new PMR("Set group suffix.");
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	    return new PMR(false, "SQL error code " + e.getErrorCode());
