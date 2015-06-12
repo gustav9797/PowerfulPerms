@@ -11,13 +11,15 @@ public class Group
 	private HashMap<String, String> permissions = new HashMap<String, String>();
 	private ArrayList<Group> parents;
 	private String prefix;
+	private String suffix;
 
-	public Group(int id, String name, HashMap<String, String> permissions, String prefix)
+	public Group(int id, String name, HashMap<String, String> permissions, String prefix, String suffix)
 	{
 		this.id = id;
 		this.name = name;
 		this.permissions = permissions;
 		this.prefix = prefix;
+		this.suffix = suffix;
 	}
 
 	public int getId()
@@ -38,6 +40,11 @@ public class Group
 	public String getPrefix()
 	{
 		return prefix;
+	}
+	
+	public String getSuffix()
+	{
+		return suffix;
 	}
 
 	public HashMap<String, String> getPermissions()

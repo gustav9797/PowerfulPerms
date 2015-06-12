@@ -1,3 +1,7 @@
-name: SimpleShelf
+name: SimplePerms
 main: com.github.cheesesoftware.SimplePerms.SimplePerms
 version: 0.1
+commands:
+  simpleperms:
+    description: Modify permissions for players and groups.
+    aliases: [sip]

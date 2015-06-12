@@ -12,12 +12,14 @@ public class PermissionsPlayer {
     private Map<String, String> permissions = new HashMap<String, String>();
     private PermissionAttachment pa;
     private String prefix = "";
-
-    public PermissionsPlayer(Player p, Group group, Map<String, String> permissions, PermissionAttachment pa, String prefix) {
+    private String suffix = "";
+    
+    public PermissionsPlayer(Player p, Group group, Map<String, String> permissions, PermissionAttachment pa, String prefix, String suffix) {
 	this.group = group;
 	this.permissions = permissions;
 	this.pa = pa;
 	this.prefix = prefix;
+	this.suffix = suffix;
 	this.UpdatePermissionAttachment();
     }
 
@@ -62,5 +64,9 @@ public class PermissionsPlayer {
 
     public String getPrefix() {
 	return (!this.prefix.isEmpty() ? this.prefix : (group != null && group.getPrefix() != "" ? group.getPrefix() : ""));
+    }
+
+    public String getSuffix() {
+	return (!this.suffix.isEmpty() ? this.suffix : (group != null && group.getSuffix() != "" ? group.getSuffix() : ": "));
     }
 }
