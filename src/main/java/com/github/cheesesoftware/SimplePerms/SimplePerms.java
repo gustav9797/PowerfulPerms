@@ -26,6 +26,16 @@ public class SimplePerms extends JavaPlugin implements Listener {
 	this.sql = new SQL(getConfig().getString("host"), getConfig().getString("database"), getConfig().getInt("port"), getConfig().getString("username"), getConfig().getString("password"));
 
 	try {
+	    if (sql.getConnection() == null || sql.getConnection().isClosed()) {
+		Bukkit.getLogger().severe(pluginPrefix + "Could not access the database, disabling..");
+		this.setEnabled(false);
+	    }
+	} catch (SQLException e2) {
+	    Bukkit.getLogger().severe(pluginPrefix + "Could not access the database, disabling..");
+	    this.setEnabled(false);
+	}
+
+	try {
 	    sql.getConnection().prepareStatement("SELECT 1 FROM groups LIMIT 1;").execute();
 	} catch (SQLException e) {
 	    String groupsTable = "CREATE TABLE `groups` (" + "`id` int(10) unsigned NOT NULL AUTO_INCREMENT," + "`name` varchar(255) NOT NULL," + "`permissions` longtext NOT NULL,"
