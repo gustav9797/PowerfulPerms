@@ -116,7 +116,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	ByteArrayDataInput in = ByteStreams.newDataInput(message);
 	String subChannel = in.readUTF();
 	if (subChannel.equals("PermissionManager")) {
-	    Bukkit.getLogger().info("Subchannel equals");
+	    //Bukkit.getLogger().info("Subchannel equals");
 	    short len = in.readShort();
 	    byte[] msgbytes = new byte[len];
 	    in.readFully(msgbytes);
