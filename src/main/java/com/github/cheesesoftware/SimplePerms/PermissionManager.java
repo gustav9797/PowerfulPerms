@@ -145,13 +145,10 @@ public class PermissionManager implements Listener, PluginMessageListener {
     }
 
     public void setPrefix(Player p) {
-	String prefix = getPlayerPrefix(p);
-	// prefix = prefix.substring(prefix.length() - 2, prefix.length());
-	String name = prefix + " " + p.getDisplayName();
-	if (name.length() >= 16) {
-	    name = name.substring(0, 15);
-	}
-	p.setPlayerListName(name);
+	/*
+	 * String prefix = getPlayerPrefix(p); prefix = prefix.substring(prefix.length() - 2, prefix.length()); String name = prefix + " " + p.getDisplayName(); if (name.length() >= 16) { name =
+	 * name.substring(0, 15); } p.setPlayerListName(name);
+	 */
     }
 
     private void NotifyReloadPlayer(String playerName) {
@@ -212,7 +209,6 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	 */
 	try {
 	    int group_loaded = 1;
-	    String permissions_loaded = "";
 	    String prefix_loaded = "";
 	    String suffix_loaded = ": "; // Default suffix
 
@@ -866,12 +862,11 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	}
 
 	try {
-	    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO Groups SET `name`=?, `permissions`=?, `parents`=?, `prefix`=?, `suffix`=?");
+	    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO Groups SET `name`=?, `parents`=?, `prefix`=?, `suffix`=?");
 	    s.setString(1, name);
 	    s.setString(2, "");
 	    s.setString(3, "");
 	    s.setString(4, "");
-	    s.setString(5, "");
 	    s.execute();
 	    // Reload groups
 	    LoadGroups();
@@ -903,7 +898,6 @@ public class PermissionManager implements Listener, PluginMessageListener {
     }
 
     public PMR AddGroupPermission(String groupName, String permission, String world, String server) {
-	boolean allServers = server == null || server.isEmpty() || server.equals("ALL");
 	Group group = getGroup(groupName);
 	if (group != null) {
 	    ArrayList<SimplePermission> groupPermissions = group.getOwnPermissions();
@@ -970,7 +964,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		// Reload groups
 		LoadGroups();
 		NotifyReloadGroups();
-		return new PMR("Removed " + amount + "permissions from the group.");
+		return new PMR("Removed " + amount + " permissions from the group.");
 	    } catch (SQLException e) {
 		e.printStackTrace();
 		return new PMR(false, "SQL error code: " + e.getErrorCode());

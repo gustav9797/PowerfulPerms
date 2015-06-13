@@ -2,8 +2,6 @@ package com.github.cheesesoftware.SimplePerms;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import net.md_5.bungee.api.ChatColor;
 
@@ -115,6 +113,10 @@ public class SimplePerms extends JavaPlugin implements Listener {
 			    world = args[4];
 			if (args.length >= 6)
 			    server = args[5];
+			if (server.equalsIgnoreCase("all"))
+			    server = "";
+			if (world.equalsIgnoreCase("all"))
+			    world = "";
 			PMR result = permissionManager.AddPlayerPermission(playerName, permission, world, server);
 			sender.sendMessage(pluginPrefix + result.getResponse());
 			return true;
@@ -126,6 +128,10 @@ public class SimplePerms extends JavaPlugin implements Listener {
 			    world = args[4];
 			if (args.length >= 6)
 			    server = args[5];
+			if (server.equalsIgnoreCase("all"))
+			    server = "";
+			if (world.equalsIgnoreCase("all"))
+			    world = "";
 			PMR result = permissionManager.RemovePlayerPermission(playerName, permission, world, server);
 			sender.sendMessage(pluginPrefix + result.getResponse());
 			return true;
@@ -205,7 +211,8 @@ public class SimplePerms extends JavaPlugin implements Listener {
 				sender.sendMessage(pluginPrefix + "Suffix for player(offline,non-inherited) " + playerName + ": " + permissionManager.getPlayerSuffix(playerName));
 			}
 			return true;
-		    }
+		    } else
+			showCommandInfo(sender);
 		} else {
 		    // List player permissions
 		    sender.sendMessage(pluginPrefix + "Listing permissions for player " + playerName + ".");
@@ -213,14 +220,14 @@ public class SimplePerms extends JavaPlugin implements Listener {
 		    sender.sendMessage(pluginPrefix + "Group: " + (playerGroup != null ? playerGroup.getName() : "Player has no group."));
 		    // String prefix = permissionManager.getPlayerPrefix(playerName);
 		    // sender.sendMessage(pluginPrefix+"Prefix: " + (prefix.isEmpty() ? "Player has no prefix." : prefix));
-		    boolean isOnline = false;
-		    if (Bukkit.getPlayer(playerName) != null)
-			isOnline = true;
+		    // boolean isOnline = false;
+		    // if (Bukkit.getPlayer(playerName) != null)
+		    // isOnline = true;
 		    ArrayList<SimplePermission> playerPerms = permissionManager.getPlayerPermissions(playerName);
 		    if (playerPerms.size() > 0)
 			for (SimplePermission e : playerPerms) {
-			    sender.sendMessage(pluginPrefix + "  " + e.getPermissionString() + " (Server:" + e.getServer() + " World: " + e.getWorld() + ")"
-				    + (isOnline ? "(HASPERM:" + Bukkit.getPlayer(playerName).hasPermission(e.getPermissionString()) : "") + ")");
+			    sender.sendMessage(pluginPrefix + "  " + e.getPermissionString() + " (Server:" + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer())
+				    + " World: " + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
 			}
 		    else
 			sender.sendMessage(pluginPrefix + "Player has no permissions.");
@@ -245,6 +252,10 @@ public class SimplePerms extends JavaPlugin implements Listener {
 			    world = args[4];
 			if (args.length >= 6)
 			    server = args[5];
+			if (server.equalsIgnoreCase("all"))
+			    server = "";
+			if (world.equalsIgnoreCase("all"))
+			    world = "";
 			PMR result = permissionManager.AddGroupPermission(groupName, permission, world, server);
 			sender.sendMessage(pluginPrefix + result.getResponse());
 			return true;
@@ -256,6 +267,10 @@ public class SimplePerms extends JavaPlugin implements Listener {
 			    world = args[4];
 			if (args.length >= 6)
 			    server = args[5];
+			if (server.equalsIgnoreCase("all"))
+			    server = "";
+			if (world.equalsIgnoreCase("all"))
+			    world = "";
 			PMR result = permissionManager.RemoveGroupPermission(groupName, permission, world, server);
 			sender.sendMessage(pluginPrefix + result.getResponse());
 			return true;
@@ -351,7 +366,8 @@ public class SimplePerms extends JavaPlugin implements Listener {
 				sender.sendMessage(pluginPrefix + "Group doesn't exist.");
 			    return true;
 			}
-		    }
+		    } else
+			showCommandInfo(sender);
 		} else {
 		    // List group permissions
 		    Group group = permissionManager.getGroup(groupName);
@@ -361,7 +377,8 @@ public class SimplePerms extends JavaPlugin implements Listener {
 			ArrayList<SimplePermission> permissions = group.getPermissions();
 			if (permissions.size() > 0) {
 			    for (SimplePermission e : permissions)
-				sender.sendMessage(pluginPrefix + "  " + e.getPermissionString() + " (Server:" + e.getServer() + " World:" + e.getWorld() + ")");
+				sender.sendMessage(pluginPrefix + "  " + e.getPermissionString() + " (Server:" + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer())
+					+ " World:" + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
 			} else
 			    sender.sendMessage(pluginPrefix + "Group has no permissions.");
 
@@ -371,6 +388,7 @@ public class SimplePerms extends JavaPlugin implements Listener {
 		}
 	    } else
 		showCommandInfo(sender);
+	    return true;
 	}
 	return false;
     }

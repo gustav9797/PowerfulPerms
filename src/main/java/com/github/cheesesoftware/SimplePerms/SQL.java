@@ -10,14 +10,14 @@ public class SQL {
 
     private String username = "";
     private String password = "";
-    
+
     private String connectionString = "";
 
     public SQL(String host, String database, int port, String username, String password) {
-	
+
 	this.username = username;
 	this.password = password;
-	
+
 	this.connectionString = "jdbc:mysql://" + host + ":" + port + "/" + database;
 	if (!(conn == null)) {
 	    try {

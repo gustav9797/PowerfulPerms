@@ -1,7 +1,8 @@
 name: SimplePerms
 main: com.github.cheesesoftware.SimplePerms.SimplePerms
-version: 0.1
+version: 1.0
 commands:
   simpleperms:
     description: Modify permissions for players and groups.
     aliases: [sip]
+    usage: Unknown command. Type "/help" for help.
