@@ -21,6 +21,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.permissions.PermissionAttachment;
@@ -72,6 +73,15 @@ public class PermissionManager implements Listener, PluginMessageListener {
     @EventHandler(priority = EventPriority.HIGH)
     private void onPlayerChat(AsyncPlayerChatEvent e) {
 	e.setFormat(getPlayerPrefix(e.getPlayer()) + e.getPlayer().getDisplayName() + getPlayerSuffix(e.getPlayer()) + e.getMessage());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+	Player p = event.getPlayer();
+	if (players.containsKey(p.getUniqueId())) {
+	    PermissionsPlayer permissionsPlayer = players.get(p.getUniqueId());
+	    permissionsPlayer.UpdatePermissionAttachment();
+	}
     }
 
     public void reloadPlayers() {
@@ -201,15 +211,6 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	 * Loads player data from MySQL, removes old data
 	 */
 	try {
-	    if (SimplePerms.getPlugin().getSQL().getConnection().isClosed()) {
-		sql.openConnection();
-		LoadPlayer(p);
-		return;
-	    }
-	} catch (SQLException e) {
-	    e.printStackTrace();
-	}
-	try {
 	    int group_loaded = 1;
 	    String permissions_loaded = "";
 	    String prefix_loaded = "";
@@ -222,7 +223,6 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    if (result.next()) {
 		// The player exists in database.
 		group_loaded = result.getInt("group");
-		permissions_loaded = result.getString("permissions");
 		prefix_loaded = result.getString("prefix");
 		suffix_loaded = result.getString("suffix");
 
@@ -249,20 +249,18 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		    s.execute();
 		    // UUID has been entered into player. Lets continue.
 		    group_loaded = result.getInt("group");
-		    permissions_loaded = result.getString("permissions");
 		    prefix_loaded = result.getString("prefix");
 
 		    s.close();
 		} else {
 		    // Player does not exist in database. Create a new player.
 		    s.close();
-		    s = sql.getConnection().prepareStatement("INSERT INTO Players SET `uuid`=?, `name`=?, `group`=?, `permissions`=?, `prefix`=?, `suffix`=?;");
+		    s = sql.getConnection().prepareStatement("INSERT INTO Players SET `uuid`=?, `name`=?, `group`=?, `prefix`=?, `suffix`=?;");
 		    s.setString(1, p.getUniqueId().toString());
 		    s.setString(2, p.getName());
 		    s.setInt(3, 1);
 		    s.setString(4, "");
 		    s.setString(5, "");
-		    s.setString(6, "");
 		    s.execute();
 		    s.close();
 		}
@@ -270,8 +268,8 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    s.close();
 
 	    // Load player permissions.
-	    PermissionAttachment pa = getPlayerPermissions(p, permissions_loaded);
-	    Map<String, String> betterPerms = getPermissionsMap(permissions_loaded);
+	    PermissionAttachment pa = p.addAttachment(plugin);
+	    ArrayList<SimplePermission> perms = loadPlayerPermissions(p);
 
 	    if (players.containsKey(p.getUniqueId())) {
 		PermissionsPlayer gp = players.get(p.getUniqueId());
@@ -280,7 +278,9 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		    toRemove.remove();
 	    }
 	    Group playerGroup = groups.get(group_loaded);
-	    players.put(p.getUniqueId(), new PermissionsPlayer(p, playerGroup, betterPerms, pa, prefix_loaded, suffix_loaded));
+	    PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, playerGroup, perms, pa, prefix_loaded, suffix_loaded);
+	    players.put(p.getUniqueId(), permissionsPlayer);
+	    permissionsPlayer.UpdatePermissionAttachment();
 
 	} catch (SQLException ex) {
 	    ex.printStackTrace();
@@ -301,13 +301,12 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    while (result.next()) {
 		int groupId = result.getInt("id");
 		String name = result.getString("name");
-		String permissionsString = result.getString("permissions");
 		String parents = result.getString("parents");
 		String prefix = result.getString("prefix");
 		String suffix = result.getString("suffix");
 
 		tempParents.put(groupId, parents);
-		Group group = new Group(groupId, name, getPermissionsMap(permissionsString), prefix, suffix);
+		Group group = new Group(groupId, name, loadGroupPermissions(name), prefix, suffix);
 		groups.put(groupId, group);
 	    }
 	} catch (SQLException ex) {
@@ -344,31 +343,90 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	}
     }
 
-    private PermissionAttachment getPlayerPermissions(Player p, String permissionsString) {
-	PermissionAttachment pa = p.addAttachment(plugin);
-	if (!permissionsString.isEmpty()) {
-	    String[] rawPerms = permissionsString.split(";");
-	    for (String tempRawPerm : rawPerms) {
-		String[] temp = tempRawPerm.split(":");
-		pa.setPermission(temp[0], (temp.length >= 2 ? ((temp[1].equals(Bukkit.getServerName()) || temp[1].isEmpty() || temp[1].equals("ALL")) ? true : false) : false));
-		// Bukkit.getLogger().info("Loaded permission " + temp[0] +
-		// " for player " + p.getName());
+    private ArrayList<SimplePermission> loadPlayerPermissions(Player p) {
+	PreparedStatement s;
+	boolean needsNameUpdate = false;
+	try {
+	    s = sql.getConnection().prepareStatement("SELECT * FROM permissions WHERE `playeruuid`=?");
+	    s.setString(1, p.getUniqueId().toString());
+	    s.execute();
+	    ResultSet result = s.getResultSet();
+	    ArrayList<SimplePermission> perms = new ArrayList<SimplePermission>();
+	    while (result.next()) {
+		SimplePermission tempPerm = new SimplePermission(result.getString("permission"), result.getString("world"), result.getString("server"));
+		perms.add(tempPerm);
+
+		if (!p.getName().equals(result.getString("playername")))
+		    needsNameUpdate = true;
 	    }
+
+	    // Update player names if UUID doesn't match. Allows permission indexing by player name.
+	    if (needsNameUpdate) {
+		s = sql.getConnection().prepareStatement("UPDATE permissions SET `playername`=? WHERE `playeruuid`=?");
+		s.setString(1, p.getName());
+		s.setString(2, p.getUniqueId().toString());
+		s.execute();
+		Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Player has changed name, updated UUID and name.");
+	    }
+
+	    return perms;
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Could not load player permissions.");
 	}
-	return pa;
+	return null;
     }
 
-    private HashMap<String, String> getPermissionsMap(String permissionsString) {
-	HashMap<String, String> permissions = new HashMap<String, String>();
-	if (!permissionsString.isEmpty()) {
-	    String[] rawPerms = permissionsString.split(";");
-	    for (String tempRawPerm : rawPerms) {
-		String[] temp = tempRawPerm.split(":");
-		permissions.put(temp[0], (temp.length >= 2 ? temp[1] : ""));
+    private ArrayList<SimplePermission> loadPlayerPermissions(String name) {
+	PreparedStatement s;
+	try {
+	    s = sql.getConnection().prepareStatement("SELECT * FROM permissions WHERE `playername`=?");
+	    s.setString(1, name);
+	    s.execute();
+	    ResultSet result = s.getResultSet();
+	    ArrayList<SimplePermission> perms = new ArrayList<SimplePermission>();
+	    while (result.next()) {
+		SimplePermission tempPerm = new SimplePermission(result.getString("permission"), result.getString("world"), result.getString("server"));
+		perms.add(tempPerm);
 	    }
+	    return perms;
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Could not load player permissions.");
 	}
-	return permissions;
+	return null;
     }
+
+    private ArrayList<SimplePermission> loadGroupPermissions(String groupName) {
+	PreparedStatement s;
+	try {
+	    s = sql.getConnection().prepareStatement("SELECT * FROM permissions WHERE `groupname`=?");
+	    s.setString(1, groupName);
+	    s.execute();
+	    ResultSet result = s.getResultSet();
+	    ArrayList<SimplePermission> perms = new ArrayList<SimplePermission>();
+	    while (result.next()) {
+		SimplePermission tempPerm = new SimplePermission(result.getString("permission"), result.getString("world"), result.getString("server"));
+		perms.add(tempPerm);
+	    }
+	    return perms;
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Could not load group permissions.");
+	}
+	return null;
+    }
+
+    /*
+     * private PermissionAttachment getPlayerPermissions(Player p, String permissionsString) { PermissionAttachment pa = p.addAttachment(plugin); if (!permissionsString.isEmpty()) { String[] rawPerms
+     * = permissionsString.split(";"); for (String tempRawPerm : rawPerms) { String[] temp = tempRawPerm.split(":"); pa.setPermission(temp[0], (temp.length >= 2 ?
+     * ((temp[1].equals(Bukkit.getServerName()) || temp[1].isEmpty() || temp[1].equals("ALL")) ? true : false) : false)); // Bukkit.getLogger().info("Loaded permission " + temp[0] + // " for player "
+     * + p.getName()); } } return pa; }
+     * 
+     * private HashMap<String, String> getPermissionsMap(String permissionsString) { HashMap<String, String> permissions = new HashMap<String, String>(); if (!permissionsString.isEmpty()) { String[]
+     * rawPerms = permissionsString.split(";"); for (String tempRawPerm : rawPerms) { String[] temp = tempRawPerm.split(":"); permissions.put(temp[0], (temp.length >= 2 ? temp[1] : "")); } } return
+     * permissions; }
+     */
 
     private ArrayList<String> getGroupParents(String parentsString) {
 	ArrayList<String> parents = new ArrayList<String>();
@@ -391,13 +449,12 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    if (rs.next())
 		return rs;
 	    else {
-		s = sql.getConnection().prepareStatement("INSERT INTO Players SET `uuid`=?, `name`=?, `group`=?, `permissions`=?, `prefix`=?, `suffix`=?");
+		s = sql.getConnection().prepareStatement("INSERT INTO Players SET `uuid`=?, `name`=?, `group`=?, `prefix`=?, `suffix`=?");
 		s.setString(1, "");
 		s.setString(2, playerName);
 		s.setInt(3, 1);
 		s.setString(4, "");
 		s.setString(5, "");
-		s.setString(6, "");
 		s.execute();
 
 		s = sql.getConnection().prepareStatement("SELECT * FROM Players WHERE `name`=?");
@@ -462,7 +519,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	return groups.get(groupId);
     }
 
-    public Map<String, String> getPlayerPermissions(String playerName) {
+    public ArrayList<SimplePermission> getPlayerPermissions(String playerName) {
 	/**
 	 * Gets a map containing all the permissions a player has, including its group's permissions and its group's parent groups' permissions. If player is not online data will be loaded from DB.
 	 * 
@@ -477,15 +534,14 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	} else {
 	    // Load from DB
 	    try {
+		ArrayList<SimplePermission> permissions = loadPlayerPermissions(playerName);
+
 		ResultSet result = getPlayerData(playerName);
 		int groupId = result.getInt("group");
-		String ownPerms = result.getString("permissions");
 		Group group = groups.get(groupId);
 		if (group != null) {
-		    Map<String, String> temp = new HashMap<String, String>();
-		    temp.putAll(group.getPermissions());
-		    temp.putAll(getPermissionsMap(ownPerms));
-		    return temp;
+		    permissions.addAll(group.getPermissions());
+		    return permissions;
 		} else
 		    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get permissions of a non-loaded player (Group is null. Group ID:" + groupId + ")");
 
@@ -493,7 +549,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		e.printStackTrace();
 	    }
 	}
-	return new HashMap<String, String>();
+	return new ArrayList<SimplePermission>();
     }
 
     public String getPlayerPrefix(Player p) {
@@ -605,29 +661,43 @@ public class PermissionManager implements Listener, PluginMessageListener {
     // -------------------------------------------------------------------//
 
     public PMR AddPlayerPermission(String playerName, String permission) {
-	return AddPlayerPermission(playerName, permission, "");
+	return AddPlayerPermission(playerName, permission, "", "");
     }
 
     public PMR AddPlayerPermission(Player player, String permission) {
-	return AddPlayerPermission(player.getName(), permission, "");
+	return AddPlayerPermission(player.getName(), permission, "", "");
     }
 
-    public PMR AddPlayerPermission(Player player, String permission, String server) {
-	return AddPlayerPermission(player.getName(), permission, server);
-    }
-
-    public PMR AddPlayerPermission(String playerName, String permission, String server) {
-	boolean allServers = server == null || server.isEmpty() || server.equals("ALL");
-	ResultSet rs = getPlayerData(playerName);
-	String rawPermissions;
+    public PMR AddPlayerPermission(String playerName, String permission, String world, String server) {
 	try {
-	    rawPermissions = rs.getString("permissions");
-	    rawPermissions += permission + (allServers ? "" : (":" + server)) + ";";
-	    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE Players SET `permissions`=? WHERE `name`=?");
-	    s.setString(1, rawPermissions);
-	    s.setString(2, playerName);
-	    s.execute();
 	    Player p = Bukkit.getPlayer(playerName);
+
+	    UUID uuid = null;
+	    if (p == null) {
+		// Get UUID from table players. Player has to exist.
+		PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM players WHERE `name`=?");
+		s.setString(1, playerName);
+		s.execute();
+		ResultSet result = s.getResultSet();
+		if (result.next()) {
+		    uuid = UUID.fromString(result.getString("uuid"));
+		}
+	    }
+
+	    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO permissions SET `playeruuid`=?, `playername`=?, `groupname`=?, `permission`=?, `world`=?, `server`=?");
+	    if (p != null)
+		s.setString(1, p.getUniqueId().toString());
+	    else if (uuid != null)
+		s.setString(1, uuid.toString());
+	    else
+		return new PMR(false, "Could not add permission. Player doesn't exist.");
+	    s.setString(2, playerName);
+	    s.setString(3, "");
+	    s.setString(4, permission);
+	    s.setString(5, world);
+	    s.setString(6, server);
+	    s.execute();
+
 	    // If player is online, reload his permissions
 	    if (p != null)
 		LoadPlayer(p);
@@ -640,37 +710,47 @@ public class PermissionManager implements Listener, PluginMessageListener {
     }
 
     public PMR RemovePlayerPermission(String playerName, String permission) {
-	return RemovePlayerPermission(playerName, permission, "");
+	return RemovePlayerPermission(playerName, permission, "", "");
     }
 
     public PMR RemovePlayerPermission(Player player, String permission) {
-	return RemovePlayerPermission(player.getName(), permission, "");
+	return RemovePlayerPermission(player.getName(), permission, "", "");
     }
 
-    public PMR RemovePlayerPermission(Player player, String permission, String server) {
-	return RemovePlayerPermission(player.getName(), permission, server);
+    public PMR RemovePlayerPermission(Player player, String permission, String world, String server) {
+	return RemovePlayerPermission(player.getName(), permission, world, server);
     }
 
-    public PMR RemovePlayerPermission(String playerName, String permission, String server) {
-	boolean allServers = server == null || server.isEmpty() || server.equals("ALL");
-	ResultSet rs = getPlayerData(playerName);
-	String rawPermissions;
+    public PMR RemovePlayerPermission(String playerName, String permission, String world, String server) {
 	try {
-	    rawPermissions = rs.getString("permissions");
-	    String toRemove = permission + (allServers ? "" : (":" + server)) + ";";
-	    if (!rawPermissions.contains(toRemove))
-		return new PMR(false, "Player doesn't have the specified permission.");
-	    rawPermissions = rawPermissions.replace(toRemove, "");
-	    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE Players SET `permissions`=? WHERE `name`=?");
-	    s.setString(1, rawPermissions);
-	    s.setString(2, playerName);
-	    s.execute();
+	    boolean useWorld = false;
+	    boolean useServer = false;
+
+	    String statement = "DELETE FROM `permissions` WHERE `playername`=? AND `permission`=?";
+	    if (!world.isEmpty() && !world.equalsIgnoreCase("ALL")) {
+		statement += ", `world`=?";
+		useWorld = true;
+	    }
+	    if (!server.isEmpty() && !server.equalsIgnoreCase("ALL")) {
+		statement += ", `server`=?";
+		useServer = true;
+	    }
+	    PreparedStatement s = sql.getConnection().prepareStatement(statement);
+
+	    s.setString(1, playerName);
+	    s.setString(2, permission);
+	    if (useWorld)
+		s.setString(3, world);
+	    if (useServer)
+		s.setString(4, server);
+	    int amount = s.executeUpdate();
+
 	    Player p = Bukkit.getPlayer(playerName);
 	    // If player is online, reload his permissions
 	    if (p != null)
 		LoadPlayer(p);
 	    NotifyReloadPlayer(playerName);
-	    return new PMR("Removed permission from player.");
+	    return new PMR("Removed " + amount + " permissions from the player.");
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	    return new PMR(false, "SQL error code " + e.getErrorCode());
@@ -819,20 +899,27 @@ public class PermissionManager implements Listener, PluginMessageListener {
     }
 
     public PMR AddGroupPermission(String groupName, String permission) {
-	return AddGroupPermission(groupName, permission, "");
+	return AddGroupPermission(groupName, permission, "", "");
     }
 
-    public PMR AddGroupPermission(String groupName, String permission, String server) {
+    public PMR AddGroupPermission(String groupName, String permission, String world, String server) {
 	boolean allServers = server == null || server.isEmpty() || server.equals("ALL");
 	Group group = getGroup(groupName);
 	if (group != null) {
-	    String groupPermissions = group.getRawOwnPermissions();
+	    ArrayList<SimplePermission> groupPermissions = group.getOwnPermissions();
 	    try {
-		groupPermissions += permission + (allServers ? "" : (":" + server)) + ";";
-		PreparedStatement s = sql.getConnection().prepareStatement("UPDATE Groups SET `permissions`=? WHERE `name`=?");
-		s.setString(1, groupPermissions);
-		s.setString(2, groupName);
+		SimplePermission sp = new SimplePermission(permission, world, server);
+		groupPermissions.add(sp);
+
+		PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO permissions SET `playeruuid`=?, `playername`=?, `groupname`=?, `permission`=?, `world`=?, `server`=?");
+		s.setString(1, "");
+		s.setString(2, "");
+		s.setString(3, groupName);
+		s.setString(4, permission);
+		s.setString(5, world);
+		s.setString(6, server);
 		s.execute();
+
 		// Reload groups
 		LoadGroups();
 		NotifyReloadGroups();
@@ -846,27 +933,44 @@ public class PermissionManager implements Listener, PluginMessageListener {
     }
 
     public PMR RemoveGroupPermission(String groupName, String permission) {
-	return RemoveGroupPermission(groupName, permission, "");
+	return RemoveGroupPermission(groupName, permission, "", "");
     }
 
-    public PMR RemoveGroupPermission(String groupName, String permission, String server) {
-	boolean allServers = server == null || server.isEmpty() || server.equals("ALL");
+    public PMR RemoveGroupPermission(String groupName, String permission, String world, String server) {
+	// boolean allServers = server == null || server.isEmpty() || server.equals("ALL");
 	Group group = getGroup(groupName);
 	if (group != null) {
-	    String groupPermissions = group.getRawOwnPermissions();
+	    ArrayList<SimplePermission> removed = new ArrayList<SimplePermission>();
+	    ArrayList<SimplePermission> groupPermissions = group.getOwnPermissions();
+	    Iterator<SimplePermission> it = groupPermissions.iterator();
+	    while (it.hasNext()) {
+		SimplePermission current = it.next();
+		if (current.getPermissionString().equalsIgnoreCase(permission)) {
+		    if (world.equals(current.getWorld()) && server.equals(current.getServer())) {
+			removed.add(current);
+			it.remove();
+		    }
+		}
+	    }
+
 	    try {
-		String toRemove = permission + (allServers ? "" : (":" + server)) + ";";
-		if (!groupPermissions.contains(toRemove))
+		if (removed.size() <= 0)
 		    return new PMR(false, "Group does not have the specified permission.");
-		groupPermissions = groupPermissions.replace(toRemove, "");
-		PreparedStatement s = sql.getConnection().prepareStatement("UPDATE Groups SET `permissions`=? WHERE `name`=?");
-		s.setString(1, groupPermissions);
-		s.setString(2, groupName);
-		s.execute();
+
+		int amount = 0;
+		for (SimplePermission current : removed) {
+		    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM permissions WHERE `groupName`=? AND `permission`=? AND `world`=? AND `server`=?");
+		    s.setString(1, groupName);
+		    s.setString(2, current.getPermissionString());
+		    s.setString(3, current.getWorld());
+		    s.setString(4, current.getServer());
+		    amount += s.executeUpdate();
+		}
+
 		// Reload groups
 		LoadGroups();
 		NotifyReloadGroups();
-		return new PMR("Removed permission from group.");
+		return new PMR("Removed " + amount + "permissions from the group.");
 	    } catch (SQLException e) {
 		e.printStackTrace();
 		return new PMR(false, "SQL error code: " + e.getErrorCode());

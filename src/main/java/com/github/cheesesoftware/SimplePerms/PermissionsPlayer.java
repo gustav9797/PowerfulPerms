@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.SimplePerms;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,13 +9,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
 
 public class PermissionsPlayer {
+    private Player player;
     private Group group;
-    private Map<String, String> permissions = new HashMap<String, String>();
+    private ArrayList<SimplePermission> permissions = new ArrayList<SimplePermission>();
     private PermissionAttachment pa;
     private String prefix = "";
     private String suffix = "";
-    
-    public PermissionsPlayer(Player p, Group group, Map<String, String> permissions, PermissionAttachment pa, String prefix, String suffix) {
+
+    public PermissionsPlayer(Player p, Group group, ArrayList<SimplePermission> permissions, PermissionAttachment pa, String prefix, String suffix) {
+	this.player = p;
 	this.group = group;
 	this.permissions = permissions;
 	this.pa = pa;
@@ -41,24 +44,41 @@ public class PermissionsPlayer {
 	permissions.clear();
     }
 
-    public Map<String, String> getPermissions() {
-	Map<String, String> newTemp = new HashMap<String, String>();
-	newTemp.putAll(this.permissions);
+    public ArrayList<SimplePermission> getPermissions() {
+	ArrayList<SimplePermission> newTemp = new ArrayList<SimplePermission>();
+	newTemp.addAll(this.permissions);
 	if (group != null) {
-	    newTemp.putAll(group.getPermissions());
+	    newTemp.addAll(group.getPermissions());
 	}
 	return newTemp;
     }
 
     public void UpdatePermissionAttachment() {
 	if (group != null) {
-	    for (Map.Entry<String, String> e : group.getPermissions().entrySet()) {
-		pa.setPermission(e.getKey(), (e.getValue().equals(Bukkit.getServerName()) || e.getValue().isEmpty() || e.getValue().equals("ALL")) ? true : false);
-		// Bukkit.getLogger().info("setPermission " + e.getKey() + " server " + e.getValue());
-	    }
-	    for (Map.Entry<String, String> e : permissions.entrySet())
-		pa.setPermission(e.getKey(), (e.getValue().equals(Bukkit.getServerName()) || e.getValue().isEmpty() || e.getValue().equals("ALL")) ? true : false);
+	    for (SimplePermission e : group.getPermissions()) {
+		boolean isSameServer = false;
+		boolean isSameWorld = false;
 
+		if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || e.getServer().equals(Bukkit.getServerName()))
+		    isSameServer = true;
+
+		if (e.getWorld().isEmpty() || e.getWorld().equalsIgnoreCase("ALL") || e.getWorld().equals(player.getWorld().getName()))
+		    isSameWorld = true;
+
+		pa.setPermission(e.getPermissionString(), (isSameServer && isSameWorld ? true : false));
+	    }
+	}
+	for (SimplePermission e : permissions) {
+	    boolean isSameServer = false;
+	    boolean isSameWorld = false;
+
+	    if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || e.getServer().equals(Bukkit.getServerName()))
+		isSameServer = true;
+
+	    if (e.getWorld().isEmpty() || e.getWorld().equalsIgnoreCase("ALL") || e.getWorld().equals(player.getWorld().getName()))
+		isSameWorld = true;
+
+	    pa.setPermission(e.getPermissionString(), (isSameServer && isSameWorld ? true : false));
 	}
     }
 
