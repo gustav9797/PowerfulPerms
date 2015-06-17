@@ -1,5 +1,8 @@
 # default config.yml
 
+# defaultGroup is the group a new player get when he/she joins the server for the first time.
+defaultGroup: Guest
+
 # Database
 host: localhost
 database: minecraft

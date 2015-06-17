@@ -2,6 +2,9 @@ package com.github.cheesesoftware.SimplePerms;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import net.md_5.bungee.api.ChatColor;
 
@@ -9,7 +12,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,10 +21,13 @@ public class SimplePerms extends JavaPlugin implements Listener {
     private PermissionManager permissionManager;
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "SimplePerms" + ChatColor.WHITE + "] ";
 
+    public static String defaultGroup = "";
+
     public void onEnable() {
 	this.saveDefaultConfig();
 	getServer().getPluginManager().registerEvents(this, this);
 	this.sql = new SQL(getConfig().getString("host"), getConfig().getString("database"), getConfig().getInt("port"), getConfig().getString("username"), getConfig().getString("password"));
+	this.defaultGroup = getConfig().getString("defaultGroup");
 
 	try {
 	    if (sql.getConnection() == null || sql.getConnection().isClosed()) {
@@ -48,7 +53,7 @@ public class SimplePerms extends JavaPlugin implements Listener {
 	try {
 	    sql.getConnection().prepareStatement("SELECT 1 FROM players LIMIT 1;").execute();
 	} catch (SQLException e) {
-	    String playersTable = "CREATE TABLE `players` (`uuid` varchar(36) NOT NULL DEFAULT '',`name` varchar(32) NOT NULL,`group` int(10) unsigned NOT NULL,`prefix` text NOT NULL,`suffix` text NOT NULL,PRIMARY KEY (`name`,`uuid`),UNIQUE KEY `uuid_UNIQUE` (`uuid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+	    String playersTable = "CREATE TABLE `players` (`uuid` varchar(36) NOT NULL DEFAULT '',`name` varchar(32) NOT NULL,`groups` longtext NOT NULL,`prefix` text NOT NULL,`suffix` text NOT NULL,PRIMARY KEY (`name`,`uuid`),UNIQUE KEY `uuid_UNIQUE` (`uuid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 	    try {
 		sql.getConnection().prepareStatement(playersTable).execute();
 	    } catch (SQLException e1) {
@@ -74,8 +79,8 @@ public class SimplePerms extends JavaPlugin implements Listener {
 	String helpPrefix = "§b ";
 	sender.sendMessage(ChatColor.RED + "~ " + ChatColor.BLUE + "SimplePerms" + ChatColor.BOLD + ChatColor.RED + " Reference ~");
 	sender.sendMessage(helpPrefix + "/sip user <username>");
-	sender.sendMessage(helpPrefix + "/sip user <username> setgroup <group>");
-	sender.sendMessage(helpPrefix + "/sip user <username> removegroup");
+	sender.sendMessage(helpPrefix + "/sip user <username> setgroup <group> (server)");
+	sender.sendMessage(helpPrefix + "/sip user <username> removegroup <group> (server)");
 	sender.sendMessage(helpPrefix + "/sip user <username> add/remove <permission> (world) (server)");
 	sender.sendMessage(helpPrefix + "/sip user <username> prefix set/remove <prefix>");
 	sender.sendMessage(helpPrefix + "/sip user <username> suffix set/remove <suffix>");
@@ -87,7 +92,7 @@ public class SimplePerms extends JavaPlugin implements Listener {
 	sender.sendMessage(helpPrefix + "/sip group <group> suffix set/remove <suffix>");
     }
 
-    @EventHandler
+    @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 	if (cmd.getName().equalsIgnoreCase("sip") || cmd.getName().equalsIgnoreCase("simpleperms") && sender.hasPermission("simpleperms.admin")) {
 	    if (args.length >= 1 && args[0].equalsIgnoreCase("user") && args.length >= 2) {
@@ -96,13 +101,24 @@ public class SimplePerms extends JavaPlugin implements Listener {
 		    if (args[2].equalsIgnoreCase("setgroup")) {
 			if (args.length >= 4) {
 			    String group = args[3];
-			    PMR result = permissionManager.setPlayerGroup(playerName, group);
+
+			    String server = "";
+			    if (args.length >= 5)
+				server = args[4];
+
+			    PMR result = permissionManager.setPlayerGroup(playerName, group, server);
 			    sender.sendMessage(pluginPrefix + result.getResponse());
 			} else
 			    showCommandInfo(sender);
 			return true;
-		    } else if (args[2].equalsIgnoreCase("removegroup")) {
-			PMR result = permissionManager.setPlayerGroup(playerName, 1);
+		    } else if (args[2].equalsIgnoreCase("removegroup") && args.length >= 4) {
+			String group = args[3];
+
+			String server = "";
+			if (args.length >= 5)
+			    server = args[4];
+
+			PMR result = permissionManager.removePlayerGroup(playerName, group, server);
 			sender.sendMessage(pluginPrefix + result.getResponse());
 			return true;
 		    } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
@@ -216,8 +232,19 @@ public class SimplePerms extends JavaPlugin implements Listener {
 		} else {
 		    // List player permissions
 		    sender.sendMessage(pluginPrefix + "Listing permissions for player " + playerName + ".");
-		    Group playerGroup = permissionManager.getPlayerGroup(playerName);
-		    sender.sendMessage(pluginPrefix + "Group: " + (playerGroup != null ? playerGroup.getName() : "Player has no group."));
+		    HashMap<String, Group> groups = permissionManager.getPlayerGroups(playerName);
+		    sender.sendMessage(pluginPrefix + "Group: " + (groups.get("") != null ? groups.get("") : "Player has no default group."));
+		    String otherGroups = pluginPrefix + "Other groups: ";
+		    if (groups.size() > 0) {
+			Iterator<Entry<String, Group>> it = groups.entrySet().iterator();
+			while (it.hasNext()) {
+			    Entry<String, Group> current = it.next();
+			    otherGroups += current.getKey() + ":" + current.getValue().getName();
+			    if (it.hasNext())
+				otherGroups += ", ";
+			}
+		    }
+		    sender.sendMessage(otherGroups);
 		    // String prefix = permissionManager.getPlayerPrefix(playerName);
 		    // sender.sendMessage(pluginPrefix+"Prefix: " + (prefix.isEmpty() ? "Player has no prefix." : prefix));
 		    // boolean isOnline = false;
