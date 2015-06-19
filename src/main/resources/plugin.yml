@@ -2,8 +2,3 @@ name: PowerfulPerms
 main: com.github.cheesesoftware.PowerfulPerms.PowerfulPerms
 version: 1.2
 author: gustav9797
-commands:
-  powerfulperms:
-    description: Modify permissions for players and groups.
-    aliases: [pp]
-    usage: Unknown command. Type "/help" for help.
