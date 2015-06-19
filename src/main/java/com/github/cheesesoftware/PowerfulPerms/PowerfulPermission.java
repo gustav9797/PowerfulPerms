@@ -1,15 +1,15 @@
-package com.github.cheesesoftware.SimplePerms;
+package com.github.cheesesoftware.PowerfulPerms;
 
-public class SimplePermission {
+public class PowerfulPermission {
     private String permission;
     private String world = "";
     private String server ="";
 
-    public SimplePermission(String permission) {
+    public PowerfulPermission(String permission) {
 	this.permission = permission;
     }
     
-    public SimplePermission(String permission, String world, String server) {
+    public PowerfulPermission(String permission, String world, String server) {
 	this.permission = permission;
 	
 	if(world != null && !world.isEmpty() && !world.equalsIgnoreCase("ALL"))

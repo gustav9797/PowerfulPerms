@@ -2,9 +2,9 @@
 <!-- Configuration of the Ant build system to generate a Jar file --> 
 <project name="TestMain" default="build-jar">
     <target name="build-jar">  	
-    	<jar destfile="C:\Users\Gustav\Desktop\spigotserver1.8\plugins\SimplePerms.jar"
+    	<jar destfile="C:\Users\Gustav\Desktop\spigotserver1.8\plugins\PowerfulPerms.jar"
        		basedir="target/classes"
-      	    includes="com/github/cheesesoftware/SimplePerms/*">
+      	    includes="com/github/cheesesoftware/PowerfulPerms/*">
     		<fileset dir="target/classes" includes="*" />
   		</jar>
  	</target>

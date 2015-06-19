@@ -1,4 +1,4 @@
-package com.github.cheesesoftware.SimplePerms;
+package com.github.cheesesoftware.PowerfulPerms;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class SimplePerms extends JavaPlugin implements Listener {
+public class PowerfulPerms extends JavaPlugin implements Listener {
 
     private SQL sql;
     private PermissionManager permissionManager;
@@ -27,7 +27,7 @@ public class SimplePerms extends JavaPlugin implements Listener {
 	this.saveDefaultConfig();
 	getServer().getPluginManager().registerEvents(this, this);
 	this.sql = new SQL(getConfig().getString("host"), getConfig().getString("database"), getConfig().getInt("port"), getConfig().getString("username"), getConfig().getString("password"));
-	this.defaultGroup = getConfig().getString("defaultGroup");
+	defaultGroup = getConfig().getString("defaultGroup");
 
 	try {
 	    if (sql.getConnection() == null || sql.getConnection().isClosed()) {
@@ -250,9 +250,9 @@ public class SimplePerms extends JavaPlugin implements Listener {
 		    // boolean isOnline = false;
 		    // if (Bukkit.getPlayer(playerName) != null)
 		    // isOnline = true;
-		    ArrayList<SimplePermission> playerPerms = permissionManager.getPlayerPermissions(playerName);
+		    ArrayList<PowerfulPermission> playerPerms = permissionManager.getPlayerPermissions(playerName);
 		    if (playerPerms.size() > 0)
-			for (SimplePermission e : playerPerms) {
+			for (PowerfulPermission e : playerPerms) {
 			    sender.sendMessage(pluginPrefix + "  " + e.getPermissionString() + " (Server:" + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer())
 				    + " World: " + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
 			}
@@ -401,9 +401,9 @@ public class SimplePerms extends JavaPlugin implements Listener {
 		    if (group != null) {
 			sender.sendMessage(pluginPrefix + "Listing permissions for group " + groupName + ":");
 
-			ArrayList<SimplePermission> permissions = group.getPermissions();
+			ArrayList<PowerfulPermission> permissions = group.getPermissions();
 			if (permissions.size() > 0) {
-			    for (SimplePermission e : permissions)
+			    for (PowerfulPermission e : permissions)
 				sender.sendMessage(pluginPrefix + "  " + e.getPermissionString() + " (Server:" + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer())
 					+ " World:" + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
 			} else
@@ -420,8 +420,8 @@ public class SimplePerms extends JavaPlugin implements Listener {
 	return false;
     }
 
-    public static SimplePerms getPlugin() {
-	return (SimplePerms) Bukkit.getPluginManager().getPlugin("SimplePerms");
+    public static PowerfulPerms getPlugin() {
+	return (PowerfulPerms) Bukkit.getPluginManager().getPlugin("SimplePerms");
     }
 
     public SQL getSQL() {

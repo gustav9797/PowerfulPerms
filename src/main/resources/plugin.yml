@@ -1,8 +1,9 @@
-name: SimplePerms
-main: com.github.cheesesoftware.SimplePerms.SimplePerms
-version: 1.1
+name: PowerfulPerms
+main: com.github.cheesesoftware.PowerfulPerms.PowerfulPerms
+version: 1.2
+author: gustav9797
 commands:
-  simpleperms:
+  powerfulperms:
     description: Modify permissions for players and groups.
-    aliases: [sip]
+    aliases: [pp]
     usage: Unknown command. Type "/help" for help.

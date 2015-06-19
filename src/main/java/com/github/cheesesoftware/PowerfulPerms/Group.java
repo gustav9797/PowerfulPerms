@@ -1,16 +1,16 @@
-package com.github.cheesesoftware.SimplePerms;
+package com.github.cheesesoftware.PowerfulPerms;
 
 import java.util.ArrayList;
 
 public class Group {
     private int id;
     private String name;
-    private ArrayList<SimplePermission> permissions = new ArrayList<SimplePermission>();
+    private ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
     private ArrayList<Group> parents;
     private String prefix;
     private String suffix;
 
-    public Group(int id, String name, ArrayList<SimplePermission> permissions, String prefix, String suffix) {
+    public Group(int id, String name, ArrayList<PowerfulPermission> permissions, String prefix, String suffix) {
 	this.id = id;
 	this.name = name;
 	this.permissions = permissions;
@@ -38,12 +38,12 @@ public class Group {
 	return suffix;
     }
 
-    public ArrayList<SimplePermission> getOwnPermissions() {
-	return new ArrayList<SimplePermission>(permissions);
+    public ArrayList<PowerfulPermission> getOwnPermissions() {
+	return new ArrayList<PowerfulPermission>(permissions);
     }
 
-    public ArrayList<SimplePermission> getPermissions() {
-	ArrayList<SimplePermission> temp = new ArrayList<SimplePermission>(permissions);
+    public ArrayList<PowerfulPermission> getPermissions() {
+	ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions);
 	temp.addAll(permissions);
 	for (Group parent : this.parents) {
 	    temp.addAll(parent.getInheritedPermissions());
@@ -51,8 +51,8 @@ public class Group {
 	return temp;
     }
 
-    public ArrayList<SimplePermission> getInheritedPermissions() {
-	ArrayList<SimplePermission> temp = new ArrayList<SimplePermission>(permissions);
+    public ArrayList<PowerfulPermission> getInheritedPermissions() {
+	ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions);
 	for (Group parent : this.parents) {
 	    temp.addAll(parent.getPermissions());
 	}

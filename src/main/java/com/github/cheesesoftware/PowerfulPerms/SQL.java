@@ -1,4 +1,4 @@
-package com.github.cheesesoftware.SimplePerms;
+package com.github.cheesesoftware.PowerfulPerms;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

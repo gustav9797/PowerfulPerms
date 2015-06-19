@@ -1,4 +1,4 @@
-package com.github.cheesesoftware.SimplePerms;
+package com.github.cheesesoftware.PowerfulPerms;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,12 +12,12 @@ public class PermissionsPlayer {
     private Player player;
     private Group group;
     private HashMap<String, Group> groups = new HashMap<String, Group>();
-    private ArrayList<SimplePermission> permissions = new ArrayList<SimplePermission>();
+    private ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
     private PermissionAttachment pa;
     private String prefix = "";
     private String suffix = "";
 
-    public PermissionsPlayer(Player p, Group group, HashMap<String, Group> groups, ArrayList<SimplePermission> permissions, PermissionAttachment pa, String prefix, String suffix) {
+    public PermissionsPlayer(Player p, Group group, HashMap<String, Group> groups, ArrayList<PowerfulPermission> permissions, PermissionAttachment pa, String prefix, String suffix) {
 	this.player = p;
 	this.group = group;
 	this.groups = groups;
@@ -69,8 +69,8 @@ public class PermissionsPlayer {
 	permissions.clear();
     }
 
-    public ArrayList<SimplePermission> getPermissions() {
-	ArrayList<SimplePermission> newTemp = new ArrayList<SimplePermission>();
+    public ArrayList<PowerfulPermission> getPermissions() {
+	ArrayList<PowerfulPermission> newTemp = new ArrayList<PowerfulPermission>();
 	newTemp.addAll(this.permissions);
 	if (group != null) {
 	    newTemp.addAll(group.getPermissions());
@@ -80,7 +80,7 @@ public class PermissionsPlayer {
 
     public void UpdatePermissionAttachment() {
 	if (group != null) {
-	    for (SimplePermission e : group.getPermissions()) {
+	    for (PowerfulPermission e : group.getPermissions()) {
 		boolean isSameServer = false;
 		boolean isSameWorld = false;
 
@@ -93,7 +93,7 @@ public class PermissionsPlayer {
 		pa.setPermission(e.getPermissionString(), (isSameServer && isSameWorld ? true : false));
 	    }
 	}
-	for (SimplePermission e : permissions) {
+	for (PowerfulPermission e : permissions) {
 	    boolean isSameServer = false;
 	    boolean isSameWorld = false;
 

@@ -1,4 +1,4 @@
-package com.github.cheesesoftware.SimplePerms;
+package com.github.cheesesoftware.PowerfulPerms;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -62,7 +62,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    gp.clearPermissions();
 	    players.remove(e.getPlayer().getUniqueId());
 	} else
-	    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Could not remove leaving player.");
+	    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Could not remove leaving player.");
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -131,12 +131,12 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		    if (p != null) {
 			LoadPlayer(p);
 			// p.sendMessage("Your rank has been changed. Please relog when convenient.");
-			Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Reloaded permissions for player " + playerName);
+			Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Reloaded permissions for player " + playerName);
 		    } // else
 		      // Bukkit.getLogger().info("Received player reload packet for offline player " + playerName);
 		} else if (somedata.equals("ReloadGroups")) {
 		    LoadGroups();
-		    Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Reloaded permissions for groups");
+		    Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Reloaded permissions for groups");
 		}
 	    } catch (IOException e) {
 		e.printStackTrace();
@@ -172,9 +172,9 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    out.writeShort(msgbytes.toByteArray().length);
 	    out.write(msgbytes.toByteArray());
 	    ((PluginMessageRecipient) Bukkit.getServer().getOnlinePlayers().toArray()[0]).sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
-	    Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Sent packet to reload permissions for player " + playerName);
+	    Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Sent packet to reload permissions for player " + playerName);
 	} else
-	    Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Could not send player reload message to other servers, there is no player online!");
+	    Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Could not send player reload message to other servers, there is no player online!");
     }
 
     private void NotifyReloadGroups() {
@@ -197,7 +197,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    out.writeShort(msgbytes.toByteArray().length);
 	    out.write(msgbytes.toByteArray());
 	    ((PluginMessageRecipient) Bukkit.getOnlinePlayers().toArray()[0]).sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
-	    Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Sent packet to reload group permissions");
+	    Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Sent packet to reload group permissions");
 	} else
 	    Bukkit.getLogger().info("Could not send groups reload message to other servers, there is no player online!");
     }
@@ -265,7 +265,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 
 	    // Load player permissions.
 	    PermissionAttachment pa = p.addAttachment(plugin);
-	    ArrayList<SimplePermission> perms = loadPlayerPermissions(p);
+	    ArrayList<PowerfulPermission> perms = loadPlayerPermissions(p);
 
 	    if (players.containsKey(p.getUniqueId())) {
 		PermissionsPlayer gp = players.get(p.getUniqueId());
@@ -296,9 +296,9 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    Group playerGroup = groups.get(playerGroupID);
 	    if (playerGroup == null) {
 		playerGroup = getDefaultGroup();
-		Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Could not load player groups, setting default group.");
+		Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Could not load player groups, setting default group.");
 		if (playerGroup == null)
-		    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Default group doesn't exist, this must be created.");
+		    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Default group doesn't exist, this must be created.");
 	    }
 
 	    PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, playerGroup, playerGroupsGroup, perms, pa, prefix_loaded, suffix_loaded);
@@ -366,7 +366,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	}
     }
 
-    private ArrayList<SimplePermission> loadPlayerPermissions(Player p) {
+    private ArrayList<PowerfulPermission> loadPlayerPermissions(Player p) {
 	PreparedStatement s;
 	boolean needsNameUpdate = false;
 	try {
@@ -374,9 +374,9 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    s.setString(1, p.getUniqueId().toString());
 	    s.execute();
 	    ResultSet result = s.getResultSet();
-	    ArrayList<SimplePermission> perms = new ArrayList<SimplePermission>();
+	    ArrayList<PowerfulPermission> perms = new ArrayList<PowerfulPermission>();
 	    while (result.next()) {
-		SimplePermission tempPerm = new SimplePermission(result.getString("permission"), result.getString("world"), result.getString("server"));
+		PowerfulPermission tempPerm = new PowerfulPermission(result.getString("permission"), result.getString("world"), result.getString("server"));
 		perms.add(tempPerm);
 
 		if (!p.getName().equals(result.getString("playername")))
@@ -389,53 +389,53 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		s.setString(1, p.getName());
 		s.setString(2, p.getUniqueId().toString());
 		s.execute();
-		Bukkit.getLogger().info(SimplePerms.pluginPrefix + "Player has changed name, updated UUID and name.");
+		Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Player has changed name, updated UUID and name.");
 	    }
 
 	    return perms;
 	} catch (SQLException e) {
 	    e.printStackTrace();
-	    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Could not load player permissions.");
+	    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Could not load player permissions.");
 	}
 	return null;
     }
 
-    private ArrayList<SimplePermission> loadPlayerPermissions(String name) {
+    private ArrayList<PowerfulPermission> loadPlayerPermissions(String name) {
 	PreparedStatement s;
 	try {
 	    s = sql.getConnection().prepareStatement("SELECT * FROM permissions WHERE `playername`=?");
 	    s.setString(1, name);
 	    s.execute();
 	    ResultSet result = s.getResultSet();
-	    ArrayList<SimplePermission> perms = new ArrayList<SimplePermission>();
+	    ArrayList<PowerfulPermission> perms = new ArrayList<PowerfulPermission>();
 	    while (result.next()) {
-		SimplePermission tempPerm = new SimplePermission(result.getString("permission"), result.getString("world"), result.getString("server"));
+		PowerfulPermission tempPerm = new PowerfulPermission(result.getString("permission"), result.getString("world"), result.getString("server"));
 		perms.add(tempPerm);
 	    }
 	    return perms;
 	} catch (SQLException e) {
 	    e.printStackTrace();
-	    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Could not load player permissions.");
+	    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Could not load player permissions.");
 	}
 	return null;
     }
 
-    private ArrayList<SimplePermission> loadGroupPermissions(String groupName) {
+    private ArrayList<PowerfulPermission> loadGroupPermissions(String groupName) {
 	PreparedStatement s;
 	try {
 	    s = sql.getConnection().prepareStatement("SELECT * FROM permissions WHERE `groupname`=?");
 	    s.setString(1, groupName);
 	    s.execute();
 	    ResultSet result = s.getResultSet();
-	    ArrayList<SimplePermission> perms = new ArrayList<SimplePermission>();
+	    ArrayList<PowerfulPermission> perms = new ArrayList<PowerfulPermission>();
 	    while (result.next()) {
-		SimplePermission tempPerm = new SimplePermission(result.getString("permission"), result.getString("world"), result.getString("server"));
+		PowerfulPermission tempPerm = new PowerfulPermission(result.getString("permission"), result.getString("world"), result.getString("server"));
 		perms.add(tempPerm);
 	    }
 	    return perms;
 	} catch (SQLException e) {
 	    e.printStackTrace();
-	    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Could not load group permissions.");
+	    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Could not load group permissions.");
 	}
 	return null;
     }
@@ -501,7 +501,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		rs = s.getResultSet();
 		if (rs.next())
 		    return rs;
-		Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Player didn't insert into database properly!");
+		Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Player didn't insert into database properly!");
 	    }
 	} catch (SQLException e) {
 	    e.printStackTrace();
@@ -556,7 +556,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
     }
 
     public Group getDefaultGroup() {
-	return getGroup(SimplePerms.defaultGroup);
+	return getGroup(PowerfulPerms.defaultGroup);
     }
 
     public Group getGroup(int groupId) {
@@ -569,7 +569,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	return groups.get(groupId);
     }
 
-    public ArrayList<SimplePermission> getPlayerPermissions(String playerName) {
+    public ArrayList<PowerfulPermission> getPlayerPermissions(String playerName) {
 	/**
 	 * Gets a map containing all the permissions a player has, including its group's permissions and its group's parent groups' permissions. If player is not online data will be loaded from DB.
 	 * 
@@ -584,7 +584,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	} else {
 	    // Load from DB
 	    try {
-		ArrayList<SimplePermission> permissions = loadPlayerPermissions(playerName);
+		ArrayList<PowerfulPermission> permissions = loadPlayerPermissions(playerName);
 
 		ResultSet result = getPlayerData(playerName);
 		int groupId = result.getInt("group");
@@ -593,13 +593,13 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		    permissions.addAll(group.getPermissions());
 		    return permissions;
 		} else
-		    Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get permissions of a non-loaded player (Group is null. Group ID:" + groupId + ")");
+		    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get permissions of a non-loaded player (Group is null. Group ID:" + groupId + ")");
 
 	    } catch (SQLException e) {
 		e.printStackTrace();
 	    }
 	}
-	return new ArrayList<SimplePermission>();
+	return new ArrayList<PowerfulPermission>();
     }
 
     public String getPlayerPrefix(Player p) {
@@ -614,7 +614,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    String prefix = gp.getPrefix();
 	    return prefix;
 	}
-	Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get prefix of a non-loaded player");
+	Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get prefix of a non-loaded player");
 	return null;
     }
 
@@ -633,7 +633,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    if (result.next()) {
 		return result.getString("prefix");
 	    } else
-		Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get prefix of a player that doesn't exist.");
+		Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get prefix of a player that doesn't exist.");
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
@@ -652,7 +652,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    String suffix = gp.getSuffix();
 	    return suffix;
 	}
-	Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get suffix of a non-loaded player");
+	Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get suffix of a non-loaded player");
 	return null;
     }
 
@@ -671,7 +671,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	    if (result.next()) {
 		return result.getString("suffix");
 	    } else
-		Bukkit.getLogger().severe(SimplePerms.pluginPrefix + "Attempted to get suffix of a player that doesn't exist.");
+		Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get suffix of a player that doesn't exist.");
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
@@ -1090,9 +1090,9 @@ public class PermissionManager implements Listener, PluginMessageListener {
     public PMR AddGroupPermission(String groupName, String permission, String world, String server) {
 	Group group = getGroup(groupName);
 	if (group != null) {
-	    ArrayList<SimplePermission> groupPermissions = group.getOwnPermissions();
+	    ArrayList<PowerfulPermission> groupPermissions = group.getOwnPermissions();
 	    try {
-		SimplePermission sp = new SimplePermission(permission, world, server);
+		PowerfulPermission sp = new PowerfulPermission(permission, world, server);
 		groupPermissions.add(sp);
 
 		PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO permissions SET `playeruuid`=?, `playername`=?, `groupname`=?, `permission`=?, `world`=?, `server`=?");
@@ -1124,11 +1124,11 @@ public class PermissionManager implements Listener, PluginMessageListener {
 	// boolean allServers = server == null || server.isEmpty() || server.equals("ALL");
 	Group group = getGroup(groupName);
 	if (group != null) {
-	    ArrayList<SimplePermission> removed = new ArrayList<SimplePermission>();
-	    ArrayList<SimplePermission> groupPermissions = group.getOwnPermissions();
-	    Iterator<SimplePermission> it = groupPermissions.iterator();
+	    ArrayList<PowerfulPermission> removed = new ArrayList<PowerfulPermission>();
+	    ArrayList<PowerfulPermission> groupPermissions = group.getOwnPermissions();
+	    Iterator<PowerfulPermission> it = groupPermissions.iterator();
 	    while (it.hasNext()) {
-		SimplePermission current = it.next();
+		PowerfulPermission current = it.next();
 		if (current.getPermissionString().equalsIgnoreCase(permission)) {
 		    if (world.equals(current.getWorld()) && server.equals(current.getServer())) {
 			removed.add(current);
@@ -1142,7 +1142,7 @@ public class PermissionManager implements Listener, PluginMessageListener {
 		    return new PMR(false, "Group does not have the specified permission.");
 
 		int amount = 0;
-		for (SimplePermission current : removed) {
+		for (PowerfulPermission current : removed) {
 		    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM permissions WHERE `groupName`=? AND `permission`=? AND `world`=? AND `server`=?");
 		    s.setString(1, groupName);
 		    s.setString(2, current.getPermissionString());
