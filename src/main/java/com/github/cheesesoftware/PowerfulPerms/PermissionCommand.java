@@ -148,7 +148,7 @@ public class PermissionCommand implements CommandExecutor {
 		Group primary = permissionManager.getPlayerPrimaryGroup(playerName);
 		sendSender(sender, "Primary Group: " + (primary != null ? primary.getName() : "Player has no group."));
 
-		String otherGroups = PowerfulPerms.pluginPrefix + "Groups: ";
+		String otherGroups = "Groups: ";
 		if (groups.size() > 0) {
 		    Iterator<Entry<String, List<Group>>> it = groups.entrySet().iterator();
 		    while (it.hasNext()) {

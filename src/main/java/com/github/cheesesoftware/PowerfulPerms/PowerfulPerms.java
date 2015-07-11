@@ -15,8 +15,8 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
 
     private SQL sql;
     private PermissionManager permissionManager;
-    private PowerfulPerms_Vault vaultPermsHook;
-    private PowerfulPerms_Chat vaultChatHook;
+    private PowerfulPerms_Vault_Permissions vaultPermsHook;
+    private PowerfulPerms_Vault_Chat vaultChatHook;
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
 
@@ -115,8 +115,8 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
 	if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {
 	    Bukkit.getLogger().info(consolePrefix + "Found Vault. Enabling Vault integration.");
 
-	    vaultPermsHook = new PowerfulPerms_Vault(permissionManager);
-	    vaultChatHook = new PowerfulPerms_Chat(vaultPermsHook, permissionManager);
+	    vaultPermsHook = new PowerfulPerms_Vault_Permissions(permissionManager);
+	    vaultChatHook = new PowerfulPerms_Vault_Chat(vaultPermsHook, permissionManager);
 	    Bukkit.getServicesManager().register(net.milkbowl.vault.permission.Permission.class, vaultPermsHook, Bukkit.getPluginManager().getPlugin("Vault"), ServicePriority.Normal);
 	    Bukkit.getServicesManager().register(net.milkbowl.vault.chat.Chat.class, vaultChatHook, Bukkit.getPluginManager().getPlugin("Vault"), ServicePriority.Normal);
 	}

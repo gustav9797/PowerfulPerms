@@ -4,13 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
+
 import net.milkbowl.vault.permission.Permission;
 
-public class PowerfulPerms_Vault extends Permission {
+public class PowerfulPerms_Vault_Permissions extends Permission {
 
     private PermissionManager permissionManager;
 
-    public PowerfulPerms_Vault(PermissionManager permissionManager) {
+    public PowerfulPerms_Vault_Permissions(PermissionManager permissionManager) {
 	this.permissionManager = permissionManager;
     }
 
@@ -50,8 +51,9 @@ public class PowerfulPerms_Vault extends Permission {
     }
 
     @Override
-    public boolean groupAdd(String arg0, String arg1, String arg2) {
-	return false;
+    public boolean groupAdd(String world, String group, String permission) {
+	PMR result = permissionManager.addGroupPermission(group, permission, world, "");
+	return result.isSucceeded();
     }
 
     @Override
@@ -60,8 +62,9 @@ public class PowerfulPerms_Vault extends Permission {
     }
 
     @Override
-    public boolean groupRemove(String arg0, String arg1, String arg2) {
-	return false;
+    public boolean groupRemove(String world, String group, String permission) {
+	PMR result = permissionManager.removeGroupPermission(group, permission, world, "");
+	return result.isSucceeded();
     }
 
     @Override
@@ -80,13 +83,15 @@ public class PowerfulPerms_Vault extends Permission {
     }
 
     @Override
-    public boolean playerAdd(String arg0, String arg1, String arg2) {
-	return false;
+    public boolean playerAdd(String world, String player, String permission) {
+	PMR result = permissionManager.addPlayerPermission(player, permission, world, "");
+	return result.isSucceeded();
     }
 
     @Override
-    public boolean playerAddGroup(String arg0, String arg1, String arg2) {
-	return false;
+    public boolean playerAddGroup(String world, String player, String group) {
+	PMR result = permissionManager.addPlayerGroup(player, group);
+	return result.isSucceeded();
     }
 
     @Override
@@ -108,13 +113,15 @@ public class PowerfulPerms_Vault extends Permission {
     }
 
     @Override
-    public boolean playerRemove(String arg0, String arg1, String arg2) {
-	return false;
+    public boolean playerRemove(String world, String player, String permission) {
+	PMR result = permissionManager.removePlayerPermission(player, permission, world, "");
+	return result.isSucceeded();
     }
 
     @Override
-    public boolean playerRemoveGroup(String arg0, String arg1, String arg2) {
-	return false;
+    public boolean playerRemoveGroup(String world, String player, String group) {
+	PMR result = permissionManager.removePlayerGroup(player, group);
+	return result.isSucceeded();
     }
 
 }
