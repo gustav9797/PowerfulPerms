@@ -3,3 +3,9 @@ main: com.github.cheesesoftware.PowerfulPerms.PowerfulPerms
 version: ${version}
 author: gustav9797
 softdepend: [Vault, DeluxeChat]
+
+commands:
+ powerfulperms:
+  description: The global command of PowerfulPerms for modifying permissions.
+  aliases: [pp]
+  permission: powerfulperms.admin
