@@ -1,4 +1,5 @@
 name: PowerfulPerms
 main: com.github.cheesesoftware.PowerfulPerms.PowerfulPerms
-version: 1.2
+version: ${version}
 author: gustav9797
+softdepend: [Vault, DeluxeChat]

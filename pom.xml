@@ -2,8 +2,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.cheesesoftware</groupId>
-	<artifactId>SimplePerms</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>PowerfulPerms</artifactId>
+	<version>1.6</version>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<resources>
@@ -26,6 +26,26 @@
 					<target />
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.3.1</version>
+				<configuration>
+					<outputDirectory>C:\Users\Gustav\Desktop\spigotserver1.8\plugins</outputDirectory>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -33,10 +53,6 @@
 		<repository>
 			<id>shadowvolt-repo</id>
 			<url>http://ci.shadowvolt.com/plugin/repository/everything/</url>
-		</repository>
-		<repository>
-			<id>lasagne-repo</id>
-			<url>http://lasagne.tgnmc.com:8081/nexus/content/repositories/public/</url>
 		</repository>
 		<repository>
 			<id>spigot-repo</id>
@@ -83,6 +99,22 @@
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
 			<version>1.8.7-R0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>redis.clients</groupId>
+			<artifactId>jedis</artifactId>
+			<version>2.7.2</version>
+			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-pool2</artifactId>
+			<version>2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>net.milkbowl.vault</groupId>
+			<artifactId>VaultAPI</artifactId>
+			<version>1.5</version>
 		</dependency>
 	</dependencies>
 </project>

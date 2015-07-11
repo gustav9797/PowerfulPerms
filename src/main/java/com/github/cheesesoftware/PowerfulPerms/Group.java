@@ -44,7 +44,6 @@ public class Group {
 
     public ArrayList<PowerfulPermission> getPermissions() {
 	ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions);
-	temp.addAll(permissions);
 	for (Group parent : this.parents) {
 	    temp.addAll(parent.getInheritedPermissions());
 	}

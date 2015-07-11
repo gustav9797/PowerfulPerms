@@ -4,7 +4,7 @@
     <target name="build-jar">  	
     	<jar destfile="C:\Users\Gustav\Desktop\spigotserver1.8\plugins\PowerfulPerms.jar"
        		basedir="target/classes"
-      	    includes="com/github/cheesesoftware/PowerfulPerms/*">
+      	    includes="com/github/cheesesoftware/PowerfulPerms/*,me/clip/deluxechat/placeholders/*">
     		<fileset dir="target/classes" includes="*" />
   		</jar>
  	</target>
