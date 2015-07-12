@@ -41,6 +41,21 @@
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <artifactSet>
+                <excludes>
+                  <exclude>org.bukkit:**</exclude>
+                  <exclude>org.spigotmc:**</exclude>
+                  <exclude>net.md-5:**</exclude>
+                  <exclude>com.google.guava:**</exclude>
+                  <exclude>com.google.code.gson:**</exclude>
+                  <exclude>org.hamcrest:hamcrest-core:**</exclude>
+                  <exclude>org.avaje:ebean:**</exclude>
+                  <exclude>org.yaml:**</exclude>
+                  <exclude>javax.persistence:**</exclude>
+                </excludes>
+              </artifactSet>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -90,5 +105,13 @@
       <url>http://repo.comphenix.net/content/groups/public</url>
     </repository>
   </repositories>
+  <dependencies>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot-api</artifactId>
+      <version>1.8.7-R0.1-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
 </project>
 
