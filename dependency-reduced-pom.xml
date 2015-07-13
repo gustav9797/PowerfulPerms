@@ -13,6 +13,7 @@
         <directory>src/main/resources</directory>
         <includes>
           <include>plugin.yml</include>
+          <include>bungee.yml</include>
           <include>config.yml</include>
         </includes>
       </resource>
@@ -34,6 +35,30 @@
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.4.3</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>install</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>C:\Users\Gustav\Desktop\bungee\plugins</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>C:\Users\Gustav\Desktop\spigotserver1.8\plugins\</directory>
+                  <includes>
+                    <include>${build.finalName}.jar</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
@@ -53,6 +78,9 @@
                   <exclude>org.avaje:ebean:**</exclude>
                   <exclude>org.yaml:**</exclude>
                   <exclude>javax.persistence:**</exclude>
+                  <exclude>net.milkbowl.vault:**</exclude>
+                  <exclude>junit:junit</exclude>
+                  <exclude>com.googlecode.json-simple:**</exclude>
                 </excludes>
               </artifactSet>
             </configuration>
@@ -110,6 +138,32 @@
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
       <version>1.8.7-R0.1-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.md-5</groupId>
+      <artifactId>bungeecord-api</artifactId>
+      <version>1.8-SNAPSHOT</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>bungeecord-config</artifactId>
+          <groupId>net.md-5</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>bungeecord-event</artifactId>
+          <groupId>net.md-5</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>bungeecord-protocol</artifactId>
+          <groupId>net.md-5</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>net.milkbowl.vault</groupId>
+      <artifactId>VaultAPI</artifactId>
+      <version>1.5</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

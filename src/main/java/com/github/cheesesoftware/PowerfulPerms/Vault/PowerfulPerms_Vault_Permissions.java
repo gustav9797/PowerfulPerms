@@ -1,9 +1,14 @@
-package com.github.cheesesoftware.PowerfulPerms;
+package com.github.cheesesoftware.PowerfulPerms.Vault;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
+
+import com.github.cheesesoftware.PowerfulPerms.Group;
+import com.github.cheesesoftware.PowerfulPerms.PMR;
+import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
+import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayer;
 
 import net.milkbowl.vault.permission.Permission;
 

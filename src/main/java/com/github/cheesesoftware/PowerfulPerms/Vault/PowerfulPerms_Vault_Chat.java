@@ -1,4 +1,8 @@
-package com.github.cheesesoftware.PowerfulPerms;
+package com.github.cheesesoftware.PowerfulPerms.Vault;
+
+import com.github.cheesesoftware.PowerfulPerms.Group;
+import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
+import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayer;
 
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
