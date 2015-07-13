@@ -3,9 +3,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.cheesesoftware</groupId>
 	<artifactId>PowerfulPerms</artifactId>
-	<version>1.6</version>
+	<version>1.7</version>
 	<build>
-		<sourceDirectory>src</sourceDirectory>
 		<resources>
 			<resource>
 				<targetPath>.</targetPath>
@@ -23,8 +22,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source />
-					<target />
+					<source>1.7</source>
+					<target>1.7</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -79,7 +78,7 @@
 									<exclude>org.hamcrest:hamcrest-core:**</exclude>
 									<exclude>org.avaje:ebean:**</exclude>
 									<exclude>org.yaml:**</exclude>
-									<exclude>javax.persistence:**</exclude>								
+									<exclude>javax.persistence:**</exclude>
 									<exclude>net.milkbowl.vault:**</exclude>
 									<exclude>junit:junit</exclude>
 									<exclude>com.googlecode.json-simple:**</exclude>
