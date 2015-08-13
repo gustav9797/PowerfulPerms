@@ -56,7 +56,9 @@ public class PermissionsPlayer {
 	if (server.equalsIgnoreCase("all"))
 	    server = "";
 	List<Group> groups = new ArrayList<Group>();
-	groups.addAll(serverGroups.get(server));
+	List<Group> serverGroupsTemp = serverGroups.get(server);
+	if(serverGroupsTemp != null)
+	    groups.addAll(serverGroupsTemp);
 	if (!server.isEmpty())
 	    groups.addAll(serverGroups.get(""));
 	return groups;

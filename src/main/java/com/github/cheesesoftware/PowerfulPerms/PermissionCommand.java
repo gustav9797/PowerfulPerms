@@ -3,6 +3,7 @@ package com.github.cheesesoftware.PowerfulPerms;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -320,7 +321,7 @@ public class PermissionCommand implements CommandExecutor {
 		    sendSender(sender, "Group doesn't exist.");
 	    }
 	} else if (args.length >= 1 && args[0].equalsIgnoreCase("groups")) {
-	    List<Group> groups = permissionManager.getGroups();
+	    Collection<Group> groups = permissionManager.getGroups();
 	    String s = "";
 	    for (Group group : groups) {
 		s += group.getName() + ", ";

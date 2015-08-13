@@ -125,6 +125,9 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
 	}
 
 	this.getCommand("powerfulperms").setExecutor(new PermissionCommand(permissionManager));
+	
+	if(Bukkit.getOnlinePlayers().size() > 0) // Admin used /reload command	    
+	    permissionManager.reloadPlayers();
     }
 
     public void onDisable() {

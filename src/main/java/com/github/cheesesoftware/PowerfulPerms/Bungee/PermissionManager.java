@@ -35,7 +35,7 @@ public class PermissionManager {
 	this.sql = sql;
 
 	// Initialize Redis
-	if (PowerfulPerms.redis_password == null || PowerfulPerms.redis_password.equals(""))
+	if (PowerfulPerms.redis_password == null || PowerfulPerms.redis_password.isEmpty())
 	    pool = new JedisPool(new GenericObjectPoolConfig(), PowerfulPerms.redis_ip, PowerfulPerms.redis_port, 0);
 	else
 	    pool = new JedisPool(new GenericObjectPoolConfig(), PowerfulPerms.redis_ip, PowerfulPerms.redis_port, 0, PowerfulPerms.redis_password);
@@ -43,8 +43,9 @@ public class PermissionManager {
 	plugin.getProxy().getScheduler().runAsync(plugin, new Runnable() {
 	    @SuppressWarnings("deprecation")
 	    public void run() {
-		Jedis jedis = pool.getResource();
+		Jedis jedis = null;
 		try {
+		    jedis = pool.getResource();
 		    subscriber = (new JedisPubSub() {
 			@Override
 			public void onMessage(String channel, final String msg) {
@@ -66,9 +67,9 @@ public class PermissionManager {
 		    });
 		    jedis.subscribe(subscriber, "PowerfulPerms");
 		} catch (Exception e) {
-		    e.printStackTrace();
 		    pool.returnBrokenResource(jedis);
-		    tempPlugin.getLogger().severe("Unable to connect to Redis server.");
+		    tempPlugin.getLogger().warning(
+			    PowerfulPerms.pluginPrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
 		    return;
 		}
 		pool.returnResource(jedis);
@@ -83,8 +84,10 @@ public class PermissionManager {
     }
 
     public void onDisable() {
-	subscriber.unsubscribe();
-	pool.destroy();
+	if (subscriber != null)
+	    subscriber.unsubscribe();
+	if (pool != null)
+	    pool.destroy();
 	groups.clear();
     }
 

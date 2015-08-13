@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -59,8 +60,9 @@ public class PermissionManager implements Listener {
 	Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 	    @SuppressWarnings("deprecation")
 	    public void run() {
-		Jedis jedis = pool.getResource();
+		Jedis jedis = null;
 		try {
+		    jedis = pool.getResource();
 		    subscriber = (new JedisPubSub() {
 			@Override
 			public void onMessage(String channel, final String msg) {
@@ -77,15 +79,15 @@ public class PermissionManager implements Listener {
 
 					if (first.equals("[groups]")) {
 					    loadGroups();
-					    Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Reloaded all groups.");
+					    Bukkit.getLogger().info(PowerfulPerms.consolePrefix + "Reloaded all groups.");
 					} else if (first.equals("[players]")) {
 					    loadGroups();
-					    Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Reloaded all players. ");
+					    Bukkit.getLogger().info(PowerfulPerms.consolePrefix + "Reloaded all players. ");
 					} else {
 					    Player player = Bukkit.getPlayer(first);
 					    if (player != null) {
 						loadPlayer(player);
-						Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Reloaded player \"" + first + "\".");
+						Bukkit.getLogger().info(PowerfulPerms.consolePrefix + "Reloaded player \"" + first + "\".");
 					    }
 					}
 				    }
@@ -95,15 +97,14 @@ public class PermissionManager implements Listener {
 		    });
 		    jedis.subscribe(subscriber, "PowerfulPerms");
 		} catch (Exception e) {
-		    e.printStackTrace();
 		    pool.returnBrokenResource(jedis);
-		    Bukkit.getLogger().severe("Unable to connect to Redis server.");
+		    Bukkit.getLogger().warning(
+			    PowerfulPerms.consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
 		    return;
 		}
 		pool.returnResource(jedis);
 	    }
 	});
-
 	// plugin.getServer().getMessenger().registerIncomingPluginChannel(plugin, "PowerfulPerms", this);
 	Bukkit.getPluginManager().registerEvents(this, plugin);
 
@@ -115,8 +116,10 @@ public class PermissionManager implements Listener {
     }
 
     public void onDisable() {
-	subscriber.unsubscribe();
-	pool.destroy();
+	if (subscriber != null)
+	    subscriber.unsubscribe();
+	if (pool != null)
+	    pool.destroy();
 	players.clear();
 	groups.clear();
     }
@@ -126,7 +129,7 @@ public class PermissionManager implements Listener {
 	if (players.containsKey(e.getPlayer().getUniqueId())) {
 	    players.remove(e.getPlayer().getUniqueId());
 	} else
-	    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Could not remove leaving player.");
+	    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not remove leaving player.");
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -158,13 +161,18 @@ public class PermissionManager implements Listener {
 	Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 	    @SuppressWarnings("deprecation")
 	    public void run() {
-		Jedis jedis = pool.getResource();
 		try {
-		    jedis.publish("PowerfulPerms", "[groups]" + " " + Bukkit.getServerName());
+		    Jedis jedis = pool.getResource();
+		    try {
+			jedis.publish("PowerfulPerms", "[groups]" + " " + Bukkit.getServerName());
+		    } catch (Exception e) {
+			pool.returnBrokenResource(jedis);
+		    }
+		    pool.returnResource(jedis);
 		} catch (Exception e) {
-		    pool.returnBrokenResource(jedis);
+		    Bukkit.getLogger().warning(
+			    PowerfulPerms.consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
 		}
-		pool.returnResource(jedis);
 	    }
 	});
     }
@@ -173,13 +181,19 @@ public class PermissionManager implements Listener {
 	Bukkit.getScheduler().runTaskAsynchronously(this.plugin, new Runnable() {
 	    @SuppressWarnings("deprecation")
 	    public void run() {
-		Jedis jedis = pool.getResource();
 		try {
-		    jedis.publish("PowerfulPerms", "[players]" + " " + Bukkit.getServerName());
+		    Jedis jedis = pool.getResource();
+		    try {
+			jedis.publish("PowerfulPerms", "[players]" + " " + Bukkit.getServerName());
+		    } catch (Exception e) {
+			pool.returnBrokenResource(jedis);
+		    }
+		    pool.returnResource(jedis);
+
 		} catch (Exception e) {
-		    pool.returnBrokenResource(jedis);
+		    Bukkit.getLogger().warning(
+			    PowerfulPerms.consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
 		}
-		pool.returnResource(jedis);
 	    }
 	});
     }
@@ -188,13 +202,18 @@ public class PermissionManager implements Listener {
 	Bukkit.getScheduler().runTaskAsynchronously(this.plugin, new Runnable() {
 	    @SuppressWarnings("deprecation")
 	    public void run() {
-		Jedis jedis = pool.getResource();
 		try {
-		    jedis.publish("PowerfulPerms", playerName + " " + Bukkit.getServerName());
+		    Jedis jedis = pool.getResource();
+		    try {
+			jedis.publish("PowerfulPerms", playerName + " " + Bukkit.getServerName());
+		    } catch (Exception e) {
+			pool.returnBrokenResource(jedis);
+		    }
+		    pool.returnResource(jedis);
 		} catch (Exception e) {
-		    pool.returnBrokenResource(jedis);
+		    Bukkit.getLogger().warning(
+			    PowerfulPerms.consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
 		}
-		pool.returnResource(jedis);
 	    }
 	});
     }
@@ -447,13 +466,13 @@ public class PermissionManager implements Listener {
 		s.setString(1, p.getName());
 		s.setString(2, p.getUniqueId().toString());
 		s.execute();
-		Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Player has changed name, updated UUID and name.");
+		Bukkit.getLogger().info(PowerfulPerms.consolePrefix + "Player has changed name, updated UUID and name.");
 	    }
 
 	    return perms;
 	} catch (SQLException e) {
 	    e.printStackTrace();
-	    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Could not load player permissions.");
+	    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not load player permissions.");
 	}
 	return null;
     }
@@ -473,7 +492,7 @@ public class PermissionManager implements Listener {
 	    return perms;
 	} catch (SQLException e) {
 	    e.printStackTrace();
-	    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Could not load player permissions.");
+	    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not load player permissions.");
 	}
 	return null;
     }
@@ -493,7 +512,7 @@ public class PermissionManager implements Listener {
 	    return perms;
 	} catch (SQLException e) {
 	    e.printStackTrace();
-	    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Could not load group permissions.");
+	    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not load group permissions.");
 	}
 	return null;
     }
@@ -560,7 +579,7 @@ public class PermissionManager implements Listener {
 		rs = s.getResultSet();
 		if (rs.next())
 		    return rs;
-		Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Player didn't insert into database properly!");
+		Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Player didn't insert into database properly!");
 	    }
 	} catch (SQLException e) {
 	    e.printStackTrace();
@@ -632,8 +651,8 @@ public class PermissionManager implements Listener {
      * 
      * @return All groups.
      */
-    public List<Group> getGroups() {
-	return (List<Group>) this.groups.values();
+    public Collection<Group> getGroups() {
+	return (Collection<Group>) this.groups.values();
     }
 
     /**
@@ -661,7 +680,7 @@ public class PermissionManager implements Listener {
 		    permissions.addAll(group.getPermissions());
 		    return permissions;
 		} else {
-		    Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get permissions of a non-loaded player (Group is null. Group ID:" + groupId + ")");
+		    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Attempted to get permissions of a non-loaded player (Group is null. Group ID:" + groupId + ")");
 		    return permissions;
 		}
 
@@ -762,7 +781,7 @@ public class PermissionManager implements Listener {
 	    String prefix = gp.getPrefix();
 	    return prefix;
 	}
-	Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get prefix of a non-loaded player");
+	Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Attempted to get prefix of a non-loaded player");
 	return null;
     }
 
@@ -781,7 +800,7 @@ public class PermissionManager implements Listener {
 	    if (result.next()) {
 		return result.getString("prefix");
 	    } else
-		Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get prefix of a player that doesn't exist.");
+		Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Attempted to get prefix of a player that doesn't exist.");
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
@@ -800,7 +819,7 @@ public class PermissionManager implements Listener {
 	    String suffix = gp.getSuffix();
 	    return suffix;
 	}
-	Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get suffix of a non-loaded player");
+	Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Attempted to get suffix of a non-loaded player");
 	return null;
     }
 
@@ -819,7 +838,7 @@ public class PermissionManager implements Listener {
 	    if (result.next()) {
 		return result.getString("suffix");
 	    } else
-		Bukkit.getLogger().severe(PowerfulPerms.pluginPrefix + "Attempted to get suffix of a player that doesn't exist.");
+		Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Attempted to get suffix of a player that doesn't exist.");
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
