@@ -132,7 +132,7 @@ public class PermissionManager implements Listener {
 	    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not remove leaving player.");
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(final PlayerJoinEvent e) {
 	Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 	    public void run() {
@@ -145,7 +145,7 @@ public class PermissionManager implements Listener {
     public void onPlayerChat(AsyncPlayerChatEvent e) {
 	String out = getPlayerPrefix(e.getPlayer()) + e.getPlayer().getDisplayName() + getPlayerSuffix(e.getPlayer());
 	out = ChatColor.translateAlternateColorCodes('&', out);
-	e.setFormat(out + e.getMessage());
+	e.setMessage(out + e.getMessage());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
