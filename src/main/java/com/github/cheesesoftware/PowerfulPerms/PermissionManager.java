@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.pool2.impl.*;
 import org.bukkit.Bukkit;
@@ -22,8 +23,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.Plugin;
@@ -41,6 +44,7 @@ public class PermissionManager implements Listener {
 
     private Plugin plugin;
     private HashMap<UUID, PermissionsPlayer> players = new HashMap<UUID, PermissionsPlayer>();
+    private ConcurrentHashMap<UUID, CachedPlayer> cachedPlayers = new ConcurrentHashMap<UUID, CachedPlayer>();
     private HashMap<Integer, Group> groups = new HashMap<Integer, Group>();
     private SQL sql;
 
@@ -132,19 +136,46 @@ public class PermissionManager implements Listener {
 	    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not remove leaving player.");
     }
 
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onAsyncPlayerPreLogin(AsyncPlayerPreLoginEvent e) {
+	if (e.getLoginResult() == AsyncPlayerPreLoginEvent.Result.ALLOWED) {
+	    loadPlayer(e.getUniqueId(), e.getName(), true);
+	}
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerLogin(PlayerLoginEvent e) {
+	if (e.getResult() == PlayerLoginEvent.Result.ALLOWED) {
+	    if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
+		// Player is cached. Continue load it.
+		continueLoadPlayer(e.getPlayer());
+	    } else if (!players.containsKey(e.getPlayer().getUniqueId())) {
+		// MySQL connection is extremely slow so we let it load by itself when it finishes.
+		CachedPlayer temp = new CachedPlayer();
+		temp.setLoginEventfinished();
+		cachedPlayers.put(e.getPlayer().getUniqueId(), temp);
+	    }
+	}
+    }
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(final PlayerJoinEvent e) {
-	Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-	    public void run() {
-		loadPlayer(e.getPlayer());
-	    }
-	});
+	// Check again if
+	if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
+	    // Player is cached. Continue load it.
+	    continueLoadPlayer(e.getPlayer());
+	} else if (!players.containsKey(e.getPlayer().getUniqueId())) {
+	    // MySQL connection is extremely slow so we let it load by itself when it finishes.
+	    CachedPlayer temp = new CachedPlayer();
+	    temp.setLoginEventfinished();
+	    cachedPlayers.put(e.getPlayer().getUniqueId(), temp);
+	}
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerChat(AsyncPlayerChatEvent e) {
-	//String out =  + e.getPlayer().getDisplayName() + getPlayerSuffix(e.getPlayer());
-	//out = ChatColor.translateAlternateColorCodes('&', out);		
+	// String out = + e.getPlayer().getDisplayName() + getPlayerSuffix(e.getPlayer());
+	// out = ChatColor.translateAlternateColorCodes('&', out);
 	e.setFormat(ChatColor.translateAlternateColorCodes('&', getPlayerPrefix(e.getPlayer()) + "%1$s" + getPlayerSuffix(e.getPlayer()) + "%2$s"));
     }
 
@@ -270,16 +301,12 @@ public class PermissionManager implements Listener {
 	return players.get(uuid);
     }
 
-    /*
-     * public void onPluginMessageReceived(String channel, Player player, byte[] message) { if (!channel.equals("PowerfulPerms")) { return; }
-     * 
-     * if (message.length == 1 && message[0] == 0) { LoadGroups(); Bukkit.getLogger().info(PowerfulPerms.pluginPrefix + "Reloaded permissions for groups"); } else { ByteArrayDataInput in =
-     * ByteStreams.newDataInput(message); String playerName = in.readUTF(); Player p = Bukkit.getPlayer(playerName); if (p != null) { loadPlayer(p); Bukkit.getLogger().info(PowerfulPerms.pluginPrefix
-     * + "Reloaded permissions for player " + playerName); } } }
-     */
+    private void loadPlayer(Player player) {
+	loadPlayer(player.getUniqueId(), player.getName(), false);
+    }
 
     @SuppressWarnings("resource")
-    private void loadPlayer(Player p) {
+    private void loadPlayer(UUID uuid, String name, boolean login) {
 	/**
 	 * Loads player data from MySQL, removes old data
 	 */
@@ -289,7 +316,7 @@ public class PermissionManager implements Listener {
 	    String suffix_loaded = ": ";
 
 	    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPlayers + " WHERE `uuid`=?");
-	    s.setString(1, p.getUniqueId().toString());
+	    s.setString(1, uuid.toString());
 	    s.execute();
 	    ResultSet result = s.getResultSet();
 	    if (result.next()) {
@@ -300,28 +327,29 @@ public class PermissionManager implements Listener {
 
 		// Check if name mismatch, update player name
 		String playerName_loaded = result.getString("name");
-		String playerName = p.getName();
+		String playerName = name;
 		if (!playerName_loaded.equals(playerName)) {
 		    s = sql.getConnection().prepareStatement("UPDATE " + PowerfulPerms.tblPlayers + " SET `name`=? WHERE `uuid`=?;");
-		    s.setString(1, p.getName());
-		    s.setString(2, p.getUniqueId().toString());
+		    s.setString(1, name);
+		    s.setString(2, uuid.toString());
 		    s.execute();
 		}
 	    } else {
 		// The player might exist in database but has no UUID yet.
 		s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPlayers + " WHERE `name`=?");
-		s.setString(1, p.getName());
+		s.setString(1, name);
 		s.execute();
 		result = s.getResultSet();
 		if (result.next()) {
 		    // Player exists in database but has no UUID. Lets enter it.
 		    s = sql.getConnection().prepareStatement("UPDATE " + PowerfulPerms.tblPlayers + " SET `uuid`=? WHERE `name`=?;");
-		    s.setString(1, p.getUniqueId().toString());
-		    s.setString(2, p.getName());
+		    s.setString(1, uuid.toString());
+		    s.setString(2, name);
 		    s.execute();
 		    // UUID has been entered into player. Lets continue.
 		    groups_loaded = result.getString("groups");
 		    prefix_loaded = result.getString("prefix");
+		    suffix_loaded = result.getString("suffix");
 
 		    s.close();
 		} else {
@@ -334,8 +362,8 @@ public class PermissionManager implements Listener {
 		    suffix_loaded = result.getString("suffix");
 
 		    s = sql.getConnection().prepareStatement("INSERT INTO " + PowerfulPerms.tblPlayers + " SET `uuid`=?, `name`=?, `groups`=?, `prefix`=?, `suffix`=?;");
-		    s.setString(1, p.getUniqueId().toString());
-		    s.setString(2, p.getName());
+		    s.setString(1, uuid.toString());
+		    s.setString(2, name);
 		    s.setString(3, groups_loaded);
 		    s.setString(4, prefix_loaded);
 		    s.setString(5, suffix_loaded);
@@ -345,25 +373,45 @@ public class PermissionManager implements Listener {
 	    }
 	    s.close();
 
-	    final Player ppp = p;
-	    final String groups_loaded_final = groups_loaded;
-	    final String prefix_loaded_final = prefix_loaded;
-	    final String suffix_loaded_final = suffix_loaded;
-	    Bukkit.getScheduler().runTask(plugin, new Runnable() {
-		public void run() {
-		    continueloadPlayer(ppp, groups_loaded_final, prefix_loaded_final, suffix_loaded_final);
-		}
-	    });
+	    ArrayList<PowerfulPermission> perms = loadPlayerPermissions(uuid);
 
+	    if (login) {
+		if (cachedPlayers.containsKey(uuid) && cachedPlayers.get(uuid).getLoginEventFinished()) {
+		    final Player player = Bukkit.getServer().getPlayer(uuid);
+		    if (player != null) {
+			cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
+			Bukkit.getScheduler().runTask(plugin, new Runnable() {
+			    public void run() {
+				continueLoadPlayer(player);
+			    }
+			});
+			Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "Your MySQL connection is running slow. Permission checks in player join event may not work as expected.");
+		    }
+		    return;
+		}
+
+		cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
+	    } else {
+		Player player = Bukkit.getServer().getPlayer(uuid);
+		if (player != null) {
+		    cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
+		    continueLoadPlayer(player);
+		}
+
+	    }
 	} catch (SQLException ex) {
 	    ex.printStackTrace();
 	}
     }
 
-    private void continueloadPlayer(Player p, String groups_loaded, String prefix_loaded, String suffix_loaded) {
+    private void continueLoadPlayer(Player p) {
+	CachedPlayer cachedPlayer = cachedPlayers.get(p.getUniqueId());
+	if (cachedPlayer == null) {
+	    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not continue load player. Cached player is null.");
+	    return;
+	}
 	// Load player permissions.
 	PermissionAttachment pa = p.addAttachment(plugin);
-	ArrayList<PowerfulPermission> perms = loadPlayerPermissions(p);
 
 	if (players.containsKey(p.getUniqueId())) {
 	    PermissionsPlayer gp = players.get(p.getUniqueId());
@@ -374,7 +422,7 @@ public class PermissionManager implements Listener {
 	}
 
 	// Load player groups.
-	HashMap<String, List<Integer>> playerGroupsRaw = getPlayerGroupsRaw(groups_loaded);
+	HashMap<String, List<Integer>> playerGroupsRaw = getPlayerGroupsRaw(cachedPlayer.getGroups());
 	HashMap<String, List<Group>> playerGroups = new HashMap<String, List<Group>>();
 	for (Entry<String, List<Integer>> entry : playerGroupsRaw.entrySet()) {
 	    ArrayList<Group> groupList = new ArrayList<Group>();
@@ -383,8 +431,9 @@ public class PermissionManager implements Listener {
 	    playerGroups.put(entry.getKey(), groupList);
 	}
 
-	PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, playerGroups, perms, pa, prefix_loaded, suffix_loaded);
+	PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, playerGroups, cachedPlayer.getPermissions(), pa, cachedPlayer.getPrefix(), cachedPlayer.getSuffix());
 	players.put(p.getUniqueId(), permissionsPlayer);
+	cachedPlayers.remove(p.getUniqueId());
     }
 
     private void loadGroups() {
@@ -443,12 +492,12 @@ public class PermissionManager implements Listener {
 	}
     }
 
-    private ArrayList<PowerfulPermission> loadPlayerPermissions(Player p) {
+    private ArrayList<PowerfulPermission> loadPlayerPermissions(UUID uuid) {
 	PreparedStatement s;
-	boolean needsNameUpdate = false;
+	// boolean needsNameUpdate = false;
 	try {
 	    s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPermissions + " WHERE `playeruuid`=?");
-	    s.setString(1, p.getUniqueId().toString());
+	    s.setString(1, uuid.toString());
 	    s.execute();
 	    ResultSet result = s.getResultSet();
 	    ArrayList<PowerfulPermission> perms = new ArrayList<PowerfulPermission>();
@@ -456,18 +505,15 @@ public class PermissionManager implements Listener {
 		PowerfulPermission tempPerm = new PowerfulPermission(result.getString("permission"), result.getString("world"), result.getString("server"));
 		perms.add(tempPerm);
 
-		if (!p.getName().equals(result.getString("playername")))
-		    needsNameUpdate = true;
+		// if (!p.getName().equals(result.getString("playername")))
+		// needsNameUpdate = true;
 	    }
 
 	    // Update player names if UUID doesn't match. Allows permission indexing by player name.
-	    if (needsNameUpdate) {
-		s = sql.getConnection().prepareStatement("UPDATE " + PowerfulPerms.tblPermissions + " SET `playername`=? WHERE `playeruuid`=?");
-		s.setString(1, p.getName());
-		s.setString(2, p.getUniqueId().toString());
-		s.execute();
-		Bukkit.getLogger().info(PowerfulPerms.consolePrefix + "Player has changed name, updated UUID and name.");
-	    }
+	    /*
+	     * if (needsNameUpdate) { s = sql.getConnection().prepareStatement("UPDATE " + PowerfulPerms.tblPermissions + " SET `playername`=? WHERE `playeruuid`=?"); s.setString(1, p.getName());
+	     * s.setString(2, p.getUniqueId().toString()); s.execute(); Bukkit.getLogger().info(PowerfulPerms.consolePrefix + "Player has changed name, updated UUID and name."); }
+	     */
 
 	    return perms;
 	} catch (SQLException e) {
