@@ -143,9 +143,9 @@ public class PermissionManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerChat(AsyncPlayerChatEvent e) {
-	String out = getPlayerPrefix(e.getPlayer()) + e.getPlayer().getDisplayName() + getPlayerSuffix(e.getPlayer());
-	out = ChatColor.translateAlternateColorCodes('&', out);
-	e.setMessage(out + e.getMessage());
+	//String out =  + e.getPlayer().getDisplayName() + getPlayerSuffix(e.getPlayer());
+	//out = ChatColor.translateAlternateColorCodes('&', out);		
+	e.setFormat(ChatColor.translateAlternateColorCodes('&', getPlayerPrefix(e.getPlayer()) + "%1$s" + getPlayerSuffix(e.getPlayer()) + "%2$s"));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

@@ -1,9 +1,11 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
@@ -57,7 +59,7 @@ public class PermissionsPlayer {
 	    server = "";
 	List<Group> groups = new ArrayList<Group>();
 	List<Group> serverGroupsTemp = serverGroups.get(server);
-	if(serverGroupsTemp != null)
+	if (serverGroupsTemp != null)
 	    groups.addAll(serverGroupsTemp);
 	if (!server.isEmpty())
 	    groups.addAll(serverGroups.get(""));
@@ -129,9 +131,10 @@ public class PermissionsPlayer {
      * Internal function to update the PermissionAttachment.
      */
     public void UpdatePermissionAttachment() {
-	for (String permission : pa.getPermissions().keySet()) {
-	    pa.unsetPermission(permission);
-	}
+	Map<String, Boolean> values = new HashMap<String, Boolean>();
+	// for (String permission : pa.getPermissions().keySet()) {
+	// pa.unsetPermission(permission);
+	// }
 
 	// Add permissions derived from groups.
 	for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
@@ -139,26 +142,7 @@ public class PermissionsPlayer {
 		for (Group group : entry.getValue()) {
 		    if (group != null) {
 			for (PowerfulPermission e : group.getPermissions()) {
-
-			    boolean isSameServer = false;
-			    boolean isSameWorld = false;
-
-			    if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || e.getServer().equals(Bukkit.getServerName()))
-				isSameServer = true;
-
-			    if (e.getWorld().isEmpty() || e.getWorld().equalsIgnoreCase("ALL") || e.getWorld().equals(player.getWorld().getName()))
-				isSameWorld = true;
-
-			    if (e.getPermissionString().startsWith("-")) {
-				String actualPermission = e.getPermissionString().substring(1);
-				pa.setPermission(actualPermission, (isSameServer && isSameWorld ? false : true));
-				continue;
-			    }
-
-			    if (pa.getPermissions().containsKey(e.getPermissionString()) && pa.getPermissions().get(e.getPermissionString()) == false)
-				continue;
-
-			    pa.setPermission(e.getPermissionString(), (isSameServer && isSameWorld ? true : false));
+			    calculatePlayerPermission(e, player, values);
 			}
 		    }
 		}
@@ -167,26 +151,13 @@ public class PermissionsPlayer {
 
 	// Add own permissions.
 	for (PowerfulPermission e : permissions) {
-	    boolean isSameServer = false;
-	    boolean isSameWorld = false;
-
-	    if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || e.getServer().equals(Bukkit.getServerName()))
-		isSameServer = true;
-
-	    if (e.getWorld().isEmpty() || e.getWorld().equalsIgnoreCase("ALL") || e.getWorld().equals(player.getWorld().getName()))
-		isSameWorld = true;
-
-	    if (e.getPermissionString().startsWith("-")) {
-		String actualPermission = e.getPermissionString().substring(1);
-		pa.setPermission(actualPermission, (isSameServer && isSameWorld ? false : true));
-		continue;
-	    }
-
-	    if (pa.getPermissions().containsKey(e.getPermissionString()) && pa.getPermissions().get(e.getPermissionString()) == false)
-		continue;
-
-	    pa.setPermission(e.getPermissionString(), (isSameServer && isSameWorld ? true : false));
+	    calculatePlayerPermission(e, player, values);
 	}
+
+	Map<String, Boolean> dest = reflectMap(pa);
+	dest.clear();
+	dest.putAll(values);
+	player.recalculatePermissions();
     }
 
     /**
@@ -207,5 +178,42 @@ public class PermissionsPlayer {
     public String getSuffix() {
 	Group group = getPrimaryGroup();
 	return (!suffix.isEmpty() ? suffix : (group != null && group.getSuffix() != "" ? group.getSuffix() : ": "));
+    }
+
+    private Field pField;
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Boolean> reflectMap(PermissionAttachment attachment) {
+	try {
+	    if (pField == null) {
+		pField = PermissionAttachment.class.getDeclaredField("permissions");
+		pField.setAccessible(true);
+	    }
+	    return (Map<String, Boolean>) pField.get(attachment);
+	} catch (Exception e) {
+	    throw new RuntimeException(e);
+	}
+    }
+
+    private void calculatePlayerPermission(PowerfulPermission e, Player player, Map<String, Boolean> values) {
+	boolean isSameServer = false;
+	boolean isSameWorld = false;
+
+	if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || e.getServer().equals(Bukkit.getServerName()))
+	    isSameServer = true;
+
+	if (e.getWorld().isEmpty() || e.getWorld().equalsIgnoreCase("ALL") || e.getWorld().equals(player.getWorld().getName()))
+	    isSameWorld = true;
+
+	if (e.getPermissionString().startsWith("-")) {
+	    String actualPermission = e.getPermissionString().substring(1);
+	    values.put(actualPermission, (isSameServer && isSameWorld ? false : true));
+	    return;
+	}
+
+	if (values.containsKey(e.getPermissionString()) && values.get(e.getPermissionString()) == false)
+	    return;
+
+	values.put(e.getPermissionString(), (isSameServer && isSameWorld ? true : false));
     }
 }
