@@ -969,6 +969,9 @@ public class PermissionManager implements Listener {
 
     public PMR addPlayerPermission(String playerName, String permission, String world, String server) {
 	try {
+	    if(playerName.equalsIgnoreCase("[default]"))
+		return new PMR(false, "You can't add permissions to the default player. Add them to a group instead and add the group to the default player.");
+	    
 	    // Check if the same permission already exists.
 	    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPermissions + " WHERE `playername`=? AND `permission`=? AND `world`=? AND `server`=?");
 	    s.setString(1, playerName);
