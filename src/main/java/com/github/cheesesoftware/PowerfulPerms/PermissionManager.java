@@ -1,5 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
+import io.netty.util.internal.ConcurrentSet;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,6 +47,8 @@ public class PermissionManager implements Listener {
     private Plugin plugin;
     private HashMap<UUID, PermissionsPlayer> players = new HashMap<UUID, PermissionsPlayer>();
     private ConcurrentHashMap<UUID, CachedPlayer> cachedPlayers = new ConcurrentHashMap<UUID, CachedPlayer>();
+    private ConcurrentSet<UUID> connectingOnlinePlayers = new ConcurrentSet<UUID>();
+
     private HashMap<Integer, Group> groups = new HashMap<Integer, Group>();
     private SQL sql;
 
@@ -119,6 +123,13 @@ public class PermissionManager implements Listener {
 	}
     }
 
+    @SuppressWarnings("unused")
+    private void debug(String msg) {
+	if (false) {
+	    Bukkit.getLogger().info("[DEBUG] " + msg);
+	}
+    }
+
     public void onDisable() {
 	if (subscriber != null)
 	    subscriber.unsubscribe();
@@ -130,36 +141,44 @@ public class PermissionManager implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent e) {
+	debug("PlayerQuitEvent " + e.getPlayer().getName());
+	connectingOnlinePlayers.remove(e.getPlayer().getUniqueId());
 	if (players.containsKey(e.getPlayer().getUniqueId())) {
 	    players.remove(e.getPlayer().getUniqueId());
-	} else
-	    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not remove leaving player.");
+	}// else
+	 // Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not remove leaving player.");
+	if (cachedPlayers.containsKey(e.getPlayer().getUniqueId()))
+	    cachedPlayers.remove(e.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onAsyncPlayerPreLogin(AsyncPlayerPreLoginEvent e) {
+    public void onAsyncPlayerPreLogin(final AsyncPlayerPreLoginEvent e) {
+	debug("AsyncPlayerPreLoginEvent " + e.getName());
+	/*
+	 * try { Thread.sleep(4000); } catch (InterruptedException ex) { ex.printStackTrace(); }
+	 */
 	if (e.getLoginResult() == AsyncPlayerPreLoginEvent.Result.ALLOWED) {
-	    loadPlayer(e.getUniqueId(), e.getName(), true);
+	    connectingOnlinePlayers.add(e.getUniqueId());
+	    Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+		public void run() {
+		    loadPlayer(e.getUniqueId(), e.getName(), true);
+		}
+	    });
+
 	}
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerLogin(PlayerLoginEvent e) {
-	if (e.getResult() == PlayerLoginEvent.Result.ALLOWED) {
-	    if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
-		// Player is cached. Continue load it.
-		continueLoadPlayer(e.getPlayer());
-	    } else if (!players.containsKey(e.getPlayer().getUniqueId())) {
-		// MySQL connection is extremely slow so we let it load by itself when it finishes.
-		CachedPlayer temp = new CachedPlayer();
-		temp.setLoginEventfinished();
-		cachedPlayers.put(e.getPlayer().getUniqueId(), temp);
-	    }
-	}
+	debug("PlayerLoginEvent " + e.getPlayer().getName());
+	// if (e.getResult() == PlayerLoginEvent.Result.ALLOWED) {
+
+	// }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(final PlayerJoinEvent e) {
+	debug("PlayerJoinEvent " + e.getPlayer().getName());
 	// Check again if
 	if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
 	    // Player is cached. Continue load it.
@@ -182,6 +201,7 @@ public class PermissionManager implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onWorldChange(PlayerChangedWorldEvent event) {
 	Player p = event.getPlayer();
+	debug("Player " + p.getName() + " changed world from " + event.getFrom().getName() + " to " + p.getWorld().getName());
 	if (players.containsKey(p.getUniqueId())) {
 	    PermissionsPlayer permissionsPlayer = players.get(p.getUniqueId());
 	    permissionsPlayer.UpdatePermissionAttachment();
@@ -373,6 +393,14 @@ public class PermissionManager implements Listener {
 	    }
 	    s.close();
 
+	    /*
+	     * debug("begin sleep");
+	     * 
+	     * try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
+	     * 
+	     * debug("end sleep");
+	     */
+
 	    ArrayList<PowerfulPermission> perms = loadPlayerPermissions(uuid);
 
 	    if (login) {
@@ -380,17 +408,20 @@ public class PermissionManager implements Listener {
 		    final Player player = Bukkit.getServer().getPlayer(uuid);
 		    if (player != null) {
 			cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
+			Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "Your MySQL connection is running slow. Permission checks in player join event may not work as expected.");
 			Bukkit.getScheduler().runTask(plugin, new Runnable() {
 			    public void run() {
 				continueLoadPlayer(player);
 			    }
 			});
-			Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "Your MySQL connection is running slow. Permission checks in player join event may not work as expected.");
 		    }
 		    return;
 		}
 
-		cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
+		if (connectingOnlinePlayers.contains(uuid)) {
+		    debug("Inserted into cachedPlayers allowing playerjoin to finish");
+		    cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
+		}
 	    } else {
 		Player player = Bukkit.getServer().getPlayer(uuid);
 		if (player != null) {
@@ -405,6 +436,7 @@ public class PermissionManager implements Listener {
     }
 
     private void continueLoadPlayer(Player p) {
+	debug("continueLoadPlayer " + p.getName());
 	CachedPlayer cachedPlayer = cachedPlayers.get(p.getUniqueId());
 	if (cachedPlayer == null) {
 	    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not continue load player. Cached player is null.");
@@ -702,7 +734,8 @@ public class PermissionManager implements Listener {
     }
 
     /**
-     * Gets a map containing all the permissions a player has, including derived permissions. If player is not online data will be loaded from DB.
+     * Gets a map containing all the permissions a player has, including derived permissions. If player is not online data will be loaded from DB and will not return world-specific or server-specific
+     * permissions.
      * 
      * @param p
      *            The player to get permissions from.
@@ -720,13 +753,20 @@ public class PermissionManager implements Listener {
 		ArrayList<PowerfulPermission> permissions = loadPlayerPermissions(playerName);
 
 		ResultSet result = getPlayerData(playerName);
-		int groupId = result.getInt("group");
-		Group group = groups.get(groupId);
+		HashMap<String, List<Integer>> playerGroupsRaw = getPlayerGroupsRaw(result.getString("groups"));
+		HashMap<String, List<Group>> playerGroups = new HashMap<String, List<Group>>();
+		for (Entry<String, List<Integer>> entry : playerGroupsRaw.entrySet()) {
+		    ArrayList<Group> groupList = new ArrayList<Group>();
+		    for (Integer groupId : entry.getValue())
+			groupList.add(groups.get(groupId));
+		    playerGroups.put(entry.getKey(), groupList);
+		}
+
+		Group group = playerGroups.get("").iterator().next();
 		if (group != null) {
 		    permissions.addAll(group.getPermissions());
 		    return permissions;
 		} else {
-		    Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Attempted to get permissions of a non-loaded player (Group is null. Group ID:" + groupId + ")");
 		    return permissions;
 		}
 

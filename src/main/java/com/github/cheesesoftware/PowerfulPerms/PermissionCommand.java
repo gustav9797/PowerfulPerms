@@ -8,11 +8,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Queue;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.util.ChatPaginator;
 
 public class PermissionCommand implements CommandExecutor {
 
@@ -25,6 +28,7 @@ public class PermissionCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 	if (args.length >= 1 && args[0].equalsIgnoreCase("user") && args.length >= 2) {
 	    String playerName = args[1];
+	    int page = -1;
 	    if (args.length >= 3) {
 		if (args[2].equalsIgnoreCase("setprimarygroup") && args.length >= 4) {
 		    String group = args[3];
@@ -134,22 +138,35 @@ public class PermissionCommand implements CommandExecutor {
 			sendSender(sender, result.getResponse());
 		    } else
 			sendSender(sender, "Suffix for player(non-inherited) " + playerName + ": " + permissionManager.getPlayerSuffix(playerName));
+		} else if (args[2].length() == 1) {
+		    try {
+			page = Integer.parseInt(args[2]);
+		    } catch (NumberFormatException e) {
+			showCommandInfo(sender);
+		    }
 		} else
 		    showCommandInfo(sender);
-	    } else {
+	    }
+	    if (page != -1 || args.length == 2) {
+		if (page == -1)
+		    page = 1;
+		page--;
+		if (page < 0)
+		    sendSender(sender, "Invalid page. Page negative.");
 		// List player permissions
-		sendSender(sender, "Listing permissions for player " + playerName + ".");
+		Queue<String> rows = new java.util.ArrayDeque<String>();
+		rows.add(ChatColor.BLUE + "Listing permissions for player " + playerName + ".");
 		ResultSet result = permissionManager.getPlayerData(playerName);
 		try {
-		    sendSender(sender, "UUID: " + result.getString("uuid"));
+		    rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + result.getString("uuid"));
 		} catch (SQLException e1) {
 		    e1.printStackTrace();
 		}
 		HashMap<String, List<Group>> groups = permissionManager.getPlayerGroups(playerName);
 		Group primary = permissionManager.getPlayerPrimaryGroup(playerName);
-		sendSender(sender, "Primary Group: " + (primary != null ? primary.getName() : "Player has no group."));
+		rows.add(ChatColor.GREEN + "Primary Group" + ChatColor.WHITE + ": " + (primary != null ? primary.getName() : "Player has no group."));
 
-		String otherGroups = "Groups: ";
+		String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
 		if (groups.size() > 0) {
 		    Iterator<Entry<String, List<Group>>> it = groups.entrySet().iterator();
 		    while (it.hasNext()) {
@@ -157,29 +174,34 @@ public class PermissionCommand implements CommandExecutor {
 			Iterator<Group> itt = current.getValue().iterator();
 			while (itt.hasNext()) {
 			    Group group = itt.next();
-			    otherGroups += (current.getKey().isEmpty() ? "ALL" : current.getKey()) + ":" + group.getName();
+			    otherGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED + (current.getKey().isEmpty() ? "ALL" : current.getKey());
 			    if (it.hasNext() || itt.hasNext())
 				otherGroups += ", ";
 			}
 		    }
 		}
-		sendSender(sender, otherGroups);
-		// String prefix = permissionManager.getPlayerPrefix(playerName);
-		// sender.sendMessage(pluginPrefix+"Prefix: " + (prefix.isEmpty() ? "Player has no prefix." : prefix));
-		// boolean isOnline = false;
-		// if (Bukkit.getPlayer(playerName) != null)
-		// isOnline = true;
+		rows.add(otherGroups);
+
 		ArrayList<PowerfulPermission> playerPerms = permissionManager.getPlayerPermissions(playerName);
 		if (playerPerms.size() > 0)
 		    for (PowerfulPermission e : playerPerms) {
-			sendSender(sender, e.getPermissionString() + " (Server:" + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
-				+ (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
+			rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:" + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer())
+				+ " World:" + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
 		    }
 		else
-		    sendSender(sender, "Player has no permissions.");
+		    rows.add("Player has no permissions.");
+
+		List<List<String>> list = createList(rows, 19);
+		sendSender(sender, ChatColor.BLUE + "Page " + (page + 1) + " of " + list.size());
+		if (page < list.size()) {
+		    for (String s : list.get(page))
+			sendSender(sender, s);
+		} else
+		    sendSender(sender, "Invalid page. Page too high. ");
 	    }
 	} else if (args.length >= 1 && args[0].equalsIgnoreCase("group") && args.length >= 2) {
 	    String groupName = args[1];
+	    int page = -1;
 	    if (args.length >= 3) {
 		if (args[2].equalsIgnoreCase("create")) {
 		    PMR result = permissionManager.createGroup(groupName);
@@ -302,23 +324,45 @@ public class PermissionCommand implements CommandExecutor {
 			} else
 			    sendSender(sender, "Group doesn't exist.");
 		    }
+		} else if (args[2].length() == 1) {
+		    try {
+			page = Integer.parseInt(args[2]);
+		    } catch (NumberFormatException e) {
+			showCommandInfo(sender);
+		    }
 		} else
 		    showCommandInfo(sender);
-	    } else {
+	    }
+	    if (page != -1 || args.length == 2) {
+		if (page == -1)
+		    page = 1;
+		page--;
+		if (page < 0)
+		    sendSender(sender, "Invalid page. Page negative.");
 		// List group permissions
+		Queue<String> rows = new java.util.ArrayDeque<String>();
 		Group group = permissionManager.getGroup(groupName);
 		if (group != null) {
-		    sendSender(sender, "Listing permissions for group " + groupName + ":");
+		    rows.add("Listing permissions for group " + groupName + ":");
 		    ArrayList<PowerfulPermission> permissions = group.getPermissions();
 		    if (permissions.size() > 0) {
 			for (PowerfulPermission e : permissions)
-			    sendSender(sender, e.getPermissionString() + " (Server:" + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
+			    rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
+				    + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
 				    + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
 		    } else
-			sendSender(sender, "Group has no permissions.");
+			rows.add("Group has no permissions.");
 
 		} else
 		    sendSender(sender, "Group doesn't exist.");
+
+		List<List<String>> list = createList(rows, 19);
+		sendSender(sender, ChatColor.BLUE + "Page " + (page + 1) + " of " + list.size());
+		if (page < list.size()) {
+		    for (String s : list.get(page))
+			sendSender(sender, s);
+		} else
+		    sendSender(sender, "Invalid page. Page too high. ");
 	    }
 	} else if (args.length >= 1 && args[0].equalsIgnoreCase("groups")) {
 	    Collection<Group> groups = permissionManager.getGroups();
@@ -346,8 +390,27 @@ public class PermissionCommand implements CommandExecutor {
 	return true;
     }
 
+    private List<List<String>> createList(Queue<String> input, int rowsPerPage) {
+	int rowWidth = ChatPaginator.GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH;
+	List<List<String>> list = new ArrayList<List<String>>();
+	while (input.size() > 0) {
+	    List<String> page = new ArrayList<String>();
+	    for (int j = 0; j < rowsPerPage; j++) {
+		if (input.size() > 0) {
+		    String row = input.remove();
+		    page.add(row);
+		    if (row.length() > rowWidth)
+			j++;
+
+		}
+	    }
+	    list.add(page);
+	}
+	return list;
+    }
+
     private void sendSender(CommandSender sender, String message) {
-	sender.sendMessage(PowerfulPerms.pluginPrefix + message);
+	sender.sendMessage(PowerfulPerms.pluginPrefixShort + message);
     }
 
     private void showCommandInfo(CommandSender sender) {

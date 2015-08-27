@@ -21,6 +21,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
     private PowerfulPerms_Vault_Permissions vaultPermsHook;
     private PowerfulPerms_Vault_Chat vaultChatHook;
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
+    public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
 
     public static String tblPlayers = "players";
