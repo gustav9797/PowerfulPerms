@@ -14,51 +14,45 @@ public class SQL {
     private String connectionString = "";
 
     public SQL(String host, String database, int port, String username, String password) {
-
+	
 	this.username = username;
 	this.password = password;
 
 	this.connectionString = "jdbc:mysql://" + host + ":" + port + "/" + database;
-	if (!(conn == null)) {
-	    try {
-		if (!conn.isClosed()) {
 
-		} else {
-		    openConnection();
-		}
-	    } catch (SQLException e) {
-		e.printStackTrace();
-	    }
-	} else {
-	    openConnection();
-	}
+	conn = openConnection();
     }
 
-    public Connection getConnection() {
+    public synchronized Connection getConnection() {
 	try {
-	    if (conn.equals(null)) {
-		openConnection();
-		return getConnection();
+	    if (conn != null && (conn.isClosed() || !conn.isValid(1))) {
+		try {
+		    conn.close();
+		} catch (SQLException e) {
+		}
+		conn = null;
 	    }
-	    if (conn.isClosed()) {
-		openConnection();
-		return getConnection();
+
+	    if (conn == null) {
+		conn = openConnection();
 	    }
+	    return conn;
 	} catch (SQLException e) {
 	    e.printStackTrace();
+	    return null;
 	}
-	return conn;
     }
 
-    public void openConnection() {
+    private synchronized Connection openConnection() {
 	try {
 	    Class.forName("com.mysql.jdbc.Driver");
-	    conn = DriverManager.getConnection(connectionString, username, password);
+	    return DriverManager.getConnection(connectionString, username, password);
 	} catch (ClassNotFoundException e) {
 	    e.printStackTrace();
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
+	return null;
     }
 
 }
