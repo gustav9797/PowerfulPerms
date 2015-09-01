@@ -1,7 +1,5 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
-import io.netty.util.internal.ConcurrentSet;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -47,7 +45,7 @@ public class PermissionManager implements Listener {
     private Plugin plugin;
     private HashMap<UUID, PermissionsPlayer> players = new HashMap<UUID, PermissionsPlayer>();
     private ConcurrentHashMap<UUID, CachedPlayer> cachedPlayers = new ConcurrentHashMap<UUID, CachedPlayer>();
-    private ConcurrentSet<UUID> connectingOnlinePlayers = new ConcurrentSet<UUID>();
+    //private CopyOnWriteArrayList<UUID> connectingOnlinePlayers = new CopyOnWriteArrayList<UUID>();
 
     private HashMap<Integer, Group> groups = new HashMap<Integer, Group>();
     private SQL sql;
@@ -84,8 +82,11 @@ public class PermissionManager implements Listener {
 
 					if (server.equals(Bukkit.getServerName()))
 					    return;
-
-					if (first.equals("[groups]")) {
+					/*if(first.equals("[servername]") && split.length > 1) {
+					    PowerfulPerms.serverName = msg.substring(12);
+					    debug("Received servername \"" + PowerfulPerms.serverName + "\"");
+					}
+					else */if (first.equals("[groups]")) {
 					    loadGroups();
 					    Bukkit.getLogger().info(PowerfulPerms.consolePrefix + "Reloaded all groups.");
 					} else if (first.equals("[players]")) {
@@ -142,11 +143,9 @@ public class PermissionManager implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent e) {
 	debug("PlayerQuitEvent " + e.getPlayer().getName());
-	connectingOnlinePlayers.remove(e.getPlayer().getUniqueId());
 	if (players.containsKey(e.getPlayer().getUniqueId())) {
 	    players.remove(e.getPlayer().getUniqueId());
-	}// else
-	 // Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not remove leaving player.");
+	}
 	if (cachedPlayers.containsKey(e.getPlayer().getUniqueId()))
 	    cachedPlayers.remove(e.getPlayer().getUniqueId());
     }
@@ -154,17 +153,11 @@ public class PermissionManager implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onAsyncPlayerPreLogin(final AsyncPlayerPreLoginEvent e) {
 	debug("AsyncPlayerPreLoginEvent " + e.getName());
-	/*
-	 * try { Thread.sleep(4000); } catch (InterruptedException ex) { ex.printStackTrace(); }
-	 */
+	
+	//try { Thread.sleep(4000); } catch (InterruptedException ex) { ex.printStackTrace(); }
+	 
 	if (e.getLoginResult() == AsyncPlayerPreLoginEvent.Result.ALLOWED) {
-	    connectingOnlinePlayers.add(e.getUniqueId());
-	    Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-		public void run() {
-		    loadPlayer(e.getUniqueId(), e.getName(), true);
-		}
-	    });
-
+	    loadPlayer(e.getUniqueId(), e.getName(), true);
 	}
     }
 
@@ -183,12 +176,15 @@ public class PermissionManager implements Listener {
 	if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
 	    // Player is cached. Continue load it.
 	    continueLoadPlayer(e.getPlayer());
-	} else if (!players.containsKey(e.getPlayer().getUniqueId())) {
+	}
+	else
+	    debug("onPlayerJoin player isn't cached");
+	
+	/*else if (!players.containsKey(e.getPlayer().getUniqueId())) {
 	    // MySQL connection is extremely slow so we let it load by itself when it finishes.
 	    CachedPlayer temp = new CachedPlayer();
-	    temp.setLoginEventfinished();
 	    cachedPlayers.put(e.getPlayer().getUniqueId(), temp);
-	}
+	}*/
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -207,6 +203,27 @@ public class PermissionManager implements Listener {
 	    permissionsPlayer.UpdatePermissionAttachment();
 	}
     }
+    
+    /*public void notifyLoadServerName() {
+	Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+	    @SuppressWarnings("deprecation")
+	    public void run() {
+		try {
+		    Jedis jedis = pool.getResource();
+		    try {
+			jedis.publish("PowerfulPerms", "[requestservername]");
+			debug("Requested server name");
+		    } catch (Exception e) {
+			pool.returnBrokenResource(jedis);
+		    }
+		    pool.returnResource(jedis);
+		} catch (Exception e) {
+		    Bukkit.getLogger().warning(
+			    PowerfulPerms.consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+		}
+	    }
+	});
+    }*/
 
     public void notifyReloadGroups() {
 	Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
@@ -404,7 +421,7 @@ public class PermissionManager implements Listener {
 	    ArrayList<PowerfulPermission> perms = loadPlayerPermissions(uuid);
 
 	    if (login) {
-		if (cachedPlayers.containsKey(uuid) && cachedPlayers.get(uuid).getLoginEventFinished()) {
+		/*if (cachedPlayers.containsKey(uuid)) {
 		    final Player player = Bukkit.getServer().getPlayer(uuid);
 		    if (player != null) {
 			cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
@@ -416,12 +433,11 @@ public class PermissionManager implements Listener {
 			});
 		    }
 		    return;
-		}
+		}*/
 
-		if (connectingOnlinePlayers.contains(uuid)) {
-		    debug("Inserted into cachedPlayers allowing playerjoin to finish");
-		    cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
-		}
+		debug("Inserted into cachedPlayers allowing playerjoin to finish");
+		cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
+		
 	    } else {
 		Player player = Bukkit.getServer().getPlayer(uuid);
 		if (player != null) {

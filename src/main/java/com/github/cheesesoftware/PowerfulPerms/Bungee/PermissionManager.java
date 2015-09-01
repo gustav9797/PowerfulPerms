@@ -60,6 +60,9 @@ public class PermissionManager {
 					    loadGroups();
 					    tempPlugin.getLogger().info(PowerfulPerms.pluginPrefix + "Reloaded all groups.");
 					}
+					/*else if(first.equals("[requestservername]")) {
+					    ProxyServer.getInstance().getServers().get("lol").getAddress().
+					}*/
 				    }
 				}
 			    });

@@ -23,6 +23,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
     public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
+    public static String serverName;
 
     public static String tblPlayers = "players";
     public static String tblGroups = "groups";
@@ -129,6 +130,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
 	
 	if(Bukkit.getOnlinePlayers().size() > 0) // Admin used /reload command	    
 	    permissionManager.reloadPlayers();
+	//permissionManager.notifyLoadServerName();
     }
 
     public void onDisable() {
