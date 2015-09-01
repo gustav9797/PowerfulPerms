@@ -24,6 +24,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
     public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String serverName;
+    public static boolean debug = false;
 
     public static String tblPlayers = "players";
     public static String tblGroups = "groups";
@@ -40,6 +41,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
 	redis_ip = getConfig().getString("redis_ip");
 	redis_port = getConfig().getInt("redis_port");
 	redis_password = getConfig().getString("redis_password");
+	debug = getConfig().getBoolean("debug");
 
 	if (redis_ip == null || redis_password == null || getConfig().getString("defaultGroup") != null)
 	    Bukkit.getLogger().severe(consolePrefix + "You haven't deleted the old config! Do it now and restart the server!");

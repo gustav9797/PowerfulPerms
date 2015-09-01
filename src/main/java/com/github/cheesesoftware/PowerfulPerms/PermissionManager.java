@@ -124,9 +124,8 @@ public class PermissionManager implements Listener {
 	}
     }
 
-    @SuppressWarnings("unused")
     private void debug(String msg) {
-	if (false) {
+	if (PowerfulPerms.debug) {
 	    Bukkit.getLogger().info("[DEBUG] " + msg);
 	}
     }
