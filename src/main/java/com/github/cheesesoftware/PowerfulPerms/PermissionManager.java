@@ -40,7 +40,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 
-public class PermissionManager implements Listener {
+public class PermissionManager implements Listener, IPermissionManager {
 
     private Plugin plugin;
     private HashMap<UUID, PermissionsPlayer> players = new HashMap<UUID, PermissionsPlayer>();
@@ -668,9 +668,12 @@ public class PermissionManager implements Listener {
     }
 
     /**
-     * Returns the primary group of an offline player.
+     * Returns the primary group of a player.
      */
     public Group getPlayerPrimaryGroup(String playerName) {
+        Player p = Bukkit.getServer().getPlayer(playerName);
+        if (p != null)
+            return getPlayerPrimaryGroup(p);
         Iterator<Group> it = getPlayerGroups(playerName).get("").iterator();
         return it.next(); // First group is primary group.
     }
@@ -770,7 +773,7 @@ public class PermissionManager implements Listener {
     }
 
     /**
-     * Checks if player has permission. Works with offline players.
+     * Checks if player has permission. Works with offline players. Does not work with negated permissions. Use Bukkit player instance to check properly.
      * 
      * @param playerName
      *            Name of the player.
@@ -807,7 +810,7 @@ public class PermissionManager implements Listener {
     }
 
     /**
-     * Checks if group has permission.
+     * Checks if group has permission. Does not work with negated permissions.
      * 
      * @param groupName
      *            Name of the group.
@@ -870,6 +873,10 @@ public class PermissionManager implements Listener {
      *            The player to get prefix from.
      */
     public String getPlayerPrefix(String playerName) {
+        Player p = Bukkit.getPlayer(playerName);
+        if (p != null)
+            return getPlayerPrefix(p);
+
         try {
             PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPlayers + " WHERE `name`=?");
             s.setString(1, playerName);
@@ -908,6 +915,10 @@ public class PermissionManager implements Listener {
      *            The player to get suffix from.
      */
     public String getPlayerSuffix(String playerName) {
+        Player p = Bukkit.getPlayer(playerName);
+        if (p != null)
+            return getPlayerSuffix(p);
+
         try {
             PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPlayers + " WHERE `name`=?");
             s.setString(1, playerName);
