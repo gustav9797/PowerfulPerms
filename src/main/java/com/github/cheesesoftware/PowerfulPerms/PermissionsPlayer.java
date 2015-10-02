@@ -131,32 +131,68 @@ public class PermissionsPlayer {
      * Internal function to update the PermissionAttachment.
      */
     public void UpdatePermissionAttachment() {
-        Map<String, Boolean> values = new HashMap<String, Boolean>();
-        // for (String permission : pa.getPermissions().keySet()) {
-        // pa.unsetPermission(permission);
-        // }
+        // Map<String, Boolean> values = new HashMap<String, Boolean>();
+        ArrayList<PowerfulPermission> unprocessedPerms = new ArrayList<PowerfulPermission>();
+
+        ArrayList<String> permsToAdd = new ArrayList<String>();
+        ArrayList<String> negatedPerms = new ArrayList<String>();
 
         // Add permissions derived from groups.
         for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
             if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("ALL") || entry.getKey().equals(Bukkit.getServerName())) {
                 for (Group group : entry.getValue()) {
                     if (group != null) {
-                        for (PowerfulPermission e : group.getPermissions()) {
-                            calculatePlayerPermission(e, player, values);
-                        }
+                        unprocessedPerms.addAll(group.getPermissions());
                     }
                 }
             }
         }
 
         // Add own permissions.
-        for (PowerfulPermission e : permissions) {
-            calculatePlayerPermission(e, player, values);
+        unprocessedPerms.addAll(this.permissions);
+
+        // Sort permissions by negated or not.
+        for (PowerfulPermission e : unprocessedPerms) {
+            if (permissionApplies(e, player)) {
+                if (e.getPermissionString().startsWith("-"))
+                    negatedPerms.add(e.getPermissionString());
+                else
+                    permsToAdd.add(e.getPermissionString());
+            }
+
+        }
+
+        // Loop through each negated permission, check if any permissions in permsToAdd should be removed
+        for (String negatedPerm : negatedPerms) {
+            // Check if wildcard negated permission.
+            if (negatedPerm.endsWith(".*")) {
+                // Remove "-" and "*". Keep dot at end for easy indexing.
+                String negatedPermClean = negatedPerm.substring(1).substring(0, negatedPerm.length() - 1);
+                Iterator<String> it = permsToAdd.iterator();
+                while (it.hasNext()) {
+                    String permToAdd = it.next();
+                    if (permToAdd.startsWith(negatedPermClean))
+                        it.remove();
+                }
+            } else {
+                // Nothing special to do, just remove the similar ones.
+                Iterator<String> it = permsToAdd.iterator();
+                while (it.hasNext()) {
+                    String permToAdd = it.next();
+                    if (permToAdd.substring(1).equalsIgnoreCase(negatedPerm))
+                        it.remove();
+                }
+            }
         }
 
         Map<String, Boolean> dest = reflectMap(pa);
         dest.clear();
-        dest.putAll(values);
+        for (String perm : permsToAdd) {
+            dest.put(perm, true);
+        }
+        for (String perm : negatedPerms) {
+            dest.put(perm.substring(1), false);
+        }
         player.recalculatePermissions();
     }
 
@@ -195,7 +231,10 @@ public class PermissionsPlayer {
         }
     }
 
-    private void calculatePlayerPermission(PowerfulPermission e, Player player, Map<String, Boolean> values) {
+    /**
+     * Calculate if the player should have this permission. Does not care about negated permissions. Simply checks if player is same server and world.
+     */
+    private boolean permissionApplies(PowerfulPermission e, Player player) {
         boolean isSameServer = false;
         boolean isSameWorld = false;
 
@@ -205,17 +244,17 @@ public class PermissionsPlayer {
         if (e.getWorld().isEmpty() || e.getWorld().equalsIgnoreCase("ALL") || e.getWorld().equals(player.getWorld().getName()))
             isSameWorld = true;
 
-        if (e.getPermissionString().startsWith("-")) {
-            String actualPermission = e.getPermissionString().substring(1);
-            if (isSameServer && isSameWorld)
-                values.put(actualPermission, false);
-            return;
-        }
+        /*
+         * if (e.getPermissionString().startsWith("-")) { String actualPermission = e.getPermissionString().substring(1); if (isSameServer && isSameWorld) values.put(actualPermission, false); return;
+         * }
+         */
 
-        if (values.containsKey(e.getPermissionString()) && values.get(e.getPermissionString()) == false)
-            return;
+        // if (values.containsKey(e.getPermissionString()) && values.get(e.getPermissionString()) == false)
+        // return;
 
         if (isSameServer && isSameWorld)
-            values.put(e.getPermissionString(), true);
+            return true;
+        // values.put(e.getPermissionString(), true);
+        return false;
     }
 }

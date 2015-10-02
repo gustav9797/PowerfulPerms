@@ -123,11 +123,6 @@
 			<url>http://repo.md-5.net/content/groups/public/</url>
 		</repository>
 		<repository>
-			<id>dakani</id>
-			<name>Dakani Nexus Repo</name>
-			<url>http://repo.dakanilabs.com/content/repositories/public</url>
-		</repository>
-		<repository>
 			<id>confuser-repo</id>
 			<url>http://ci.frostcast.net/plugin/repository/everything</url>
 		</repository>

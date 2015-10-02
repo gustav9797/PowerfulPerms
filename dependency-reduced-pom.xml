@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.cheesesoftware</groupId>
   <artifactId>PowerfulPerms</artifactId>
-  <version>1.8.1</version>
+  <version>1.8.3</version>
   <build>
     <resources>
       <resource>
@@ -118,11 +118,6 @@
     <repository>
       <id>md_5-repo</id>
       <url>http://repo.md-5.net/content/groups/public/</url>
-    </repository>
-    <repository>
-      <id>dakani</id>
-      <name>Dakani Nexus Repo</name>
-      <url>http://repo.dakanilabs.com/content/repositories/public</url>
     </repository>
     <repository>
       <id>confuser-repo</id>
