@@ -225,7 +225,9 @@ public class PermissionsPlayer {
     private boolean permissionApplies(PowerfulPermission e, ProxiedPlayer player) {
         boolean isSameServer = false;
 
-        if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || e.getServer().equals(player.getServer().getInfo().getName()))
+        if (e.getServer().isEmpty() || 
+                e.getServer().equalsIgnoreCase("ALL") || 
+                e.getServer().equals((player.getServer() != null ? (player.getServer().getInfo() != null ? player.getServer().getInfo().getName() : null) : null)))
             isSameServer = true;
 
         return isSameServer;
