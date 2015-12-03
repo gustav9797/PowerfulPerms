@@ -11,6 +11,7 @@ import com.github.cheesesoftware.PowerfulPerms.Group;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPermission;
 
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PermissionsPlayer {
@@ -106,7 +107,7 @@ public class PermissionsPlayer {
 
         for (Entry<String, List<Group>> e : serverGroups.entrySet()) {
             // Check if same server.
-            if (e.getKey().isEmpty() || e.getKey().equalsIgnoreCase("ALL") || e.getKey().equals(player.getServer().getInfo().getName())) {
+            if (e.getKey().isEmpty() || e.getKey().equalsIgnoreCase("ALL") || (player.getServer() != null ? e.getKey().equals(player.getServer().getInfo().getName()) : false)) {
                 for (Group group : e.getValue()) {
                     // Add all permissions since they apply.
                     newTemp.addAll(group.getPermissions());
@@ -115,11 +116,18 @@ public class PermissionsPlayer {
         }
         return newTemp;
     }
-
+    
     /**
      * Internal function to update the PermissionAttachment.
      */
     public void UpdatePermissions() {
+        this.UpdatePermissions(null);
+    }
+
+    /**
+     * Internal function to update the PermissionAttachment.
+     */
+    public void UpdatePermissions(ServerInfo serverInfo) {
         // Map<String, Boolean> values = new HashMap<String, Boolean>();
         ArrayList<PowerfulPermission> unprocessedPerms = new ArrayList<PowerfulPermission>();
 
@@ -128,7 +136,19 @@ public class PermissionsPlayer {
 
         // Add permissions derived from groups.
         for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
-            if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("ALL") || entry.getKey().equals(player.getServer().getInfo().getName())) {
+            if(PowerfulPerms.debug) {
+                ProxyServer.getInstance().getLogger().info("start updatepermissions");
+                if(entry.getKey() == null)
+                    ProxyServer.getInstance().getLogger().info("entry.getKey() is null");
+                if(player == null)
+                    ProxyServer.getInstance().getLogger().info("play is null");
+                else if(player.getServer() == null)
+                    ProxyServer.getInstance().getLogger().info("player server is null");
+                else if(player.getServer().getInfo() == null)
+                    ProxyServer.getInstance().getLogger().info("player server info is null");
+            }
+
+            if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("ALL") || entry.getKey().equals((serverInfo != null ? serverInfo.getName() : (player.getServer() != null ? player.getServer().getInfo().getName() : false)))) {
                 for (Group group : entry.getValue()) {
                     if (group != null) {
                         unprocessedPerms.addAll(group.getPermissions());
@@ -141,14 +161,25 @@ public class PermissionsPlayer {
         unprocessedPerms.addAll(this.permissions);
 
         // Sort permissions by negated or not.
-        for (PowerfulPermission e : unprocessedPerms) {
-            if (permissionApplies(e, player)) {
-                if (e.getPermissionString().startsWith("-"))
-                    negatedPerms.add(e.getPermissionString());
-                else
-                    permsToAdd.add(e.getPermissionString());
+        if(serverInfo != null) {
+            for (PowerfulPermission e : unprocessedPerms) {
+                if (permissionApplies(e, serverInfo)) {
+                    if (e.getPermissionString().startsWith("-"))
+                        negatedPerms.add(e.getPermissionString());
+                    else
+                        permsToAdd.add(e.getPermissionString());
+                }
             }
-
+        }
+        else {
+            for (PowerfulPermission e : unprocessedPerms) {
+                if (permissionApplies(e, player)) {
+                    if (e.getPermissionString().startsWith("-"))
+                        negatedPerms.add(e.getPermissionString());
+                    else
+                        permsToAdd.add(e.getPermissionString());
+                }
+            }
         }
 
         // Loop through each negated permission, check if any permissions in permsToAdd should be removed
@@ -218,17 +249,34 @@ public class PermissionsPlayer {
             return set.booleanValue();
         return false;
     }
-
+    
     /**
      * Calculate if the player should have this permission. Does not care about negated permissions. Simply checks if player is same server.
      */
     private boolean permissionApplies(PowerfulPermission e, ProxiedPlayer player) {
-        boolean isSameServer = false;
+        if(PowerfulPerms.debug) {
+            ProxyServer.getInstance().getLogger().info("start permissionApplies");
+            if(player == null)
+                ProxyServer.getInstance().getLogger().info("play is null");
+            else if(player.getServer() == null)
+                ProxyServer.getInstance().getLogger().info("player server is null");
+            else if(player.getServer().getInfo() == null)
+                ProxyServer.getInstance().getLogger().info("player server info is null");
+        }
+        
+        return this.permissionApplies(e, (player.getServer() != null ? player.getServer().getInfo() : null));
+    }
 
-        if (e.getServer().isEmpty() || 
-                e.getServer().equalsIgnoreCase("ALL") || 
-                e.getServer().equals((player.getServer() != null ? (player.getServer().getInfo() != null ? player.getServer().getInfo().getName() : null) : null)))
-            isSameServer = true;
+    /**
+     * Calculate if the permission applies. Does not care about negated permissions. Simply checks if permission is same server.
+     */
+    private boolean permissionApplies(PowerfulPermission e, ServerInfo serverInfo) {
+        boolean isSameServer = false;
+        
+        if(serverInfo != null) {
+            if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || e.getServer().equals(serverInfo.getName()))
+                isSameServer = true;
+        }
 
         return isSameServer;
     }

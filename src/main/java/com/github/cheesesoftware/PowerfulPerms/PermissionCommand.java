@@ -141,14 +141,13 @@ public class PermissionCommand implements CommandExecutor {
                         sendSender(sender, result.getResponse());
                     } else
                         sendSender(sender, "Suffix for player(non-inherited) " + playerName + ": " + permissionManager.getPlayerSuffix(playerName));
-                } else if (args[2].length() == 1) {
+                } else {
                     try {
                         page = Integer.parseInt(args[2]);
                     } catch (NumberFormatException e) {
                         showCommandInfo(sender);
                     }
-                } else
-                    showCommandInfo(sender);
+                }
             }
             if (page != -1 || args.length == 2) {
                 if (page == -1)
@@ -337,14 +336,13 @@ public class PermissionCommand implements CommandExecutor {
                         } else
                             sendSender(sender, "Group doesn't exist.");
                     }
-                } else if (args[2].length() == 1) {
+                } else {
                     try {
                         page = Integer.parseInt(args[2]);
                     } catch (NumberFormatException e) {
                         showCommandInfo(sender);
                     }
-                } else
-                    showCommandInfo(sender);
+                }
             }
             if (page != -1 || args.length == 2) {
                 if (page == -1)

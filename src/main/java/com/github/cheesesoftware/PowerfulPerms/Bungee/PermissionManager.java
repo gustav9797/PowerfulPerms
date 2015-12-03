@@ -29,6 +29,9 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
+import net.md_5.bungee.api.event.ServerConnectEvent;
+import net.md_5.bungee.api.event.ServerConnectedEvent;
+import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
@@ -144,6 +147,7 @@ public class PermissionManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOW)
     public void onPostLogin(final PostLoginEvent e) {
+        debug("player server name: \"" + e.getPlayer().getServer() + "\"");
         debug("PostLoginEvent " + e.getPlayer().getName() + " uuid " + e.getPlayer().getUniqueId().toString());
         // Check again if
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
@@ -152,6 +156,25 @@ public class PermissionManager implements Listener {
         } else
             debug("onPlayerJoin player isn't cached");
     }
+    
+    @EventHandler(priority = EventPriority.LOW)
+    public void onServerConnected(final ServerConnectedEvent e) {
+        debug("serverconnected event " + e.getServer().getInfo().getName());
+        if (players.containsKey(e.getPlayer().getUniqueId())) {
+            PermissionsPlayer player = players.get(e.getPlayer().getUniqueId());
+            player.UpdatePermissions(e.getServer().getInfo());
+        }
+    }
+    
+    /*@EventHandler(priority = EventPriority.LOW)
+    public void onServerConnect(final ServerConnectEvent e) {
+        debug("serverconnect event " + e.getTarget().getName());
+    }
+    
+    @EventHandler(priority = EventPriority.LOW)
+    public void onServerSwitch(final ServerSwitchEvent e) {
+        debug("serverswitch event " + e.getPlayer().getServer().getInfo().getName());
+    }*/
 
     private void debug(String msg) {
         if (PowerfulPerms.debug) {
@@ -214,7 +237,15 @@ public class PermissionManager implements Listener {
                 s.setString(1, name);
                 s.execute();
                 result = s.getResultSet();
-                if (result.next()) {
+                
+                UUID tempUUID = null;
+                try {
+                    String retrievedUUID = result.getString("uuid");
+                    if(retrievedUUID != null && !retrievedUUID.isEmpty())
+                        tempUUID = UUID.fromString(retrievedUUID);
+                } catch(IllegalArgumentException e) { }
+                
+                if (result.next() && tempUUID == null) {
                     // Player exists in database but has no UUID. Lets enter it.
                     s = sql.getConnection().prepareStatement("UPDATE " + PowerfulPerms.tblPlayers + " SET `uuid`=? WHERE `name`=?;");
                     s.setString(1, uuid.toString());

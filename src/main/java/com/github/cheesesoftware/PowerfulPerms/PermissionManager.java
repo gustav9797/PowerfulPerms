@@ -174,8 +174,10 @@ public class PermissionManager implements Listener, IPermissionManager {
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.
             continueLoadPlayer(e.getPlayer());
-        } else
-            debug("onPlayerJoin player isn't cached");
+        } else {
+            debug("onPlayerJoin player isn't cached, loading directly");
+            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), false);
+        }
 
         /*
          * else if (!players.containsKey(e.getPlayer().getUniqueId())) { // MySQL connection is extremely slow so we let it load by itself when it finishes. CachedPlayer temp = new CachedPlayer();
@@ -360,7 +362,15 @@ public class PermissionManager implements Listener, IPermissionManager {
                 s.setString(1, name);
                 s.execute();
                 result = s.getResultSet();
-                if (result.next()) {
+                
+                UUID tempUUID = null;
+                try {
+                    String retrievedUUID = result.getString("uuid");
+                    if(retrievedUUID != null && !retrievedUUID.isEmpty())
+                        tempUUID = UUID.fromString(retrievedUUID);
+                } catch(IllegalArgumentException e) { }
+                
+                if (result.next() && tempUUID == null) {
                     // Player exists in database but has no UUID. Lets enter it.
                     s = sql.getConnection().prepareStatement("UPDATE " + PowerfulPerms.tblPlayers + " SET `uuid`=? WHERE `name`=?;");
                     s.setString(1, uuid.toString());
