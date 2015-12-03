@@ -364,11 +364,13 @@ public class PermissionManager implements Listener, IPermissionManager {
                 result = s.getResultSet();
                 
                 UUID tempUUID = null;
-                try {
-                    String retrievedUUID = result.getString("uuid");
-                    if(retrievedUUID != null && !retrievedUUID.isEmpty())
-                        tempUUID = UUID.fromString(retrievedUUID);
-                } catch(IllegalArgumentException e) { }
+                if (result.next()) {
+                    try {
+                        String retrievedUUID = result.getString("uuid");
+                        if(retrievedUUID != null && !retrievedUUID.isEmpty())
+                            tempUUID = UUID.fromString(retrievedUUID);
+                    } catch(IllegalArgumentException e) { }
+                }
                 
                 if (result.next() && tempUUID == null) {
                     // Player exists in database but has no UUID. Lets enter it.
