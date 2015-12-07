@@ -2,34 +2,21 @@ package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import com.github.cheesesoftware.PowerfulPerms.Group;
+import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPermission;
 
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class PermissionsPlayer {
+public class PermissionsPlayer extends PermissionsPlayerBase {
     private ProxiedPlayer player;
-    private HashMap<String, List<Group>> serverGroups = new HashMap<String, List<Group>>(); // Contains all player main groups. Server "" is the global default group.
-    private ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
-    private String prefix = "";
-    private String suffix = "";
-    private Map<String, Boolean> realPermissions = new HashMap<String, Boolean>();
 
     public PermissionsPlayer(ProxiedPlayer p, HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix) {
+        super(serverGroups, permissions, prefix, suffix);
         this.player = p;
-        this.serverGroups = serverGroups;
-        this.permissions = permissions;
-        if(PowerfulPerms.debug)
-            ProxyServer.getInstance().getLogger().info("own permissions size " + permissions.size());
-        this.prefix = prefix;
-        this.suffix = suffix;
         this.UpdatePermissions();
     }
 
@@ -41,200 +28,35 @@ public class PermissionsPlayer {
     }
 
     /**
-     * Returns the player's primary group.
-     */
-    public Group getPrimaryGroup() {
-        Iterator<Group> it = serverGroups.get("").iterator();
-        return it.next(); // First group is primary group.
-    }
-
-    /**
-     * Returns a list of groups which apply to a specific server.
-     */
-    public List<Group> getApplyingGroups(String server) {
-        if (server.equalsIgnoreCase("all"))
-            server = "";
-        List<Group> groups = new ArrayList<Group>();
-        List<Group> serverGroupsTemp = serverGroups.get(server);
-        if (serverGroupsTemp != null)
-            groups.addAll(serverGroupsTemp);
-        if (!server.isEmpty())
-            groups.addAll(serverGroups.get(""));
-        return groups;
-    }
-
-    /**
-     * Returns all groups a player has, indexed by server name.
-     */
-    public HashMap<String, List<Group>> getServerGroups() {
-        return this.serverGroups;
-    }
-
-    /**
-     * Used when storing data in the database.
-     */
-    public String getRawServerGroups() {
-        String output = "";
-        for (Entry<String, List<Group>> entry : this.serverGroups.entrySet()) {
-            for (Group group : entry.getValue())
-                output += entry.getKey() + ":" + group.getName() + ";";
-        }
-        return output;
-    }
-
-    /**
      * Sets the player's groups as seen in getServerGroups() Changes won't save for now.
      */
+    @Override
     public void setServerGroups(HashMap<String, List<Group>> serverGroups) {
-        this.serverGroups = serverGroups;
+        super.setServerGroups(serverGroups);
         this.UpdatePermissions();
     }
 
     /**
      * Clears the player-specific permissions of this player. Changes won't save for now.
      */
+    @Override
     public void clearPermissions() {
-        permissions.clear();
+        super.clearPermissions();
         this.UpdatePermissions();
     }
 
     /**
-     * Returns a list of all permissions this player has, including derived.
-     */
-    public ArrayList<PowerfulPermission> getAllPermissions() {
-        ArrayList<PowerfulPermission> newTemp = new ArrayList<PowerfulPermission>();
-        newTemp.addAll(this.permissions);
-
-        for (Entry<String, List<Group>> e : serverGroups.entrySet()) {
-            // Check if same server.
-            if (e.getKey().isEmpty() || e.getKey().equalsIgnoreCase("ALL") || (player.getServer() != null ? e.getKey().equals(player.getServer().getInfo().getName()) : false)) {
-                for (Group group : e.getValue()) {
-                    // Add all permissions since they apply.
-                    newTemp.addAll(group.getPermissions());
-                }
-            }
-        }
-        return newTemp;
-    }
-    
-    /**
-     * Internal function to update the PermissionAttachment.
+     * Internal function to update the permissions.
      */
     public void UpdatePermissions() {
-        this.UpdatePermissions(null);
+        this.UpdatePermissions(this.player.getServer().getInfo());
     }
 
     /**
      * Internal function to update the PermissionAttachment.
      */
     public void UpdatePermissions(ServerInfo serverInfo) {
-        // Map<String, Boolean> values = new HashMap<String, Boolean>();
-        ArrayList<PowerfulPermission> unprocessedPerms = new ArrayList<PowerfulPermission>();
-
-        ArrayList<String> permsToAdd = new ArrayList<String>();
-        ArrayList<String> negatedPerms = new ArrayList<String>();
-
-        // Add permissions derived from groups.
-        for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
-            if(PowerfulPerms.debug) {
-                ProxyServer.getInstance().getLogger().info("start updatepermissions");
-                if(entry.getKey() == null)
-                    ProxyServer.getInstance().getLogger().info("entry.getKey() is null");
-                if(player == null)
-                    ProxyServer.getInstance().getLogger().info("play is null");
-                else if(player.getServer() == null)
-                    ProxyServer.getInstance().getLogger().info("player server is null");
-                else if(player.getServer().getInfo() == null)
-                    ProxyServer.getInstance().getLogger().info("player server info is null");
-            }
-
-            if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("ALL") || entry.getKey().equals((serverInfo != null ? serverInfo.getName() : (player.getServer() != null ? player.getServer().getInfo().getName() : false)))) {
-                for (Group group : entry.getValue()) {
-                    if (group != null) {
-                        unprocessedPerms.addAll(group.getPermissions());
-                    }
-                }
-            }
-        }
-
-        // Add own permissions.
-        unprocessedPerms.addAll(this.permissions);
-
-        // Sort permissions by negated or not.
-        if(serverInfo != null) {
-            for (PowerfulPermission e : unprocessedPerms) {
-                if (permissionApplies(e, serverInfo)) {
-                    if (e.getPermissionString().startsWith("-"))
-                        negatedPerms.add(e.getPermissionString());
-                    else
-                        permsToAdd.add(e.getPermissionString());
-                }
-            }
-        }
-        else {
-            for (PowerfulPermission e : unprocessedPerms) {
-                if (permissionApplies(e, player)) {
-                    if (e.getPermissionString().startsWith("-"))
-                        negatedPerms.add(e.getPermissionString());
-                    else
-                        permsToAdd.add(e.getPermissionString());
-                }
-            }
-        }
-
-        // Loop through each negated permission, check if any permissions in permsToAdd should be removed
-        for (String negatedPerm : negatedPerms) {
-            // Check if wildcard negated permission.
-            if (negatedPerm.endsWith(".*")) {
-                // Remove "-" and "*". Keep dot at end for easy indexing.
-                String negatedPermClean = negatedPerm.substring(1).substring(0, negatedPerm.length() - 1);
-                Iterator<String> it = permsToAdd.iterator();
-                while (it.hasNext()) {
-                    String permToAdd = it.next();
-                    if (permToAdd.startsWith(negatedPermClean))
-                        it.remove();
-                }
-            } else {
-                // Nothing special to do, just remove the similar ones.
-                Iterator<String> it = permsToAdd.iterator();
-                while (it.hasNext()) {
-                    String permToAdd = it.next();
-                    if (permToAdd.substring(1).equalsIgnoreCase(negatedPerm))
-                        it.remove();
-                }
-            }
-        }
-
-        Map<String, Boolean> dest = new HashMap<String, Boolean>();
-        for (String perm : permsToAdd) {
-            dest.put(perm, true);
-            if(PowerfulPerms.debug)
-                ProxyServer.getInstance().getLogger().info("Added permission " + perm + " to player " + player.getName());
-        }
-        for (String perm : negatedPerms) {
-            dest.put(perm.substring(1), false);
-        }
-        this.realPermissions = dest;
-    }
-
-    /**
-     * Returns the player's prefix. If player has no prefix set, return the prefix of the primary group.
-     * 
-     * @return The prefix.
-     */
-    public String getPrefix() {
-        Group group = getPrimaryGroup();
-        return (!prefix.isEmpty() ? prefix : (group != null && group.getPrefix() != "" ? group.getPrefix() : ""));
-    }
-
-    /**
-     * Returns the player's suffix. If player has no suffix set, return the suffix of the primary group.
-     * 
-     * @return The suffix.
-     */
-    public String getSuffix() {
-        Group group = getPrimaryGroup();
-        return (!suffix.isEmpty() ? suffix : (group != null && group.getSuffix() != "" ? group.getSuffix() : ": "));
+        this.realPermissions = super.calculatePermissions(serverInfo.getName(), null);
     }
 
     /**
@@ -248,36 +70,5 @@ public class PermissionsPlayer {
         if (set != null)
             return set.booleanValue();
         return false;
-    }
-    
-    /**
-     * Calculate if the player should have this permission. Does not care about negated permissions. Simply checks if player is same server.
-     */
-    private boolean permissionApplies(PowerfulPermission e, ProxiedPlayer player) {
-        if(PowerfulPerms.debug) {
-            ProxyServer.getInstance().getLogger().info("start permissionApplies");
-            if(player == null)
-                ProxyServer.getInstance().getLogger().info("play is null");
-            else if(player.getServer() == null)
-                ProxyServer.getInstance().getLogger().info("player server is null");
-            else if(player.getServer().getInfo() == null)
-                ProxyServer.getInstance().getLogger().info("player server info is null");
-        }
-        
-        return this.permissionApplies(e, (player.getServer() != null ? player.getServer().getInfo() : null));
-    }
-
-    /**
-     * Calculate if the permission applies. Does not care about negated permissions. Simply checks if permission is same server.
-     */
-    private boolean permissionApplies(PowerfulPermission e, ServerInfo serverInfo) {
-        boolean isSameServer = false;
-        
-        if(serverInfo != null) {
-            if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || e.getServer().equals(serverInfo.getName()))
-                isSameServer = true;
-        }
-
-        return isSameServer;
     }
 }

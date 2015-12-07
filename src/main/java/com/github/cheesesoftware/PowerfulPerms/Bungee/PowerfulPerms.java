@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
 
+import com.github.cheesesoftware.PowerfulPerms.IPlugin;
 import com.github.cheesesoftware.PowerfulPerms.SQL;
 import com.google.common.io.ByteStreams;
 
@@ -22,7 +24,7 @@ import net.md_5.bungee.config.YamlConfiguration;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-public class PowerfulPerms extends Plugin implements Listener {
+public class PowerfulPerms extends Plugin implements Listener, IPlugin {
 
     private SQL sql;
     private PermissionManager permissionManager;
@@ -110,5 +112,20 @@ public class PowerfulPerms extends Plugin implements Listener {
 
     public SQL getSQL() {
         return this.sql;
+    }
+    
+    @Override
+    public void runTaskAsynchronously(Runnable runnable) {
+        this.getProxy().getScheduler().runAsync(this, runnable);
+    }
+
+    @Override
+    public void runTaskLater(Runnable runnable, int delay) {
+        this.getProxy().getScheduler().schedule(this, runnable, delay, TimeUnit.MILLISECONDS);
+    }
+    
+    @Override
+    public boolean isDebug() {
+        return debug;
     }
 }

@@ -19,9 +19,9 @@ public interface IPermissionManager {
     
     public void reloadGroups();
     
-    public PermissionsPlayer getPermissionsPlayer(String playerName);
+    public IPermissionsPlayer getPermissionsPlayer(String playerName);
     
-    public PermissionsPlayer getPermissionsPlayer(UUID uuid);
+    public IPermissionsPlayer getPermissionsPlayer(UUID uuid);
     
     public ResultSet getPlayerData(String playerName);
     

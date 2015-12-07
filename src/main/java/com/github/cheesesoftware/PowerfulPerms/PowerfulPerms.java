@@ -10,7 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class PowerfulPerms extends JavaPlugin implements Listener {
+public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
 
     private SQL sql;
     private PermissionManager permissionManager;
@@ -111,7 +111,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
 	    }
 	}
 
-	permissionManager = new PermissionManager(this, sql);
+	permissionManager = new PermissionManager(sql, this);
 
 	if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {
 	    Bukkit.getLogger().info(consolePrefix + "Found Vault. Enabling Vault integration.");
@@ -145,5 +145,20 @@ public class PowerfulPerms extends JavaPlugin implements Listener {
 
     public SQL getSQL() {
 	return this.sql;
+    }
+
+    @Override
+    public void runTaskAsynchronously(Runnable runnable) {
+        Bukkit.getScheduler().runTaskAsynchronously(this, runnable);
+    }
+
+    @Override
+    public void runTaskLater(Runnable runnable, int delay) {
+        Bukkit.getScheduler().runTaskLater(this, runnable, delay);
+    }
+
+    @Override
+    public boolean isDebug() {
+        return debug;
     }
 }
