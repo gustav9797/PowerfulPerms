@@ -19,7 +19,7 @@ import org.bukkit.util.ChatPaginator;
 
 public class PermissionCommand implements CommandExecutor {
 
-    private PermissionManager permissionManager;
+    private PermissionManagerBase permissionManager;
 
     public PermissionCommand(PermissionManager permissionManager) {
         this.permissionManager = permissionManager;

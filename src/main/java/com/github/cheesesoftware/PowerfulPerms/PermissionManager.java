@@ -121,7 +121,8 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             continueLoadPlayer(e.getPlayer().getUniqueId());
         } else {
             debug("onPlayerJoin player isn't cached, loading directly");
-            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), false);
+            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
+            this.continueLoadPlayer(e.getPlayer().getUniqueId());
         }
     }
 

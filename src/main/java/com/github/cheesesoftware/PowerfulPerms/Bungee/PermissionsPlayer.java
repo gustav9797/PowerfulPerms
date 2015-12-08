@@ -17,13 +17,11 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
     public PermissionsPlayer(ProxiedPlayer p, HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix) {
         super(serverGroups, permissions, prefix, suffix);
         this.player = p;
-        this.UpdatePermissions();
     }
     
     public PermissionsPlayer(ProxiedPlayer p, PermissionsPlayerBase base) {
         super(base.getServerGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix());
         this.player = p;
-        this.UpdatePermissions();
     }
     
     /**
@@ -64,7 +62,8 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
      * Internal function to update the permissions.
      */
     public void UpdatePermissions() {
-        this.UpdatePermissions(this.player.getServer().getInfo());
+        if(this.player.getServer() != null)
+            this.UpdatePermissions(this.player.getServer().getInfo());
     }
 
     /**
