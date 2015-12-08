@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
+import java.util.UUID;
 import java.util.logging.Logger;
 
 public interface IPlugin {
@@ -11,4 +12,8 @@ public interface IPlugin {
     public void runTaskLater(Runnable runnable, int delay);
     
     public boolean isDebug();
+    
+    public boolean isPlayerOnline(UUID uuid);
+    
+    public UUID getPlayerUUID(String name);
 }

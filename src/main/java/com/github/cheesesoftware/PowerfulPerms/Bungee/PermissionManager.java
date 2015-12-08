@@ -1,29 +1,20 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 
-import org.apache.commons.pool2.impl.*;
-
-import com.github.cheesesoftware.PowerfulPerms.CachedPlayer;
 import com.github.cheesesoftware.PowerfulPerms.Group;
 import com.github.cheesesoftware.PowerfulPerms.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPermission;
 import com.github.cheesesoftware.PowerfulPerms.SQL;
 
@@ -46,11 +37,6 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         this.plugin = plugin;
         this.serverName = "bungeeproxy" + (new Random()).nextInt(5000) + (new Date()).getTime();
 
-        // Initialize Redis
-        if (PowerfulPerms.redis_password == null || PowerfulPerms.redis_password.isEmpty())
-            pool = new JedisPool(new GenericObjectPoolConfig(), PowerfulPerms.redis_ip, PowerfulPerms.redis_port, 0);
-        else
-            pool = new JedisPool(new GenericObjectPoolConfig(), PowerfulPerms.redis_ip, PowerfulPerms.redis_port, 0, PowerfulPerms.redis_password);
         final Plugin tempPlugin = plugin;
         plugin.getProxy().getScheduler().runAsync(plugin, new Runnable() {
             @SuppressWarnings("deprecation")
@@ -63,7 +49,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
                         public void onMessage(String channel, final String msg) {
                             tempPlugin.getProxy().getScheduler().runAsync(tempPlugin, new Runnable() {
                                 public void run() {
-                                    // Reload player or groups depending on msg
+                                    // Reload player or groups depending on message
                                     String[] split = msg.split(" ");
                                     if (split.length == 2) {
                                         String first = split[0];
@@ -75,15 +61,15 @@ public class PermissionManager extends PermissionManagerBase implements Listener
 
                                         if (first.equals("[groups]")) {
                                             loadGroups();
-                                            tempPlugin.getLogger().info(PowerfulPerms.consolePrefix + "Reloaded all groups.");
+                                            tempPlugin.getLogger().info(consolePrefix + "Reloaded all groups.");
                                         } else if (first.equals("[players]")) {
                                             loadGroups();
-                                            tempPlugin.getLogger().info(PowerfulPerms.consolePrefix + "Reloaded all players. ");
+                                            tempPlugin.getLogger().info(consolePrefix + "Reloaded all players. ");
                                         } else {
                                             ProxiedPlayer player = tempPlugin.getProxy().getPlayer(first);
                                             if (player != null) {
                                                 loadPlayer(player);
-                                                tempPlugin.getLogger().info(PowerfulPerms.consolePrefix + "Reloaded player \"" + first + "\".");
+                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");
                                             }
                                         }
                                     }
@@ -102,11 +88,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             }
         });
 
-        try {
-            loadGroups();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        loadGroups();
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -143,7 +125,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         // Check again if
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.
-            continueLoadPlayer(e.getPlayer());
+            continueLoadPlayer(e.getPlayer().getUniqueId());
         } else
             debug("onPlayerJoin player isn't cached");
     }
@@ -157,65 +139,27 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         }
     }
 
+    /**
+     * Loads online player data from database, removes old data.
+     */
     private void loadPlayer(ProxiedPlayer player) {
         loadPlayer(player.getUniqueId(), player.getName(), false);
     }
 
     /**
-     * Loads player data from database, removes old data
+     * Continues loading a previously cached player.
      */
-    @SuppressWarnings("resource")
-    private void loadPlayer(UUID uuid, String name, boolean login) {
-        Map<String, String> output = loadPlayerBase(uuid, name);
-        if (output != null) {
-
-            String groups_loaded = output.get("groups");
-            String prefix_loaded = output.get("prefix");
-            String suffix_loaded = output.get("suffix");
-
-            ArrayList<PowerfulPermission> perms = loadPlayerPermissions(uuid);
-
-            if (login) {
-                debug("Inserted into cachedPlayers allowing playerjoin to finish");
-                cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
-
-            } else {
-                ProxiedPlayer player = plugin.getProxy().getPlayer(uuid);
-                if (player != null) {
-                    cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
-                    continueLoadPlayer(player);
-                }
-
+    private void continueLoadPlayer(UUID uuid) {
+        PermissionsPlayerBase base = super.loadCachedPlayer(uuid);
+        if (base != null) {
+            ProxiedPlayer p = plugin.getProxy().getPlayer(uuid);
+            if(p != null) {
+                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base);
+                players.put(uuid, permissionsPlayer);
             }
-        } else
-            plugin.getLogger().severe("Could not load player. Output loadPlayerBase null");
-    }
-
-    private void continueLoadPlayer(ProxiedPlayer p) {
-        debug("continueLoadPlayer " + p.getName());
-        CachedPlayer cachedPlayer = cachedPlayers.get(p.getUniqueId());
-        if (cachedPlayer == null) {
-            plugin.getLogger().severe(PowerfulPerms.consolePrefix + "Could not continue load player. Cached player is null.");
-            return;
+            else
+                debug("continueLoadPlayer: ProxiedPlayer is null");
         }
-
-        if (players.containsKey(p.getUniqueId())) {
-            players.remove(p.getUniqueId());
-        }
-
-        // Load player groups.
-        HashMap<String, List<Integer>> playerGroupsRaw = getPlayerGroupsRaw(cachedPlayer.getGroups());
-        HashMap<String, List<Group>> playerGroups = new HashMap<String, List<Group>>();
-        for (Entry<String, List<Integer>> entry : playerGroupsRaw.entrySet()) {
-            ArrayList<Group> groupList = new ArrayList<Group>();
-            for (Integer groupId : entry.getValue())
-                groupList.add(groups.get(groupId));
-            playerGroups.put(entry.getKey(), groupList);
-        }
-
-        PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, playerGroups, cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix());
-        players.put(p.getUniqueId(), permissionsPlayer);
-        cachedPlayers.remove(p.getUniqueId());
     }
 
     /**
@@ -274,14 +218,17 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         return super.getPlayerPermissions(playerName);
     }
 
-    public boolean getPlayerHasPermission(ProxiedPlayer player, String permission) {
-        PermissionsPlayer permissionsPlayer = (PermissionsPlayer) players.get(player.getUniqueId());
+    /**
+     * Does a proper permissions check on the specified player. Same as PermissionsPlayer.hasPermission(Sting permission)
+     */
+    /*public boolean getPlayerHasPermission(ProxiedPlayer player, String permission) {
+        IPermissionsPlayer permissionsPlayer = players.get(player.getUniqueId());
         if (permissionsPlayer != null) {
             boolean hasPermission = permissionsPlayer.hasPermission(permission);
             debug("Permission check of " + permission + " on player " + player.getName() + " is " + hasPermission);
             return hasPermission;
         }
         return false;
-    }
+    }*/
 
 }

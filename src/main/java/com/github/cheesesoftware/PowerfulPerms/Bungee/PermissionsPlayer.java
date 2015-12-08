@@ -19,6 +19,21 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
         this.player = p;
         this.UpdatePermissions();
     }
+    
+    public PermissionsPlayer(ProxiedPlayer p, PermissionsPlayerBase base) {
+        super(base.getServerGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix());
+        this.player = p;
+        this.UpdatePermissions();
+    }
+    
+    /**
+     * Update this PermissionsPlayerBase with data from another one.
+     */
+    @Override
+    public void update(PermissionsPlayerBase base) {
+        super.update(base);
+        this.UpdatePermissions();
+    }
 
     /**
      * Returns the player attached to this PermissionsPlayer.
@@ -57,18 +72,5 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
      */
     public void UpdatePermissions(ServerInfo serverInfo) {
         this.realPermissions = super.calculatePermissions(serverInfo.getName(), null);
-    }
-
-    /**
-     * Check if this player has the specified permission.
-     * 
-     * @param permission
-     * @return
-     */
-    public boolean hasPermission(String permission) {
-        Boolean set = realPermissions.get(permission);
-        if (set != null)
-            return set.booleanValue();
-        return false;
     }
 }

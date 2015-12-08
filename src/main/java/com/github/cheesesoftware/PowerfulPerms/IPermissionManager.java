@@ -35,9 +35,9 @@ public interface IPermissionManager {
     
     public ArrayList<PowerfulPermission> getPlayerPermissions(String playerName);
     
-    public boolean playerHasPermission(String playerName, String permission, String server, String world);
+    //public boolean playerHasPermission(String playerName, String permission, String server, String world);
     
-    public boolean groupHasPermission(String groupName, String permission, String server, String world);
+    //public boolean groupHasPermission(String groupName, String permission, String server, String world);
         
     public String getPlayerPrefix(String playerName);
         

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public abstract class PermissionsPlayerBase implements IPermissionsPlayer {
+public class PermissionsPlayerBase implements IPermissionsPlayer {
 
     protected HashMap<String, List<Group>> serverGroups = new HashMap<String, List<Group>>(); // Contains all player main groups. Server "" is the global default group.
     protected ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
@@ -20,6 +20,16 @@ public abstract class PermissionsPlayerBase implements IPermissionsPlayer {
         this.permissions = permissions;
         this.prefix = prefix;
         this.suffix = suffix;
+    }
+    
+    /**
+     * Update this PermissionsPlayerBase with data from another one.
+     */
+    public void update(PermissionsPlayerBase base) {
+        this.serverGroups = base.serverGroups;
+        this.permissions = base.permissions;
+        this.prefix = base.prefix;
+        this.suffix = base.suffix;
     }
 
     /**
@@ -83,6 +93,16 @@ public abstract class PermissionsPlayerBase implements IPermissionsPlayer {
      */
     public Map<String, Boolean> getPermissionsInEffect() {
         return this.realPermissions;
+    }
+    
+    /**
+     * Check if this player has the specified permission.
+     */
+    public boolean hasPermission(String permission) {
+        Boolean set = realPermissions.get(permission);
+        if (set != null)
+            return set.booleanValue();
+        return false;
     }
 
     /**

@@ -20,6 +20,22 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
         this.pa = pa;
         this.UpdatePermissions();
     }
+    
+    public PermissionsPlayer(Player p, PermissionAttachment pa, PermissionsPlayerBase base) {
+        super(base.getServerGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix());
+        this.player = p;
+        this.pa = pa;
+        this.UpdatePermissions();
+    }
+    
+    /**
+     * Update this PermissionsPlayerBase with data from another one.
+     */
+    @Override
+    public void update(PermissionsPlayerBase base) {
+        super.update(base);
+        this.UpdatePermissions();
+    }
 
     /**
      * Returns the player attached to this PermissionsPlayer.

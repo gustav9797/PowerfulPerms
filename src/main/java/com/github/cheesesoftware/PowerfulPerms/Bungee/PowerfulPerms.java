@@ -6,9 +6,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.SQLException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import com.github.cheesesoftware.PowerfulPerms.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.IPlugin;
+import com.github.cheesesoftware.PowerfulPerms.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.SQL;
 import com.google.common.io.ByteStreams;
 
@@ -35,14 +38,6 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
     public static String consolePrefix = "[PowerfulPerms] ";
     public static boolean debug = false;
 
-    public static String tblPlayers = "players";
-    public static String tblGroups = "groups";
-    public static String tblPermissions = "permissions";
-
-    public static String redis_ip;
-    public static int redis_port;
-    public static String redis_password;
-
     @Override
     public void onEnable() {
         this.saveDefaultConfig();
@@ -54,13 +49,10 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
         }
 
         this.sql = new SQL(config.getString("host"), config.getString("database"), config.getInt("port"), config.getString("username"), config.getString("password"));
-        redis_ip = config.getString("redis_ip");
-        redis_port = config.getInt("redis_port");
-        redis_password = config.getString("redis_password");
+        PermissionManagerBase.redis_ip = config.getString("redis_ip");
+        PermissionManagerBase.redis_port = config.getInt("redis_port");
+        PermissionManagerBase.redis_password = config.getString("redis_password");
         debug = config.getBoolean("debug");
-
-        if (redis_ip == null || redis_password == null)
-            getLogger().severe(pluginPrefix + "You haven't deleted the old config! Do it now and restart the server!");
 
         try {
             if (sql.getConnection() == null || sql.getConnection().isClosed()) {
@@ -101,7 +93,9 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPermissionCheck(PermissionCheckEvent e) {
         if (e.getSender() instanceof ProxiedPlayer) {
-            boolean hasPermission = permissionManager.getPlayerHasPermission((ProxiedPlayer) e.getSender(), e.getPermission());
+            ProxiedPlayer player = (ProxiedPlayer) e.getSender();
+            IPermissionsPlayer gp = permissionManager.getPermissionsPlayer(player.getUniqueId());
+            boolean hasPermission = gp.hasPermission(e.getPermission());
             e.setHasPermission(hasPermission);
         }
     }
@@ -127,5 +121,21 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
     @Override
     public boolean isDebug() {
         return debug;
+    }
+
+    @Override
+    public boolean isPlayerOnline(UUID uuid) {
+       ProxiedPlayer player = this.getProxy().getPlayer(uuid);
+       if(player != null)
+           return true;
+       return false;
+    }
+
+    @Override
+    public UUID getPlayerUUID(String name) {
+        ProxiedPlayer player = this.getProxy().getPlayer(name);
+        if(player != null)
+            return player.getUniqueId();
+        return null;
     }
 }

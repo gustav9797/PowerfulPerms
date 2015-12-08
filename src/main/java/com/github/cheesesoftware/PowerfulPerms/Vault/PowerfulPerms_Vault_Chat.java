@@ -1,8 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
 import com.github.cheesesoftware.PowerfulPerms.Group;
+import com.github.cheesesoftware.PowerfulPerms.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
-import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayer;
 
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
@@ -12,75 +12,75 @@ public class PowerfulPerms_Vault_Chat extends Chat {
     private PermissionManager permissionManager;
 
     public PowerfulPerms_Vault_Chat(Permission perms, PermissionManager permissionManager) {
-	super(perms);
-	this.permissionManager = permissionManager;
+        super(perms);
+        this.permissionManager = permissionManager;
     }
 
     @Override
     public String getName() {
-	return "PowerfulPerms";
+        return "PowerfulPerms";
     }
 
     @Override
     public boolean isEnabled() {
-	return true;
+        return true;
     }
 
     @Override
     public String getPlayerPrefix(String world, String player) {
-	PermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
-	if (p != null)
-	    return p.getPrefix();
-	return null;
+        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
+        if (p != null)
+            return p.getPrefix();
+        return null;
     }
 
     @Override
     public void setPlayerPrefix(String world, String player, String prefix) {
-	permissionManager.setPlayerPrefix(player, prefix);
+        permissionManager.setPlayerPrefix(player, prefix);
     }
 
     @Override
     public String getPlayerSuffix(String world, String player) {
-	PermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
-	if (p != null)
-	    return p.getSuffix();
-	return null;
+        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
+        if (p != null)
+            return p.getSuffix();
+        return null;
     }
 
     @Override
     public void setPlayerSuffix(String world, String player, String suffix) {
-	permissionManager.setPlayerSuffix(player, suffix);
+        permissionManager.setPlayerSuffix(player, suffix);
     }
 
     @Override
     public String getGroupPrefix(String world, String groupName) {
-	Group group = permissionManager.getGroup(groupName);
-	if (group != null)
-	    return group.getPrefix();
-	return null;
+        Group group = permissionManager.getGroup(groupName);
+        if (group != null)
+            return group.getPrefix();
+        return null;
     }
 
     @Override
     public void setGroupPrefix(String world, String group, String prefix) {
-	permissionManager.setGroupPrefix(group, prefix);
+        permissionManager.setGroupPrefix(group, prefix);
     }
 
     @Override
     public String getGroupSuffix(String world, String groupName) {
-	Group group = permissionManager.getGroup(groupName);
-	if (group != null)
-	    return group.getSuffix();
-	return null;
+        Group group = permissionManager.getGroup(groupName);
+        if (group != null)
+            return group.getSuffix();
+        return null;
     }
 
     @Override
     public void setGroupSuffix(String world, String group, String suffix) {
-	permissionManager.setGroupSuffix(group, suffix);
+        permissionManager.setGroupSuffix(group, suffix);
     }
 
     @Override
     public int getPlayerInfoInteger(String world, String player, String node, int defaultValue) {
-	return defaultValue;
+        return defaultValue;
     }
 
     @Override
@@ -89,7 +89,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public int getGroupInfoInteger(String world, String group, String node, int defaultValue) {
-	return defaultValue;
+        return defaultValue;
     }
 
     @Override
@@ -98,7 +98,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public double getPlayerInfoDouble(String world, String player, String node, double defaultValue) {
-	return defaultValue;
+        return defaultValue;
     }
 
     @Override
@@ -107,7 +107,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public double getGroupInfoDouble(String world, String group, String node, double defaultValue) {
-	return defaultValue;
+        return defaultValue;
     }
 
     @Override
@@ -116,7 +116,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public boolean getPlayerInfoBoolean(String world, String player, String node, boolean defaultValue) {
-	return defaultValue;
+        return defaultValue;
     }
 
     @Override
@@ -125,7 +125,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public boolean getGroupInfoBoolean(String world, String group, String node, boolean defaultValue) {
-	return defaultValue;
+        return defaultValue;
     }
 
     @Override
@@ -134,7 +134,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public String getPlayerInfoString(String world, String player, String node, String defaultValue) {
-	return defaultValue;
+        return defaultValue;
     }
 
     @Override
@@ -143,7 +143,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public String getGroupInfoString(String world, String group, String node, String defaultValue) {
-	return defaultValue;
+        return defaultValue;
     }
 
     @Override

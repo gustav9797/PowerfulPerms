@@ -6,12 +6,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -28,12 +32,28 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
     private SQL sql;
     private IPlugin plugin;
+    
+    public static String tblPlayers = "players";
+    public static String tblGroups = "groups";
+    public static String tblPermissions = "permissions";
+    
+    public static String redis_ip;
+    public static int redis_port;
+    public static String redis_password;
+    
+    public static String consolePrefix = "[PowerfulPerms] ";
 
     public PermissionManagerBase(SQL sql, IPlugin plugin) {
         this.sql = sql;
         this.plugin = plugin;
+
+        // Initialize Redis
+        if (redis_password == null || redis_password.isEmpty())
+            pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0);
+        else
+            pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0, redis_password);
     }
-    
+
     protected void debug(String msg) {
         if (plugin.isDebug()) {
             plugin.getLogger().info("[DEBUG] " + msg);
@@ -53,8 +73,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                     }
                     pool.returnResource(jedis);
                 } catch (Exception e) {
-                    plugin.getLogger().warning(
-                            PowerfulPerms.consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    plugin.getLogger().warning(consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
             }
         });
@@ -74,8 +93,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                     pool.returnResource(jedis);
 
                 } catch (Exception e) {
-                    plugin.getLogger().warning(
-                            PowerfulPerms.consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    plugin.getLogger().warning(consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
             }
         });
@@ -94,17 +112,53 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                     }
                     pool.returnResource(jedis);
                 } catch (Exception e) {
-                    plugin.getLogger().warning(
-                            PowerfulPerms.consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    plugin.getLogger().warning(consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
             }
         });
     }
+
+    public void reloadPlayers() {
+        for (UUID uuid : players.keySet()) {
+            if (plugin.isPlayerOnline(uuid)) {
+                IPermissionsPlayer permissionsPlayer = players.get(uuid);
+                permissionsPlayer.clearPermissions();
+                players.remove(uuid);
+            }
+            loadPlayer(uuid, null, false);
+        }
+    }
     
-    protected Map<String, String> loadPlayerBase(UUID uuid, String name) {
+    public void reloadPlayer(String name) {
+        UUID uuid = plugin.getPlayerUUID(name);
+        if(uuid != null) {
+            this.loadPlayer(uuid, name, false);
+        }
+    }
+    
+    public void reloadPlayer(UUID uuid) {
+        this.loadPlayer(uuid, null, false);
+    }
+
+    /**
+     * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
+     */
+    public IPermissionsPlayer getPermissionsPlayer(UUID uuid) {
+        return players.get(uuid);
+    }
+    
+    /**
+     * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
+     */
+    public IPermissionsPlayer getPermissionsPlayer(String name) {
+        UUID uuid = plugin.getPlayerUUID(name);
+        return players.get(uuid);
+    }
+
+    protected void loadPlayer(UUID uuid, String name, boolean login) {
         ResultSet result = null;
         try {
-            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPlayers + " WHERE `uuid`=?");
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `uuid`=?");
             s.setString(1, uuid.toString());
             s.execute();
             result = s.getResultSet();
@@ -113,22 +167,24 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                 // The player exists in database.
 
                 String playerName_loaded = result.getString("name");
-                String playerName = name;
                 debug("playername_loaded " + playerName_loaded);
-                debug("playerName " + playerName);
 
-                // Check if name mismatch, update player name
-                if (!playerName_loaded.equals(playerName)) {
-                    s = sql.getConnection().prepareStatement("UPDATE " + PowerfulPerms.tblPlayers + " SET `name`=? WHERE `uuid`=?;");
-                    s.setString(1, name);
-                    s.setString(2, uuid.toString());
-                    s.execute();
-                    debug("PLAYER NAME MISMATCH");
+                if (name != null) {
+                    debug("playerName " + name);
+
+                    // Check if name mismatch, update player name
+                    if (!playerName_loaded.equals(name)) {
+                        s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `name`=? WHERE `uuid`=?;");
+                        s.setString(1, name);
+                        s.setString(2, uuid.toString());
+                        s.execute();
+                        debug("PLAYER NAME MISMATCH. PLAYER NAME UPDATED.");
+                    }
                 }
-            } else {
+            } else if (name != null) {
                 s.close();
                 // The player might exist in database but has no UUID yet.
-                s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPlayers + " WHERE `name`=?");
+                s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
                 s.setString(1, name);
                 s.execute();
                 result = s.getResultSet();
@@ -146,7 +202,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
                 if (result.next() && tempUUID == null) {
                     // Player exists in database but has no UUID. Lets enter it.
-                    s = sql.getConnection().prepareStatement("UPDATE " + PowerfulPerms.tblPlayers + " SET `uuid`=? WHERE `name`=?;");
+                    s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `uuid`=? WHERE `name`=?;");
                     s.setString(1, uuid.toString());
                     s.setString(2, name);
                     s.execute();
@@ -160,7 +216,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
                     result = getPlayerData("[default]");
 
-                    s = sql.getConnection().prepareStatement("INSERT INTO " + PowerfulPerms.tblPlayers + " SET `uuid`=?, `name`=?, `groups`=?, `prefix`=?, `suffix`=?;");
+                    s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayers + " SET `uuid`=?, `name`=?, `groups`=?, `prefix`=?, `suffix`=?;");
                     s.setString(1, uuid.toString());
                     s.setString(2, name);
                     s.setString(3, result.getString("groups"));
@@ -171,19 +227,54 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
                     debug("NEW PLAYER CREATED");
                 }
-            }
+            } else
+                debug("Could not reload player, 'name' is null");
+
+            String groups_loaded = (result != null ? result.getString("groups") : "");
+            String prefix_loaded = (result != null ? result.getString("prefix") : "");
+            String suffix_loaded = (result != null ? result.getString("suffix") : ": ");
             s.close();
-            
-            Map<String, String> output = new HashMap<String, String>();
-            output.put("groups", (result != null ? result.getString("groups") : ""));
-            output.put("prefix", (result != null ? result.getString("prefix") : ""));
-            output.put("suffix", (result != null ? result.getString("suffix") : ": "));
-            return output;
-            
+
+            ArrayList<PowerfulPermission> perms = loadPlayerPermissions(uuid);
+
+            if (login) {
+                debug("Inserted into cachedPlayers allowing playerjoin to finish");
+                cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
+
+            } else {
+                // Player should be reloaded if "login" is false. Reload already loaded player.
+                if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
+                    IPermissionsPlayer toUpdate = players.get(uuid);
+                    PermissionsPlayerBase base = new PermissionsPlayerBase(this.getPlayerGroups(getPlayerGroupsRaw(groups_loaded)), perms, prefix_loaded, suffix_loaded);
+                    toUpdate.update(base);
+
+                    if (cachedPlayers.get(uuid) != null)
+                        cachedPlayers.remove(uuid);
+                }
+            }
+
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return null;
+    }
+
+    protected PermissionsPlayerBase loadCachedPlayer(UUID uuid) {
+        debug("continueLoadPlayer " + uuid);
+        CachedPlayer cachedPlayer = cachedPlayers.get(uuid);
+        if (cachedPlayer == null) {
+            plugin.getLogger().severe(consolePrefix + "Could not continue load player. Cached player is null.");
+            return null;
+        }
+
+        if (players.containsKey(uuid)) {
+            players.remove(uuid);
+        }
+
+        PermissionsPlayerBase base = new PermissionsPlayerBase(this.getPlayerGroups(getPlayerGroupsRaw(cachedPlayer.getGroups())), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(),
+                cachedPlayer.getSuffix());
+
+        cachedPlayers.remove(uuid);
+        return base;
     }
 
     public void onDisable() {
@@ -206,7 +297,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         HashMap<Integer, String> tempParents = new HashMap<Integer, String>();
         try {
             groups.clear();
-            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblGroups);
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroups);
             s.execute();
             ResultSet result = s.getResultSet();
             while (result.next()) {
@@ -246,12 +337,19 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             }
             groups.get(e.getKey()).setParents(finalGroups);
         }
+
+        // Reload players too.
+        Set<UUID> keysCopy = new HashSet<UUID>(players.keySet());
+        for (UUID uuid : keysCopy) {
+            if (plugin.isPlayerOnline(uuid))
+                reloadPlayer(uuid);
+        }
     }
 
     protected ArrayList<PowerfulPermission> loadGroupPermissions(String groupName) {
         PreparedStatement s;
         try {
-            s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPermissions + " WHERE `groupname`=?");
+            s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPermissions + " WHERE `groupname`=?");
             s.setString(1, groupName);
             s.execute();
             ResultSet result = s.getResultSet();
@@ -263,7 +361,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             return perms;
         } catch (SQLException e) {
             e.printStackTrace();
-            plugin.getLogger().severe(PowerfulPerms.consolePrefix + "Could not load group permissions.");
+            plugin.getLogger().severe(consolePrefix + "Could not load group permissions.");
         }
         return null;
     }
@@ -304,14 +402,14 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public ResultSet getPlayerData(String playerName) {
         PreparedStatement s;
         try {
-            s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPlayers + " WHERE `name`=?");
+            s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
             s.setString(1, playerName);
             s.execute();
             ResultSet rs = s.getResultSet();
             if (rs.next())
                 return rs;
             else {
-                s = sql.getConnection().prepareStatement("INSERT INTO " + PowerfulPerms.tblPlayers + " SET `uuid`=?, `name`=?, `groups`=?, `prefix`=?, `suffix`=?");
+                s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayers + " SET `uuid`=?, `name`=?, `groups`=?, `prefix`=?, `suffix`=?");
                 s.setString(1, "");
                 s.setString(2, playerName);
                 s.setString(3, "1");
@@ -319,13 +417,13 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                 s.setString(5, "");
                 s.execute();
 
-                s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPlayers + " WHERE `name`=?");
+                s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
                 s.setString(1, playerName);
                 s.execute();
                 rs = s.getResultSet();
                 if (rs.next())
                     return rs;
-                plugin.getLogger().severe(PowerfulPerms.consolePrefix + "Player didn't insert into database properly!");
+                plugin.getLogger().severe(consolePrefix + "Player didn't insert into database properly!");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -333,7 +431,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         return null;
     }
 
-    protected HashMap<String, List<Integer>> getPlayerGroupsRaw(String groupsString) {
+    protected static HashMap<String, List<Integer>> getPlayerGroupsRaw(String groupsString) {
         HashMap<String, List<Integer>> groups = new HashMap<String, List<Integer>>();
         if (groupsString.contains(";")) {
             for (String s : groupsString.split(";")) {
@@ -360,57 +458,43 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         return groups;
     }
 
+    protected HashMap<String, List<Group>> getPlayerGroups(HashMap<String, List<Integer>> playerGroupsRaw) {
+        HashMap<String, List<Group>> playerGroups = new HashMap<String, List<Group>>();
+        for (Entry<String, List<Integer>> entry : playerGroupsRaw.entrySet()) {
+            ArrayList<Group> groupList = new ArrayList<Group>();
+            for (Integer groupId : entry.getValue())
+                groupList.add(groups.get(groupId));
+            playerGroups.put(entry.getKey(), groupList);
+        }
+        return playerGroups;
+    }
+
     public HashMap<String, List<Group>> getPlayerGroups(String playerName) {
         try {
             ResultSet result = getPlayerData(playerName);
-            HashMap<String, List<Integer>> playerGroupsRaw = getPlayerGroupsRaw(result.getString("groups"));
-            HashMap<String, List<Group>> playerGroups = new HashMap<String, List<Group>>();
-            for (Entry<String, List<Integer>> entry : playerGroupsRaw.entrySet()) {
-                ArrayList<Group> groupList = new ArrayList<Group>();
-                for (Integer groupId : entry.getValue())
-                    groupList.add(groups.get(groupId));
-                playerGroups.put(entry.getKey(), groupList);
-            }
-            return playerGroups;
+            return getPlayerGroups(getPlayerGroupsRaw(result.getString("groups")));
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return new HashMap<String, List<Group>>();
     }
 
     public ArrayList<PowerfulPermission> getPlayerPermissions(String playerName) {
-        try {
-            ArrayList<PowerfulPermission> permissions = loadPlayerPermissions(playerName);
+        ArrayList<PowerfulPermission> permissions = loadPlayerPermissions(playerName);
+        HashMap<String, List<Group>> playerGroups = getPlayerGroups(playerName);
 
-            ResultSet result = getPlayerData(playerName);
-            HashMap<String, List<Integer>> playerGroupsRaw = getPlayerGroupsRaw(result.getString("groups"));
-            HashMap<String, List<Group>> playerGroups = new HashMap<String, List<Group>>();
-            for (Entry<String, List<Integer>> entry : playerGroupsRaw.entrySet()) {
-                ArrayList<Group> groupList = new ArrayList<Group>();
-                for (Integer groupId : entry.getValue())
-                    groupList.add(groups.get(groupId));
-                playerGroups.put(entry.getKey(), groupList);
-            }
-
-            Group group = playerGroups.get("").iterator().next();
-            if (group != null) {
-                permissions.addAll(group.getPermissions());
-                return permissions;
-            } else {
-                return permissions;
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        Group group = playerGroups.get("").iterator().next();
+        if (group != null) {
+            permissions.addAll(group.getPermissions());
         }
-        return new ArrayList<PowerfulPermission>();
+        return permissions;
     }
 
     protected ArrayList<PowerfulPermission> loadPlayerPermissions(UUID uuid) {
         PreparedStatement s;
         // boolean needsNameUpdate = false;
         try {
-            s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPermissions + " WHERE `playeruuid`=?");
+            s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPermissions + " WHERE `playeruuid`=?");
             s.setString(1, uuid.toString());
             s.execute();
             ResultSet result = s.getResultSet();
@@ -423,7 +507,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             return perms;
         } catch (SQLException e) {
             e.printStackTrace();
-            plugin.getLogger().severe(PowerfulPerms.consolePrefix + "Could not load player permissions.");
+            plugin.getLogger().severe(consolePrefix + "Could not load player permissions.");
         }
         return null;
     }
@@ -431,7 +515,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     protected ArrayList<PowerfulPermission> loadPlayerPermissions(String name) {
         PreparedStatement s;
         try {
-            s = sql.getConnection().prepareStatement("SELECT * FROM " + PowerfulPerms.tblPermissions + " WHERE `playername`=?");
+            s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPermissions + " WHERE `playername`=?");
             s.setString(1, name);
             s.execute();
             ResultSet result = s.getResultSet();
@@ -443,7 +527,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             return perms;
         } catch (SQLException e) {
             e.printStackTrace();
-            plugin.getLogger().severe(PowerfulPerms.consolePrefix + "Could not load player permissions.");
+            plugin.getLogger().severe(consolePrefix + "Could not load player permissions.");
         }
         return null;
     }
@@ -487,6 +571,643 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             }
         }
         return false;
+    }
+
+    /**
+     * Gets the prefix of a player as stored in database.
+     */
+    public String getPlayerPrefix(String playerName) {
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
+            s.setString(1, playerName);
+            s.execute();
+            ResultSet result = s.getResultSet();
+            if (result.next()) {
+                return result.getString("prefix");
+            } else
+                plugin.getLogger().severe(consolePrefix + "Attempted to get prefix of a player that doesn't exist.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Gets the suffix of a player as stored in database.
+     */
+    public String getPlayerSuffix(String playerName) {
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
+            s.setString(1, playerName);
+            s.execute();
+            ResultSet result = s.getResultSet();
+            if (result.next()) {
+                return result.getString("suffix");
+            } else
+                plugin.getLogger().severe(consolePrefix + "Attempted to get suffix of a player that doesn't exist.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    /**
+     * Gets the prefix of a group.
+     */
+    public String getGroupPrefix(String groupName) {
+        Group g = getGroup(groupName);
+        if (g != null)
+            return g.getPrefix();
+        return null;
+    }
+
+    /**
+     * Gets the suffix of a group.
+     */
+    public String getGroupSuffix(String groupName) {
+        Group g = getGroup(groupName);
+        if (g != null)
+            return g.getSuffix();
+        return null;
+    }
+    
+    // -------------------------------------------------------------------//
+    // //
+    // ------------PLAYER PERMISSION MODIFYING FUNCTIONS BELOW------------//
+    // //
+    // -------------------------------------------------------------------//
+
+    public PMR addPlayerPermission(String playerName, String permission) {
+        return addPlayerPermission(playerName, permission, "", "");
+    }
+
+    public PMR addPlayerPermission(String playerName, String permission, String world, String server) {
+        try {
+            if (playerName.equalsIgnoreCase("[default]"))
+                return new PMR(false, "You can't add permissions to the default player. Add them to a group instead and add the group to the default player.");
+
+            // Check if the same permission already exists.
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPermissions + " WHERE `playername`=? AND `permission`=? AND `world`=? AND `server`=?");
+            s.setString(1, playerName);
+            s.setString(2, permission);
+            s.setString(3, world);
+            s.setString(4, server);
+            s.execute();
+            ResultSet result = s.getResultSet();
+            if (result.next()) {
+                return new PMR(false, "Player already has the specified permission.");
+            }
+
+            UUID uuid = null;
+            // Get UUID from table players. Player has to exist.
+            s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
+            s.setString(1, playerName);
+            s.execute();
+            result = s.getResultSet();
+            if (result.next()) {
+                uuid = UUID.fromString(result.getString("uuid"));
+            }
+
+            s = sql.getConnection().prepareStatement("INSERT INTO " + tblPermissions + " SET `playeruuid`=?, `playername`=?, `groupname`=?, `permission`=?, `world`=?, `server`=?");
+            if (uuid != null)
+                s.setString(1, uuid.toString());
+            else
+                return new PMR(false, "Could not add permission. Player doesn't exist.");
+            s.setString(2, playerName);
+            s.setString(3, "");
+            s.setString(4, permission);
+            s.setString(5, world);
+            s.setString(6, server);
+            s.execute();
+
+            reloadPlayer(playerName);
+            notifyReloadPlayer(playerName);
+            return new PMR("Permission added to player.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
+    }
+
+    public PMR removePlayerPermission(String playerName, String permission) {
+        return removePlayerPermission(playerName, permission, "", "");
+    }
+
+    public PMR removePlayerPermission(String playerName, String permission, String world, String server) {
+        try {
+            boolean useWorld = false;
+            boolean useServer = false;
+
+            String statement = "DELETE FROM `" + tblPermissions + "` WHERE `playername`=? AND `permission`=?";
+            if (!world.isEmpty() && !world.equalsIgnoreCase("ALL")) {
+                statement += ", `world`=?";
+                useWorld = true;
+            }
+            if (!server.isEmpty() && !server.equalsIgnoreCase("ALL")) {
+                statement += ", `server`=?";
+                useServer = true;
+            }
+            PreparedStatement s = sql.getConnection().prepareStatement(statement);
+
+            s.setString(1, playerName);
+            s.setString(2, permission);
+            if (useWorld)
+                s.setString(3, world);
+            if (useServer)
+                s.setString(4, server);
+            int amount = s.executeUpdate();
+            if (amount <= 0)
+                return new PMR(false, "Player does not have the specified permission.");
+
+            reloadPlayer(playerName);
+            notifyReloadPlayer(playerName);
+            return new PMR("Removed " + amount + " permissions from the player.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
+    }
+
+    public PMR removePlayerPermissions(String playerName) {
+        try {
+            String statement = "DELETE FROM `" + tblPermissions + "` WHERE `playername`=?";
+            PreparedStatement s = sql.getConnection().prepareStatement(statement);
+
+            s.setString(1, playerName);
+            int amount = s.executeUpdate();
+            if (amount <= 0)
+                return new PMR(false, "Player does not have any permissions.");
+
+            reloadPlayer(playerName);
+            notifyReloadPlayer(playerName);
+            return new PMR("Removed " + amount + " permissions from the player.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
+    }
+
+    public PMR setPlayerPrefix(String playerName, String prefix) {
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `prefix`=? WHERE `name`=?");
+            s.setString(1, prefix);
+            s.setString(2, playerName);
+            s.execute();
+
+            reloadPlayer(playerName);
+            notifyReloadPlayer(playerName);
+            return new PMR("Player prefix set.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
+    }
+
+    public PMR setPlayerSuffix(String playerName, String suffix) {
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `suffix`=? WHERE `name`=?");
+            s.setString(1, suffix);
+            s.setString(2, playerName);
+            s.execute();
+
+            reloadPlayer(playerName);
+            notifyReloadPlayer(playerName);
+            return new PMR("Player suffix set.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
+    }
+
+    public PMR setPlayerPrimaryGroup(String playerName, String groupName) {
+        Group group = getGroup(groupName);
+        if (group == null)
+            return new PMR(false, "Group does not exist.");
+
+        try {
+            String playerGroupString = "";
+
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
+            s.setString(1, playerName);
+            s.execute();
+            ResultSet result = s.getResultSet();
+            if (result.next())
+                playerGroupString = result.getString("groups");
+            else
+                return new PMR(false, "Player does not exist.");
+
+            // Add group. Put it first.
+            HashMap<String, List<Integer>> playerGroups = getPlayerGroupsRaw(playerGroupString);
+            List<Integer> groupList = playerGroups.get("");
+            if (groupList == null)
+                groupList = new ArrayList<Integer>();
+
+            // Remove existing primary
+            Iterator<Integer> it = groupList.iterator();
+            if (it.hasNext()) {
+                it.next();
+                it.remove();
+            }
+
+            ArrayList<Integer> newList = new ArrayList<Integer>();
+            newList.add(group.getId());
+            newList.addAll(groupList);
+            playerGroups.put("", newList);
+
+            String playerGroupStringOutput = "";
+            for (Entry<String, List<Integer>> entry : playerGroups.entrySet()) {
+                for (Integer groupId : entry.getValue())
+                    playerGroupStringOutput += entry.getKey() + ":" + groupId + ";";
+            }
+
+            s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `groups`=? WHERE `name`=?");
+            s.setString(1, playerGroupStringOutput);
+            s.setString(2, playerName);
+            s.execute();
+
+            reloadPlayer(playerName);
+            notifyReloadPlayer(playerName);
+            return new PMR("Player primary group set.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
+
+    }
+
+    public PMR removePlayerGroup(String playerName, String groupName) {
+        return removePlayerGroup(playerName, groupName, "");
+    }
+
+    public PMR removePlayerGroup(String playerName, String groupName, String server) {
+        if (server.equalsIgnoreCase("all"))
+            server = "";
+
+        int groupId_new;
+        Group group = getGroup(groupName);
+        if (group != null)
+            groupId_new = group.getId();
+        else
+            return new PMR(false, "Group does not exist.");
+        try {
+            String playerGroupString = "";
+
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
+            s.setString(1, playerName);
+            s.execute();
+            ResultSet result = s.getResultSet();
+            if (result.next())
+                playerGroupString = result.getString("groups");
+            else
+                return new PMR(false, "Player does not exist.");
+
+            boolean removed = false;
+            HashMap<String, List<Integer>> playerGroups = getPlayerGroupsRaw(playerGroupString);
+
+            List<Integer> groupList = playerGroups.get(server);
+            if (groupList != null) {
+                Iterator<Integer> it = groupList.iterator();
+                while (it.hasNext()) {
+                    int groupId = it.next();
+                    if (groupId == groupId_new) {
+                        if (getPlayerPrimaryGroup(playerName).getId() == groupId && server.isEmpty())
+                            return new PMR(false, "Can't remove player primary group.");
+                        it.remove();
+                        removed = true;
+                    }
+                }
+            }
+
+            if (removed)
+                playerGroups.put(server, groupList);
+            else
+                return new PMR(false, "Player does not have a specific group for the specified server.");
+
+            String playerGroupStringOutput = "";
+            for (Entry<String, List<Integer>> entry : playerGroups.entrySet()) {
+                for (Integer groupId : entry.getValue())
+                    playerGroupStringOutput += entry.getKey() + ":" + groupId + ";";
+            }
+
+            s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `groups`=? WHERE `name`=?");
+            s.setString(1, playerGroupStringOutput);
+            s.setString(2, playerName);
+            s.execute();
+
+            reloadPlayer(playerName);
+            notifyReloadPlayer(playerName);
+            return new PMR("Player group removed.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
+
+    }
+
+    public PMR addPlayerGroup(String playerName, String groupName) {
+        return addPlayerGroup(playerName, groupName, "");
+    }
+
+    public PMR addPlayerGroup(String playerName, String groupName, String server) {
+        if (server.equalsIgnoreCase("all"))
+            server = "";
+
+        Group group = getGroup(groupName);
+        if (group == null)
+            return new PMR(false, "Group does not exist.");
+
+        try {
+            String playerGroupString = "";
+
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
+            s.setString(1, playerName);
+            s.execute();
+            ResultSet result = s.getResultSet();
+            if (result.next())
+                playerGroupString = result.getString("groups");
+            else
+                return new PMR(false, "Player does not exist.");
+
+            // Add group. Put it first.
+            HashMap<String, List<Integer>> playerGroups = getPlayerGroupsRaw(playerGroupString);
+            List<Integer> groupList = playerGroups.get(server);
+            if (groupList == null)
+                groupList = new ArrayList<Integer>();
+            if (groupList.contains(group.getId()))
+                return new PMR(false, "Player already has this group.");
+            groupList.add(group.getId());
+            playerGroups.put(server, groupList);
+
+            String playerGroupStringOutput = "";
+            for (Entry<String, List<Integer>> entry : playerGroups.entrySet()) {
+                for (Integer groupId : entry.getValue())
+                    playerGroupStringOutput += entry.getKey() + ":" + groupId + ";";
+            }
+
+            s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `groups`=? WHERE `name`=?");
+            s.setString(1, playerGroupStringOutput);
+            s.setString(2, playerName);
+            s.execute();
+
+            reloadPlayer(playerName);
+            notifyReloadPlayer(playerName);
+            return new PMR("Player group set.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
+
+    }
+
+    // -------------------------------------------------------------------//
+    // //
+    // ------------GROUP PERMISSION MODIFYING FUNCTIONS BELOW-------------//
+    // //
+    // -------------------------------------------------------------------//
+
+    public PMR createGroup(String name) {
+        Iterator<Entry<Integer, Group>> it = this.groups.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<Integer, Group> e = it.next();
+            if (e.getValue().getName().equalsIgnoreCase(name)) {
+                // Group already exists
+                return new PMR(false, "Group already exists.");
+            }
+        }
+
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroups + " SET `name`=?, `parents`=?, `prefix`=?, `suffix`=?");
+            s.setString(1, name);
+            s.setString(2, "");
+            s.setString(3, "");
+            s.setString(4, "");
+            s.execute();
+            // Reload groups
+            loadGroups();
+            notifyReloadGroups();
+            return new PMR("Created group.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "Could not create group: SQL error code: " + e.getErrorCode());
+        }
+    }
+
+    public PMR deleteGroup(String groupName) {
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroups + " WHERE `name`=?;");
+            s.setString(1, groupName);
+            s.execute();
+            // Reload groups
+            loadGroups();
+            notifyReloadGroups();
+            return new PMR("Deleted group.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "Could not delete group: SQL error code: " + e.getErrorCode());
+        }
+    }
+
+    public PMR addGroupPermission(String groupName, String permission) {
+        return addGroupPermission(groupName, permission, "", "");
+    }
+
+    public PMR addGroupPermission(String groupName, String permission, String world, String server) {
+        Group group = getGroup(groupName);
+        if (group != null) {
+            ArrayList<PowerfulPermission> groupPermissions = group.getOwnPermissions();
+            try {
+                PowerfulPermission sp = new PowerfulPermission(permission, world, server);
+
+                for (PowerfulPermission temp : groupPermissions) {
+                    if (temp.getPermissionString().equals(permission) && temp.getServer().equals(server) && temp.getWorld().equals(world))
+                        return new PMR(false, "Group already has the specified permission.");
+                }
+
+                groupPermissions.add(sp);
+
+                PreparedStatement s = sql.getConnection().prepareStatement(
+                        "INSERT INTO " + tblPermissions + " SET `playeruuid`=?, `playername`=?, `groupname`=?, `permission`=?, `world`=?, `server`=?");
+                s.setString(1, "");
+                s.setString(2, "");
+                s.setString(3, groupName);
+                s.setString(4, permission);
+                s.setString(5, world);
+                s.setString(6, server);
+                s.execute();
+
+                // Reload groups
+                loadGroups();
+                notifyReloadGroups();
+                return new PMR("Added permission to group.");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return new PMR(false, "SQL error code: " + e.getErrorCode());
+            }
+        } else
+            return new PMR(false, "Group does not exist.");
+    }
+
+    public PMR removeGroupPermission(String groupName, String permission) {
+        return removeGroupPermission(groupName, permission, "", "");
+    }
+
+    public PMR removeGroupPermission(String groupName, String permission, String world, String server) {
+        // boolean allServers = server == null || server.isEmpty() || server.equals("ALL");
+        Group group = getGroup(groupName);
+        if (group != null) {
+            ArrayList<PowerfulPermission> removed = new ArrayList<PowerfulPermission>();
+            ArrayList<PowerfulPermission> groupPermissions = group.getOwnPermissions();
+            Iterator<PowerfulPermission> it = groupPermissions.iterator();
+            while (it.hasNext()) {
+                PowerfulPermission current = it.next();
+                if (current.getPermissionString().equalsIgnoreCase(permission)) {
+                    if (world.equals(current.getWorld()) && server.equals(current.getServer())) {
+                        removed.add(current);
+                        it.remove();
+                    }
+                }
+            }
+
+            try {
+                if (removed.size() <= 0)
+                    return new PMR(false, "Group does not have the specified permission.");
+
+                int amount = 0;
+                for (PowerfulPermission current : removed) {
+                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblPermissions + " WHERE `groupName`=? AND `permission`=? AND `world`=? AND `server`=?");
+                    s.setString(1, groupName);
+                    s.setString(2, current.getPermissionString());
+                    s.setString(3, current.getWorld());
+                    s.setString(4, current.getServer());
+                    amount += s.executeUpdate();
+                }
+
+                // Reload groups
+                loadGroups();
+                notifyReloadGroups();
+                return new PMR("Removed " + amount + " permissions from the group.");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return new PMR(false, "SQL error code: " + e.getErrorCode());
+            }
+        } else
+            return new PMR(false, "Group does not exist.");
+    }
+
+    public PMR removeGroupPermissions(String groupName) {
+        // boolean allServers = server == null || server.isEmpty() || server.equals("ALL");
+        Group group = getGroup(groupName);
+        if (group != null) {
+            ArrayList<PowerfulPermission> groupPermissions = group.getOwnPermissions();
+
+            try {
+                if (groupPermissions.size() <= 0)
+                    return new PMR(false, "Group does not have any permissions.");
+
+                int amount = 0;
+                PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblPermissions + " WHERE `groupName`=?");
+                s.setString(1, groupName);
+                amount += s.executeUpdate();
+
+                // Reload groups
+                loadGroups();
+                notifyReloadGroups();
+                return new PMR("Removed " + amount + " permissions from the group.");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return new PMR(false, "SQL error code: " + e.getErrorCode());
+            }
+        } else
+            return new PMR(false, "Group does not exist.");
+    }
+
+    public PMR addGroupParent(String groupName, String parentGroupName) {
+        Group group = getGroup(groupName);
+        if (group != null) {
+            Group parentGroup = getGroup(parentGroupName);
+            if (parentGroup != null) {
+                String currentParents = group.getRawOwnParents();
+                if (currentParents.contains(parentGroupName))
+                    return new PMR(false, "Group already has that parent.");
+                currentParents += parentGroup.getId() + ";";
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `parents`=? WHERE `name`=?");
+                    s.setString(1, currentParents);
+                    s.setString(2, groupName);
+                    s.execute();
+                    // Reload groups
+                    loadGroups();
+                    notifyReloadGroups();
+                    return new PMR("Added parent to group.");
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    return new PMR(false, "SQL error code " + e.getErrorCode());
+                }
+            } else
+                return new PMR(false, "Parent group does not exist.");
+        } else
+            return new PMR(false, "Group does not exist.");
+    }
+
+    public PMR removeGroupParent(String groupName, String parentGroupName) {
+        Group group = getGroup(groupName);
+        if (group != null) {
+            Group parentGroup = getGroup(parentGroupName);
+            if (parentGroup != null) {
+                String currentParents = group.getRawOwnParents();
+                String toRemove = parentGroup.getId() + ";";
+                if (!currentParents.contains(toRemove))
+                    return new PMR(false, "Group does not have that parent.");
+                currentParents = currentParents.replaceFirst(parentGroup.getId() + ";", "");
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `parents`=? WHERE `name`=?");
+                    s.setString(1, currentParents);
+                    s.setString(2, groupName);
+                    s.execute();
+                    // Reload groups
+                    loadGroups();
+                    notifyReloadGroups();
+                    return new PMR("Removed parent from group.");
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    return new PMR(false, "SQL error code: " + e.getErrorCode());
+                }
+            } else
+                return new PMR(false, "Parent group does not exist.");
+        } else
+            return new PMR(false, "Group does not exist.");
+    }
+
+    public PMR setGroupPrefix(String groupName, String prefix) {
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `prefix`=? WHERE `name`=?");
+            s.setString(1, prefix);
+            s.setString(2, groupName);
+            s.execute();
+            // Reload groups
+            loadGroups();
+            notifyReloadGroups();
+            return new PMR("Group prefix set.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
+    }
+
+    public PMR setGroupSuffix(String groupName, String suffix) {
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `suffix`=? WHERE `name`=?");
+            s.setString(1, suffix);
+            s.setString(2, groupName);
+            s.execute();
+            // Reload groups
+            loadGroups();
+            notifyReloadGroups();
+            return new PMR("Group suffix set.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new PMR(false, "SQL error code " + e.getErrorCode());
+        }
     }
 
 }
