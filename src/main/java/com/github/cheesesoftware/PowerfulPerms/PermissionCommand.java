@@ -159,8 +159,11 @@ public class PermissionCommand implements CommandExecutor {
                 Queue<String> rows = new java.util.ArrayDeque<String>();
                 rows.add(ChatColor.BLUE + "Listing permissions for player " + playerName + ".");
                 ResultSet result = permissionManager.getPlayerData(playerName);
+                String tempUUID = "empty";
                 try {
-                    rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + result.getString("uuid"));
+                    if (result != null)
+                        tempUUID = result.getString("uuid");
+                    rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
                 } catch (SQLException e1) {
                     e1.printStackTrace();
                 }

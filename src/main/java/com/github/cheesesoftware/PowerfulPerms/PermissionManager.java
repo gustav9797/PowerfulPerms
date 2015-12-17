@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -220,8 +221,13 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         Player p = Bukkit.getServer().getPlayer(playerName);
         if (p != null)
             return getPlayerPrimaryGroup(p);
-        Iterator<Group> it = getPlayerGroups(playerName).get("").iterator();
-        return it.next(); // First group is primary group.
+        HashMap<String, List<Group>> g = getPlayerGroups(playerName);
+        List<Group> primary = g.get("");
+        if(primary != null) {
+            Iterator<Group> it = primary.iterator();
+            return it.next(); // First group is primary group.
+        }
+        return null;
     }
 
     /**

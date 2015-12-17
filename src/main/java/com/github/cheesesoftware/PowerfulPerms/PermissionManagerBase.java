@@ -215,17 +215,22 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                     s.close();
 
                     result = getPlayerData("[default]");
-
-                    s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayers + " SET `uuid`=?, `name`=?, `groups`=?, `prefix`=?, `suffix`=?;");
-                    s.setString(1, uuid.toString());
-                    s.setString(2, name);
-                    s.setString(3, result.getString("groups"));
-                    s.setString(4, result.getString("prefix"));
-                    s.setString(5, result.getString("suffix"));
-                    s.execute();
-                    s.close();
-
-                    debug("NEW PLAYER CREATED");
+                    if(result != null) {
+    
+                        s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayers + " SET `uuid`=?, `name`=?, `groups`=?, `prefix`=?, `suffix`=?;");
+                        s.setString(1, uuid.toString());
+                        s.setString(2, name);
+                        s.setString(3, result.getString("groups"));
+                        s.setString(4, result.getString("prefix"));
+                        s.setString(5, result.getString("suffix"));
+                        s.execute();
+                        s.close();
+    
+                        debug("NEW PLAYER CREATED");
+                    }
+                    else
+                        plugin.getLogger().severe(consolePrefix + "Cannot get data from user [default]. Please create the default user.");
+                    
                 }
             } else
                 debug("Could not reload player, 'name' is null");
@@ -408,23 +413,6 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             ResultSet rs = s.getResultSet();
             if (rs.next())
                 return rs;
-            else {
-                s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayers + " SET `uuid`=?, `name`=?, `groups`=?, `prefix`=?, `suffix`=?");
-                s.setString(1, "");
-                s.setString(2, playerName);
-                s.setString(3, "1");
-                s.setString(4, "");
-                s.setString(5, "");
-                s.execute();
-
-                s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
-                s.setString(1, playerName);
-                s.execute();
-                rs = s.getResultSet();
-                if (rs.next())
-                    return rs;
-                plugin.getLogger().severe(consolePrefix + "Player didn't insert into database properly!");
-            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -472,7 +460,8 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public HashMap<String, List<Group>> getPlayerGroups(String playerName) {
         try {
             ResultSet result = getPlayerData(playerName);
-            return getPlayerGroups(getPlayerGroupsRaw(result.getString("groups")));
+            if(result != null)
+                return getPlayerGroups(getPlayerGroupsRaw(result.getString("groups")));
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -482,10 +471,12 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public ArrayList<PowerfulPermission> getPlayerPermissions(String playerName) {
         ArrayList<PowerfulPermission> permissions = loadPlayerPermissions(playerName);
         HashMap<String, List<Group>> playerGroups = getPlayerGroups(playerName);
-
-        Group group = playerGroups.get("").iterator().next();
-        if (group != null) {
-            permissions.addAll(group.getPermissions());
+        
+        if(!playerGroups.isEmpty()) {
+            Group group = playerGroups.get("").iterator().next();
+            if (group != null) {
+                permissions.addAll(group.getPermissions());
+            }
         }
         return permissions;
     }
