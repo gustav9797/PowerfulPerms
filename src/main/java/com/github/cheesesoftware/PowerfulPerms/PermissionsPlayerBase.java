@@ -173,7 +173,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         // Map<String, Boolean> values = new HashMap<String, Boolean>();
         ArrayList<PowerfulPermission> unprocessedPerms = new ArrayList<PowerfulPermission>();
 
-        //ArrayList<String> permsToAdd = new ArrayList<String>();
+        // ArrayList<String> permsToAdd = new ArrayList<String>();
         // ArrayList<String> negatedPerms = new ArrayList<String>();
 
         // Add permissions derived from groups.
