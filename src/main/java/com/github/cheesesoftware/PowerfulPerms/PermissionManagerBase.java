@@ -42,6 +42,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public static String redis_password;
 
     public static String consolePrefix = "[PowerfulPerms] ";
+    public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
 
     public PermissionManagerBase(SQL sql, IPlugin plugin) {
         this.sql = sql;

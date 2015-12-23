@@ -416,7 +416,7 @@ public class PermissionCommand {
     }
 
     private void sendSender(ICommand command, String sender, String message) {
-        command.sendSender(sender, PowerfulPerms.pluginPrefixShort + message);
+        command.sendSender(sender, PermissionManagerBase.pluginPrefixShort + message);
     }
 
     private void showCommandInfo(ICommand command, String sender) {

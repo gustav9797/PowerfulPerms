@@ -15,7 +15,6 @@ public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
     private SQL sql;
     private PermissionManager permissionManager;
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
-    public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String serverName;
     public static boolean debug = false;
