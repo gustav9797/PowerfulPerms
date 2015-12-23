@@ -36,6 +36,7 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
     public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
+    public static boolean bungee_command = false;
     public static boolean debug = false;
 
     @Override
@@ -52,20 +53,26 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
         PermissionManagerBase.redis_ip = config.getString("redis_ip");
         PermissionManagerBase.redis_port = config.getInt("redis_port");
         PermissionManagerBase.redis_password = config.getString("redis_password");
+        bungee_command = config.getBoolean("bungee_command");
         debug = config.getBoolean("debug");
 
         try {
             if (sql.getConnection() == null || sql.getConnection().isClosed()) {
-                getLogger().severe(pluginPrefix + "Could not access the database!");
+                getLogger().severe("Could not access the database!");
             }
         } catch (SQLException e2) {
-            getLogger().severe(pluginPrefix + "Could not access the database!");
+            getLogger().severe("Could not access the database!");
             e2.printStackTrace();
         }
 
         permissionManager = new PermissionManager(sql, this);
         this.getProxy().getPluginManager().registerListener(this, this);
         this.getProxy().getPluginManager().registerListener(this, permissionManager);
+        
+        if(bungee_command) {
+            getLogger().info("Using Bungee sided command.");
+            getProxy().getPluginManager().registerCommand(this, new PermissionCommandExecutor(permissionManager));
+        }
     }
 
     @Override
@@ -101,7 +108,7 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
     }
 
     public static PowerfulPerms getPlugin() {
-        return (PowerfulPerms) ProxyServer.getInstance().getPluginManager().getPlugin("PowerfulPermsBungee");
+        return (PowerfulPerms) ProxyServer.getInstance().getPluginManager().getPlugin("PowerfulPerms");
     }
 
     public SQL getSQL() {

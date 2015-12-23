@@ -17,6 +17,7 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.Plugin;
@@ -32,11 +33,14 @@ import redis.clients.jedis.JedisPubSub;
 public class PermissionManager extends PermissionManagerBase implements Listener {
 
     private PowerfulPerms plugin;
+    private PermissibleBaseInjector injector;
 
     public PermissionManager(SQL sql, PowerfulPerms plugin) {
         super(sql, plugin);
         this.plugin = plugin;
         this.serverName = Bukkit.getServerName();
+        
+        this.injector = new PermissibleBaseInjector();
 
         final Plugin tempPlugin = plugin;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
@@ -116,6 +120,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(final PlayerJoinEvent e) {
         debug("PlayerJoinEvent " + e.getPlayer().getName());
+        
         // Check again if
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.
@@ -197,6 +202,15 @@ public class PermissionManager extends PermissionManagerBase implements Listener
                 
                 PermissionAttachment pa = p.addAttachment(plugin);
                 PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, pa, base);
+                try {
+                    injector.inject(p, new CustomPermissibleBase(permissionsPlayer));
+                } catch (NoSuchFieldException e) {
+                    Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "You're not using Spigot. Spigot must be used for permissions to work properly. 2");
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "Could not inject permissible. Using default Bukkit permissions. 2");
+                    e.printStackTrace();
+                }
                 players.put(uuid, permissionsPlayer);
             }
             else

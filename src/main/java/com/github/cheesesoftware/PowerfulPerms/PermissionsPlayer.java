@@ -73,14 +73,14 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
      * Internal function to update the PermissionAttachment.
      */
     public void UpdatePermissions() {
-        Map<String, Boolean> destination = reflectMap(pa);
-        destination.clear();
+        //Map<String, Boolean> destination = reflectMap(pa);
+        //destination.clear();
         this.realPermissions = super.calculatePermissions(Bukkit.getServer().getServerName(), player.getWorld().getName());
-        destination.putAll(this.realPermissions);
-        player.recalculatePermissions();
+        //destination.putAll(this.realPermissions);
+        //player.recalculatePermissions();
     }
 
-    private Field pField;
+    /*private Field pField;
 
     @SuppressWarnings("unchecked")
     private Map<String, Boolean> reflectMap(PermissionAttachment attachment) {
@@ -93,6 +93,6 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
+    }*/
 
 }

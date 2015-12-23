@@ -19,6 +19,8 @@ public interface IPermissionsPlayer {
     
     public boolean hasPermission(String permission);
     
+    public boolean isPermissionSet(String permission);
+    
     public void clearPermissions();
     
     public String getPrefix();

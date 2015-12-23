@@ -32,20 +32,82 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
     private SQL sql;
     private IPlugin plugin;
-    
+
     public static String tblPlayers = "players";
     public static String tblGroups = "groups";
     public static String tblPermissions = "permissions";
-    
+
     public static String redis_ip;
     public static int redis_port;
     public static String redis_password;
-    
+
     public static String consolePrefix = "[PowerfulPerms] ";
 
     public PermissionManagerBase(SQL sql, IPlugin plugin) {
         this.sql = sql;
         this.plugin = plugin;
+
+        // Create tables if they do not exist
+
+        // Create table Groups, add group Guest
+        try {
+            sql.getConnection().prepareStatement("SELECT 1 FROM groups LIMIT 1;").execute();
+        } catch (SQLException e) {
+            String groupsTable = "CREATE TABLE `"
+                    + PermissionManagerBase.tblGroups
+                    + "` (`id` int(10) unsigned NOT NULL AUTO_INCREMENT,`name` varchar(255) NOT NULL,`parents` longtext NOT NULL,`prefix` text NOT NULL,`suffix` text NOT NULL,PRIMARY KEY (`id`),UNIQUE KEY `id_UNIQUE` (`id`),UNIQUE KEY `name_UNIQUE` (`name`)) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8";
+            try {
+                sql.getConnection().prepareStatement(groupsTable).execute();
+
+                // Insert one group "Guest"
+                sql.getConnection().prepareStatement("INSERT INTO `" + PermissionManagerBase.tblGroups + "` (`id`, `name`, `parents`, `prefix`, `suffix`) VALUES ('1', 'Guest', '', '[Guest]', ': ');")
+                        .execute();
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
+        }
+
+        // Create table Players
+        try {
+            sql.getConnection().prepareStatement("SELECT 1 FROM players LIMIT 1;").execute();
+        } catch (SQLException e) {
+            String playersTable = "CREATE TABLE `"
+                    + PermissionManagerBase.tblPlayers
+                    + "` (`uuid` varchar(36) NOT NULL DEFAULT '',`name` varchar(32) NOT NULL,`groups` longtext NOT NULL,`prefix` text NOT NULL,`suffix` text NOT NULL,PRIMARY KEY (`name`,`uuid`),UNIQUE KEY `uuid_UNIQUE` (`uuid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+            try {
+                sql.getConnection().prepareStatement(playersTable).execute();
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
+        }
+
+        // Insert [default] if not exists
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM players WHERE `name`=?");
+            s.setString(1, "[default]");
+            s.execute();
+            ResultSet result = s.getResultSet();
+            if (!result.next()) {
+                // Default player doesn't exist. Create it.
+                sql.getConnection().prepareStatement("INSERT INTO `" + PermissionManagerBase.tblPlayers + "` (`name`, `groups`, `prefix`, `suffix`) VALUES ('[default]', '1', '', '');").execute();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Create table Permissions
+        try {
+            sql.getConnection().prepareStatement("SELECT 1 FROM permissions LIMIT 1;").execute();
+        } catch (SQLException e) {
+            String permissionsTable = "CREATE TABLE `"
+                    + PermissionManagerBase.tblPermissions
+                    + "` (`id` int(10) unsigned NOT NULL AUTO_INCREMENT,`playeruuid` varchar(36) NOT NULL,`playername` varchar(45) NOT NULL,`groupname` varchar(255) NOT NULL,`permission` varchar(128) NOT NULL,`world` varchar(128) NOT NULL,`server` varchar(128) NOT NULL,PRIMARY KEY (`id`,`playeruuid`,`playername`,`groupname`),UNIQUE KEY `id_UNIQUE` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+            try {
+                sql.getConnection().prepareStatement(permissionsTable).execute();
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
+        }
 
         // Initialize Redis
         if (redis_password == null || redis_password.isEmpty())
@@ -128,14 +190,14 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             loadPlayer(uuid, null, false);
         }
     }
-    
+
     public void reloadPlayer(String name) {
         UUID uuid = plugin.getPlayerUUID(name);
-        if(uuid != null) {
+        if (uuid != null) {
             this.loadPlayer(uuid, name, false);
         }
     }
-    
+
     public void reloadPlayer(UUID uuid) {
         this.loadPlayer(uuid, null, false);
     }
@@ -146,7 +208,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public IPermissionsPlayer getPermissionsPlayer(UUID uuid) {
         return players.get(uuid);
     }
-    
+
     /**
      * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
      */
@@ -215,8 +277,8 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                     s.close();
 
                     result = getPlayerData("[default]");
-                    if(result != null) {
-    
+                    if (result != null) {
+
                         s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayers + " SET `uuid`=?, `name`=?, `groups`=?, `prefix`=?, `suffix`=?;");
                         s.setString(1, uuid.toString());
                         s.setString(2, name);
@@ -225,12 +287,11 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                         s.setString(5, result.getString("suffix"));
                         s.execute();
                         s.close();
-    
+
                         debug("NEW PLAYER CREATED");
-                    }
-                    else
+                    } else
                         plugin.getLogger().severe(consolePrefix + "Cannot get data from user [default]. Please create the default user.");
-                    
+
                 }
             } else
                 debug("Could not reload player, 'name' is null");
@@ -460,7 +521,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public HashMap<String, List<Group>> getPlayerGroups(String playerName) {
         try {
             ResultSet result = getPlayerData(playerName);
-            if(result != null)
+            if (result != null)
                 return getPlayerGroups(getPlayerGroupsRaw(result.getString("groups")));
         } catch (SQLException e) {
             e.printStackTrace();
@@ -471,8 +532,8 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public ArrayList<PowerfulPermission> getPlayerPermissions(String playerName) {
         ArrayList<PowerfulPermission> permissions = loadPlayerPermissions(playerName);
         HashMap<String, List<Group>> playerGroups = getPlayerGroups(playerName);
-        
-        if(!playerGroups.isEmpty()) {
+
+        if (!playerGroups.isEmpty()) {
             Group group = playerGroups.get("").iterator().next();
             if (group != null) {
                 permissions.addAll(group.getPermissions());
@@ -601,7 +662,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         }
         return null;
     }
-    
+
     /**
      * Gets the prefix of a group.
      */
@@ -621,7 +682,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             return g.getSuffix();
         return null;
     }
-    
+
     // -------------------------------------------------------------------//
     // //
     // ------------PLAYER PERMISSION MODIFYING FUNCTIONS BELOW------------//

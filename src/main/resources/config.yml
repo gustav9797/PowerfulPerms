@@ -7,7 +7,11 @@ port: 3306
 username: root
 password: potato
 
-#Redis
+# Redis
 redis_ip: 127.0.0.1
 redis_port: 6379
 redis_password: ""
+
+# Use Bungee-sided command
+# If this is enabled and you have PowerfulPerms installed in your Bungee proxy, it will send the /powerfulperms command through Bungee instead of Bukkit.
+bungee_command: false
