@@ -125,7 +125,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         // Check again if
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.
-            continueLoadPlayer(e.getPlayer().getUniqueId());
+            continueLoadPlayer(e.getPlayer());
         } else
             debug("onPlayerJoin player isn't cached");
     }
@@ -149,15 +149,13 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     /**
      * Continues loading a previously cached player.
      */
-    private void continueLoadPlayer(UUID uuid) {
-        PermissionsPlayerBase base = super.loadCachedPlayer(uuid);
+    private void continueLoadPlayer(ProxiedPlayer player) {
+        PermissionsPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
         if (base != null) {
-            ProxiedPlayer p = plugin.getProxy().getPlayer(uuid);
-            if(p != null) {
-                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base);
-                players.put(uuid, permissionsPlayer);
-            }
-            else
+            if (player != null) {
+                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(player, base);
+                players.put(player.getUniqueId(), permissionsPlayer);
+            } else
                 debug("continueLoadPlayer: ProxiedPlayer is null");
         }
     }
@@ -221,14 +219,10 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     /**
      * Does a proper permissions check on the specified player. Same as PermissionsPlayer.hasPermission(Sting permission)
      */
-    /*public boolean getPlayerHasPermission(ProxiedPlayer player, String permission) {
-        IPermissionsPlayer permissionsPlayer = players.get(player.getUniqueId());
-        if (permissionsPlayer != null) {
-            boolean hasPermission = permissionsPlayer.hasPermission(permission);
-            debug("Permission check of " + permission + " on player " + player.getName() + " is " + hasPermission);
-            return hasPermission;
-        }
-        return false;
-    }*/
+    /*
+     * public boolean getPlayerHasPermission(ProxiedPlayer player, String permission) { IPermissionsPlayer permissionsPlayer = players.get(player.getUniqueId()); if (permissionsPlayer != null) {
+     * boolean hasPermission = permissionsPlayer.hasPermission(permission); debug("Permission check of " + permission + " on player " + player.getName() + " is " + hasPermission); return
+     * hasPermission; } return false; }
+     */
 
 }
