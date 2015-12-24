@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -17,7 +16,6 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.Plugin;
@@ -160,9 +158,12 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             if (players.containsKey(p.getUniqueId())) {
                 PermissionsPlayer gp = (PermissionsPlayer) players.get(p.getUniqueId());
                 gp.clearPermissions();
-                players.remove(p.getUniqueId());
+                loadPlayer(p);
             }
-            loadPlayer(p);
+            else {
+                loadPlayer(p.getUniqueId(), p.getName(), true);
+                continueLoadPlayer(p.getUniqueId());
+            }
         }
     }
 

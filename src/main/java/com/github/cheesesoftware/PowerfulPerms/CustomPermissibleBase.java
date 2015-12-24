@@ -35,6 +35,6 @@ public class CustomPermissibleBase extends PermissibleBase {
             return true;
         }*/
 
-        return permissionsPlayer.hasPermission(permission);
+        return permissionsPlayer.hasPermission(permission) || (permissionsPlayer.getPlayer() != null && permissionsPlayer.getPlayer().isOp()) ;
     }
 }
