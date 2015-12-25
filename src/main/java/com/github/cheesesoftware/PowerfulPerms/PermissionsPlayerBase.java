@@ -170,15 +170,22 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     }
 
     protected List<String> calculatePermissions(String playerServer, String playerWorld) {
-        // Map<String, Boolean> values = new HashMap<String, Boolean>();
         ArrayList<PowerfulPermission> unprocessedPerms = new ArrayList<PowerfulPermission>();
-
-        // ArrayList<String> permsToAdd = new ArrayList<String>();
-        // ArrayList<String> negatedPerms = new ArrayList<String>();
 
         // Add permissions derived from groups.
         for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
-            if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("ALL") || entry.getKey().equals(playerServer)) {
+            if (entry.getKey().equals(playerServer)) {
+                for (Group group : entry.getValue()) {
+                    if (group != null) {
+                        unprocessedPerms.addAll(group.getPermissions());
+                    }
+                }
+            }
+        }
+
+        // Add permissions from primary group and parents.
+        for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
+            if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("ALL")) {
                 for (Group group : entry.getValue()) {
                     if (group != null) {
                         unprocessedPerms.addAll(group.getPermissions());
@@ -190,20 +197,6 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         // Add own permissions.
         unprocessedPerms.addAll(this.permissions);
 
-        /*
-         * // Sort permissions by negated or not. for (PowerfulPermission e : unprocessedPerms) { if (permissionApplies(e, playerServer, playerWorld)) { if (e.getPermissionString().startsWith("-"))
-         * negatedPerms.add(e.getPermissionString()); else permsToAdd.add(e.getPermissionString()); }
-         * 
-         * }
-         * 
-         * // Loop through each negated permission, check if any permissions in permsToAdd should be removed for (String negatedPerm : negatedPerms) { // Check if wildcard negated permission. if
-         * (negatedPerm.endsWith(".*")) { // Remove "-" and "*". Keep dot at end for easy indexing. String negatedPermClean = negatedPerm.substring(1).substring(0, negatedPerm.length() - 1);
-         * Iterator<String> it = permsToAdd.iterator(); while (it.hasNext()) { String permToAdd = it.next(); if (permToAdd.startsWith(negatedPermClean)) it.remove(); } } else { // Nothing special to
-         * do, just remove the similar ones. Iterator<String> it = permsToAdd.iterator(); while (it.hasNext()) { String permToAdd = it.next(); if (permToAdd.substring(1).equalsIgnoreCase(negatedPerm))
-         * it.remove(); } } }
-         */
-
-        // Map<String, Boolean> output = new HashMap<String, Boolean>();
         List<String> output = new ArrayList<String>();
 
         for (PowerfulPermission e : unprocessedPerms) {

@@ -136,7 +136,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                     }
                     pool.returnResource(jedis);
                 } catch (Exception e) {
-                    plugin.getLogger().warning(consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    plugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
             }
         });
@@ -156,7 +156,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                     pool.returnResource(jedis);
 
                 } catch (Exception e) {
-                    plugin.getLogger().warning(consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    plugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
             }
         });
@@ -175,7 +175,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                     }
                     pool.returnResource(jedis);
                 } catch (Exception e) {
-                    plugin.getLogger().warning(consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    plugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
             }
         });

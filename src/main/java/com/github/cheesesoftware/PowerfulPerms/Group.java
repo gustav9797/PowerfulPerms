@@ -11,51 +11,52 @@ public class Group {
     private String suffix;
 
     public Group(int id, String name, ArrayList<PowerfulPermission> permissions, String prefix, String suffix) {
-	this.id = id;
-	this.name = name;
-	this.permissions = permissions;
-	this.prefix = prefix;
-	this.suffix = suffix;
+        this.id = id;
+        this.name = name;
+        this.permissions = permissions;
+        this.prefix = prefix;
+        this.suffix = suffix;
     }
 
     public int getId() {
-	return this.id;
+        return this.id;
     }
 
     public String getName() {
-	return this.name;
+        return this.name;
     }
 
     public ArrayList<Group> getParents() {
-	return this.parents;
+        return this.parents;
     }
 
     public String getPrefix() {
-	return prefix;
+        return prefix;
     }
 
     public String getSuffix() {
-	return suffix;
+        return suffix;
     }
 
     public ArrayList<PowerfulPermission> getOwnPermissions() {
-	return new ArrayList<PowerfulPermission>(permissions);
+        return new ArrayList<PowerfulPermission>(permissions);
     }
 
     public ArrayList<PowerfulPermission> getPermissions() {
-	ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions);
-	for (Group parent : this.parents) {
-	    temp.addAll(parent.getInheritedPermissions());
-	}
-	return temp;
+        ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>();
+        for (Group parent : this.parents) {
+            temp.addAll(parent.getInheritedPermissions());
+        }
+        temp.addAll(permissions);
+        return temp;
     }
 
     public ArrayList<PowerfulPermission> getInheritedPermissions() {
-	ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions);
-	for (Group parent : this.parents) {
-	    temp.addAll(parent.getPermissions());
-	}
-	return temp;
+        ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions);
+        for (Group parent : this.parents) {
+            temp.addAll(parent.getPermissions());
+        }
+        return temp;
     }
 
     /*
@@ -67,13 +68,13 @@ public class Group {
      */
 
     public String getRawOwnParents() {
-	String raw = "";
-	for (Group g : parents)
-	    raw += g.getId() + ";";
-	return raw;
+        String raw = "";
+        for (Group g : parents)
+            raw += g.getId() + ";";
+        return raw;
     }
 
     public void setParents(ArrayList<Group> parents) {
-	this.parents = parents;
+        this.parents = parents;
     }
 }
