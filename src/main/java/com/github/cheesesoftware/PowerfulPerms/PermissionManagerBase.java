@@ -184,8 +184,6 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public void reloadPlayers() {
         for (UUID uuid : players.keySet()) {
             if (plugin.isPlayerOnline(uuid)) {
-                IPermissionsPlayer permissionsPlayer = players.get(uuid);
-                permissionsPlayer.clearPermissions();
                 players.remove(uuid);
             }
             loadPlayer(uuid, null, false);

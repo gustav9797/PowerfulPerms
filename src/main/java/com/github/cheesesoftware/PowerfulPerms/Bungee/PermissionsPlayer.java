@@ -50,15 +50,6 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
     }
 
     /**
-     * Clears the player-specific permissions of this player. Changes won't save for now.
-     */
-    @Override
-    public void clearPermissions() {
-        super.clearPermissions();
-        this.UpdatePermissions();
-    }
-
-    /**
      * Internal function to update the permissions.
      */
     public void UpdatePermissions() {

@@ -1,30 +1,24 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.permissions.PermissionAttachment;
 
 public class PermissionsPlayer extends PermissionsPlayerBase {
     private Player player;
-    private PermissionAttachment pa;
 
-    public PermissionsPlayer(Player p, HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, PermissionAttachment pa, String prefix, String suffix) {
+    public PermissionsPlayer(Player p, HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix) {
         super(serverGroups, permissions, prefix, suffix);
         this.player = p;
-        this.pa = pa;
         this.UpdatePermissions();
     }
     
-    public PermissionsPlayer(Player p, PermissionAttachment pa, PermissionsPlayerBase base) {
+    public PermissionsPlayer(Player p, PermissionsPlayerBase base) {
         super(base.getServerGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix());
         this.player = p;
-        this.pa = pa;
         this.UpdatePermissions();
     }
     
@@ -52,23 +46,7 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
         super.setServerGroups(serverGroups);
         this.UpdatePermissions();
     }
-
-    /**
-     * Returns the PermissionAttachment used with Bukkit.
-     */
-    public PermissionAttachment getPermissionAttachment() {
-        return this.pa;
-    }
-
-    /**
-     * Clears the player-specific permissions of this player. Changes won't save for now.
-     */
-    @Override
-    public void clearPermissions() {
-        super.clearPermissions();
-        this.UpdatePermissions();
-    }
-
+    
     /**
      * Internal function to update the PermissionAttachment.
      */

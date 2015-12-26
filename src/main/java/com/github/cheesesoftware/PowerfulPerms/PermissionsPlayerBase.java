@@ -11,6 +11,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     protected HashMap<String, List<Group>> serverGroups = new HashMap<String, List<Group>>(); // Contains all player main groups. Server "" is the global default group.
     protected ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
     protected List<String> realPermissions = new ArrayList<String>();
+    protected List<String> temporaryPermissions = new ArrayList<String>();
     protected String prefix = "";
     protected String suffix = "";
 
@@ -94,6 +95,10 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         return this.realPermissions;
     }
 
+    public void setTemporaryPermissions(List<String> permissions) {
+        this.temporaryPermissions = permissions;
+    }
+
     public boolean isPermissionSet(String permission) {
         return preHasPermission(permission) != null;
     }
@@ -103,31 +108,47 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
 
         List<String> lperm = toList(permission, ".");
 
-        for (String p : realPermissions) {
-            if (p.equalsIgnoreCase(permission)) {
-                has = true;
-            } else if (p.equalsIgnoreCase("-" + permission)) {
-                has = false;
-            } else if (p.endsWith("*")) {
-                List<String> lp = toList(p, ".");
-                int index = 0;
-                try {
-                    while (index < lp.size() && index < lperm.size()) {
-                        if (lp.get(index).equalsIgnoreCase(lperm.get(index)) || (index == 0 && lp.get(index).equalsIgnoreCase("-" + lperm.get(index)))) {
-                            index++;
-                        } else {
-                            break;
-                        }
-                    }
-                    if (lp.get(index).equalsIgnoreCase("*") || (index == 0 && lp.get(0).equalsIgnoreCase("-*"))) {
-                        has = !lp.get(0).startsWith("-");
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        if (temporaryPermissions != null) {
+            for (String p : temporaryPermissions) {
+                Boolean check = internalPermissionCheck(permission, p, lperm);
+                if (check != null)
+                    has = check;
             }
         }
 
+        for (String p : realPermissions) {
+            Boolean check = internalPermissionCheck(permission, p, lperm);
+            if (check != null)
+                has = check;
+        }
+
+        return has;
+    }
+
+    private Boolean internalPermissionCheck(String toCheck, String toCheckAgainst, List<String> lperm) {
+        Boolean has = null;
+        if (toCheckAgainst.equalsIgnoreCase(toCheck)) {
+            has = true;
+        } else if (toCheckAgainst.equalsIgnoreCase("-" + toCheck)) {
+            has = false;
+        } else if (toCheckAgainst.endsWith("*")) {
+            List<String> lp = toList(toCheckAgainst, ".");
+            int index = 0;
+            try {
+                while (index < lp.size() && index < lperm.size()) {
+                    if (lp.get(index).equalsIgnoreCase(lperm.get(index)) || (index == 0 && lp.get(index).equalsIgnoreCase("-" + lperm.get(index)))) {
+                        index++;
+                    } else {
+                        break;
+                    }
+                }
+                if (lp.get(index).equalsIgnoreCase("*") || (index == 0 && lp.get(0).equalsIgnoreCase("-*"))) {
+                    has = !lp.get(0).startsWith("-");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         return has;
     }
 
@@ -140,13 +161,6 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         if (input != null)
             output = input.booleanValue();
         return output;
-    }
-
-    /**
-     * Clears the player-specific permissions of this player. Changes won't save for now.
-     */
-    public void clearPermissions() {
-        permissions.clear();
     }
 
     /**

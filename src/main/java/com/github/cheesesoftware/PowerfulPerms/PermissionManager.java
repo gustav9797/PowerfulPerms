@@ -17,7 +17,6 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.Plugin;
 
 import com.github.cheesesoftware.PowerfulPerms.Group;
@@ -156,8 +155,6 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     public void reloadPlayers() {
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (players.containsKey(p.getUniqueId())) {
-                PermissionsPlayer gp = (PermissionsPlayer) players.get(p.getUniqueId());
-                gp.clearPermissions();
                 loadPlayer(p);
             }
             else {
@@ -193,16 +190,10 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         if (base != null) {
             Player p = Bukkit.getServer().getPlayer(uuid);
             if(p != null) {
-                if (players.containsKey(p.getUniqueId())) {
-                    PermissionsPlayer gp = (PermissionsPlayer) players.get(p.getUniqueId());
-                    PermissionAttachment toRemove = gp.getPermissionAttachment();
-                    if (toRemove != null)
-                        toRemove.remove();
+                if (players.containsKey(p.getUniqueId())) 
                     players.remove(p.getUniqueId());
-                }
                 
-                PermissionAttachment pa = p.addAttachment(plugin);
-                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, pa, base);
+                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base);
                 try {
                     injector.inject(p, new CustomPermissibleBase(permissionsPlayer));
                 } catch (NoSuchFieldException e) {
