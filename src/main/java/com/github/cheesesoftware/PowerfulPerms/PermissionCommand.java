@@ -49,9 +49,9 @@ public class PermissionCommand {
                     String world = "";
                     String server = "";
                     if (args.length >= 5)
-                        world = args[4];
+                        server = args[4];
                     if (args.length >= 6)
-                        server = args[5];
+                        world = args[5];
                     if (server.equalsIgnoreCase("all"))
                         server = "";
                     if (world.equalsIgnoreCase("all"))
@@ -63,9 +63,9 @@ public class PermissionCommand {
                     String world = "";
                     String server = "";
                     if (args.length >= 5)
-                        world = args[4];
+                        server = args[4];
                     if (args.length >= 6)
-                        server = args[5];
+                        world = args[5];
                     if (server.equalsIgnoreCase("all"))
                         server = "";
                     if (world.equalsIgnoreCase("all"))
@@ -221,9 +221,9 @@ public class PermissionCommand {
                     String world = "";
                     String server = "";
                     if (args.length >= 5)
-                        world = args[4];
+                        server = args[4];
                     if (args.length >= 6)
-                        server = args[5];
+                        world = args[5];
                     if (server.equalsIgnoreCase("all"))
                         server = "";
                     if (world.equalsIgnoreCase("all"))
@@ -235,9 +235,9 @@ public class PermissionCommand {
                     String world = "";
                     String server = "";
                     if (args.length >= 5)
-                        world = args[4];
+                        server = args[4];
                     if (args.length >= 6)
-                        server = args[5];
+                        world = args[5];
                     if (server.equalsIgnoreCase("all"))
                         server = "";
                     if (world.equalsIgnoreCase("all"))
@@ -426,14 +426,14 @@ public class PermissionCommand {
         command.sendSender(sender, helpPrefix + "/pp user <username> setprimarygroup <group>");
         command.sendSender(sender, helpPrefix + "/pp user <username> addgroup <group> (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> removegroup <group> (server)");
-        command.sendSender(sender, helpPrefix + "/pp user <username> add/remove <permission> (world) (server)");
+        command.sendSender(sender, helpPrefix + "/pp user <username> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp user <username> clearperms");
         command.sendSender(sender, helpPrefix + "/pp user <username> prefix set/remove <prefix>");
         command.sendSender(sender, helpPrefix + "/pp user <username> suffix set/remove <suffix>");
         command.sendSender(sender, helpPrefix + "/pp groups");
         command.sendSender(sender, helpPrefix + "/pp group <group>");
         command.sendSender(sender, helpPrefix + "/pp group <group> create/delete/clearperms");
-        command.sendSender(sender, helpPrefix + "/pp group <group> add/remove <permission> (world) (server)");
+        command.sendSender(sender, helpPrefix + "/pp group <group> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp group <group> parents add/remove <parent>");
         command.sendSender(sender, helpPrefix + "/pp group <group> prefix set/remove <prefix>");
         command.sendSender(sender, helpPrefix + "/pp group <group> suffix set/remove <suffix>");
