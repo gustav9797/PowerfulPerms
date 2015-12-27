@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,9 +75,9 @@ public class CustomPermissibleBase extends PermissibleBase {
         }
 
         permission = permission.toLowerCase();
-        boolean hasPermission = permissionsPlayer.hasPermission(permission);
+        boolean permissionSet = permissionsPlayer.isPermissionSet(permission);
 
-        if (!hasPermission) {
+        if (!permissionSet) {
             Permission perm = Bukkit.getServer().getPluginManager().getPermission(permission);
 
             if (perm != null) {
@@ -84,9 +85,8 @@ public class CustomPermissibleBase extends PermissibleBase {
             } else {
                 return Permission.DEFAULT_PERMISSION.getValue(isOp());
             }
-        }
-
-        return hasPermission;
+        } else
+            return permissionsPlayer.hasPermission(permission);
     }
 
     @Override
@@ -164,16 +164,21 @@ public class CustomPermissibleBase extends PermissibleBase {
         Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp());
         Bukkit.getServer().getPluginManager().subscribeToDefaultPerms(isOp(), parent);
         for (Permission perm : defaults) {
-            String name = perm.getName().toLowerCase();
-            temporaryPermissions.add(name);
-            //Bukkit.getLogger().info("added bukkit default perm " + name);
-            Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
+            Map<String, Boolean> allDefaultPerms = getAllPermissions(perm);
+            for (Map.Entry<String, Boolean> pair : allDefaultPerms.entrySet()) {
+                //Bukkit.getLogger().info("added bukkit default perm " + pair.getKey() + " value " + pair.getValue());
+                if (pair.getValue() == true)
+                    temporaryPermissions.add(pair.getKey());
+                else if (pair.getValue() == false)
+                    temporaryPermissions.add("-" + pair.getKey());
+            }
+            Bukkit.getServer().getPluginManager().subscribeToPermission(perm.getName(), parent);
         }
 
         // Add permissions added by plugins
         for (PermissionAttachment attachment : ppAttachments) {
             for (Map.Entry<String, Boolean> perm : attachment.getPermissions().entrySet()) {
-                //Bukkit.getLogger().info("added perm attachment perm " + perm.getKey());
+                //Bukkit.getLogger().info("added perm attachment perm " + perm.getKey() + " value " + perm.getValue() + " by plugin " + attachment.getPlugin().getName());
                 if (perm.getValue() == true)
                     temporaryPermissions.add(perm.getKey());
                 else if (perm.getValue() == false)
@@ -182,6 +187,23 @@ public class CustomPermissibleBase extends PermissibleBase {
         }
 
         permissionsPlayer.setTemporaryPermissions(temporaryPermissions);
+    }
+
+    // Subscribes perms too
+    private Map<String, Boolean> getAllPermissions(Permission perm) {
+        Map<String, Boolean> output = new HashMap<String, Boolean>();
+        if (perm != null) {
+            for (Map.Entry<String, Boolean> pair : perm.getChildren().entrySet()) {
+                Permission child = Bukkit.getPluginManager().getPermission(pair.getKey());
+                if (child != null) {
+                    Bukkit.getServer().getPluginManager().subscribeToPermission(child.getName(), parent);
+                    if (child.getChildren().size() > 0)
+                        output.putAll(getAllPermissions(child));
+                }
+                output.put(pair.getKey(), pair.getValue());
+            }
+        }
+        return output;
     }
 
     @Override

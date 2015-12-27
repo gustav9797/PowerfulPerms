@@ -350,7 +350,7 @@ public class PermissionCommand {
                 Group group = permissionManager.getGroup(groupName);
                 if (group != null) {
                     rows.add("Listing permissions for group " + groupName + ":");
-                    ArrayList<PowerfulPermission> permissions = group.getPermissions();
+                    ArrayList<PowerfulPermission> permissions = group.getOwnPermissions();
                     if (permissions.size() > 0) {
                         for (PowerfulPermission e : permissions)
                             rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
