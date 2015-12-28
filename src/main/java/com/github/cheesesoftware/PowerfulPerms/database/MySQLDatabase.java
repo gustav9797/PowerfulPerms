@@ -447,6 +447,8 @@ public class MySQLDatabase extends Database {
                             "INSERT INTO " + tblPermissions + " SET `playeruuid`=?, `playername`=?, `groupname`=?, `permission`=?, `world`=?, `server`=?");
                     if (uuid != null)
                         s.setString(1, uuid.toString());
+                    else
+                        s.setString(1, "");
                     s.setString(2, name);
                     s.setString(3, group);
                     s.setString(4, permission);

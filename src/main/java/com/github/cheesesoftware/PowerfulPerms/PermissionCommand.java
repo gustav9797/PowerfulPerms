@@ -187,7 +187,7 @@ public class PermissionCommand {
                                 rows.add(ChatColor.GREEN + "Primary Group" + ChatColor.WHITE + ": " + (primary != null ? primary.getName() : "Player has no group."));
 
                                 String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
-                                if (groups.size() > 0) {
+                                if (groups != null && groups.size() > 0) {
                                     Iterator<Entry<String, List<Group>>> it = groups.entrySet().iterator();
                                     while (it.hasNext()) {
                                         Entry<String, List<Group>> current = it.next();
@@ -203,6 +203,8 @@ public class PermissionCommand {
                                         }
                                     }
                                 }
+                                else
+                                    otherGroups += "Player has no groups.";
                                 rows.add(otherGroups);
 
                                 permissionManager.getPlayerPermissions(playerName, new ResultRunnable() {
@@ -210,7 +212,7 @@ public class PermissionCommand {
                                     @Override
                                     public void run() {
                                         ArrayList<PowerfulPermission> playerPerms = (ArrayList<PowerfulPermission>) result;
-                                        if (playerPerms.size() > 0)
+                                        if (playerPerms != null && playerPerms.size() > 0)
                                             for (PowerfulPermission e : playerPerms) {
                                                 rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
                                                         + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
@@ -389,12 +391,14 @@ public class PermissionCommand {
                     sendSender(invoker, sender, "Group doesn't exist.");
 
                 List<List<String>> list = createList(rows, 19);
-                sendSender(invoker, sender, ChatColor.BLUE + "Page " + (page + 1) + " of " + list.size());
-                if (page < list.size()) {
-                    for (String s : list.get(page))
-                        sendSender(invoker, sender, s);
-                } else
-                    sendSender(invoker, sender, "Invalid page. Page too high. ");
+                if (list.size() > 0) {
+                    sendSender(invoker, sender, ChatColor.BLUE + "Page " + (page + 1) + " of " + list.size());
+                    if (page < list.size()) {
+                        for (String s : list.get(page))
+                            sendSender(invoker, sender, s);
+                    } else
+                        sendSender(invoker, sender, "Invalid page. Page too high. ");
+                }
             }
         } else if (args.length >= 1 && args[0].equalsIgnoreCase("groups")) {
             Collection<Group> groups = permissionManager.getGroups();

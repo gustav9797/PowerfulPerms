@@ -99,14 +99,6 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         debug("AsyncPlayerPreLoginEvent " + e.getName());
         if (e.getLoginResult() == AsyncPlayerPreLoginEvent.Result.ALLOWED) {
             loadPlayer(e.getUniqueId(), e.getName(), true);
-            /*try {
-                while (!cachedPlayers.containsKey(e.getUniqueId())) {
-                    Thread.sleep(100);
-                }
-            } catch (InterruptedException e1) {
-                e1.printStackTrace();
-            }*/
-
         }
     }
 
@@ -119,11 +111,11 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     public void onPlayerJoin(final PlayerJoinEvent e) {
         debug("PlayerJoinEvent " + e.getPlayer().getName());
 
-        // Check again if
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.
             continueLoadPlayer(e.getPlayer().getUniqueId());
         } else {
+            // Player is not cached, Load directly on Bukkit main thread.
             debug("onPlayerJoin player isn't cached, loading directly");
             loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
             this.continueLoadPlayer(e.getPlayer().getUniqueId());
@@ -186,6 +178,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     }
 
     private void continueLoadPlayer(UUID uuid) {
+        debug("continueLoadPlayer begin");
         PermissionsPlayerBase base = super.loadCachedPlayer(uuid);
         if (base != null) {
             Player p = Bukkit.getServer().getPlayer(uuid);

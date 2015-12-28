@@ -15,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import com.github.cheesesoftware.PowerfulPerms.common.Counter;
-import com.github.cheesesoftware.PowerfulPerms.common.GroupLoader;
 import com.github.cheesesoftware.PowerfulPerms.common.ResponseRunnable;
 import com.github.cheesesoftware.PowerfulPerms.common.ResultRunnable;
 import com.github.cheesesoftware.PowerfulPerms.database.DBDocument;
@@ -208,6 +207,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     }
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
+        debug("loadPlayer begin");
         db.getPlayer(uuid, new DBRunnable(login) {
 
             @Override
@@ -234,11 +234,9 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                                         loadPlayerFinished(row, login, uuid);
                                     }
                                 });
-                            }
-                            else
+                            } else
                                 loadPlayerFinished(row, login, uuid);
-                        }
-                        else
+                        } else
                             loadPlayerFinished(row, login, uuid);
                     } else if (name != null) {
                         // The player might exist in database but has no UUID yet.
@@ -302,6 +300,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     }
 
     protected void loadPlayerFinished(DBDocument row, final boolean login, final UUID uuid) {
+        debug("loadPlayerFinished begin");
         final String groups_loaded = (row != null ? row.getString("groups") : "");
         final String prefix_loaded = (row != null ? row.getString("prefix") : "");
         final String suffix_loaded = (row != null ? row.getString("suffix") : ": ");
@@ -311,6 +310,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
             @Override
             public void run() {
+                debug("loadPlayerFinished runnable begin");
                 ArrayList<PowerfulPermission> perms;
                 if (result instanceof ArrayList) {
                     perms = (ArrayList<PowerfulPermission>) result;
@@ -332,6 +332,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                             cachedPlayers.remove(uuid);
                     }
                 }
+                debug("loadPlayerFinished runnable end");
             }
         });
 
@@ -383,7 +384,6 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             public void run() {
                 if (result.booleanValue()) {
                     HashMap<Integer, String> tempParents = new HashMap<Integer, String>();
-                    final GroupLoader loader = new GroupLoader(result.getRows(), p);
                     while (result.hasNext()) {
                         DBDocument row = result.next();
                         final int groupId = row.getInt("id");
@@ -400,48 +400,44 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                             public void run() {
                                 Group group = new Group(groupId, name, loadGroupPermissions(result), prefix, suffix);
                                 groups.put(groupId, group);
-                                loader.add();
                             }
                         });
 
+                        Iterator<Entry<Integer, String>> it = tempParents.entrySet().iterator();
+                        while (it.hasNext()) {
+                            Entry<Integer, String> e = it.next();
+                            debug("Adding parents to group with ID " + e.getKey());// + " and name " + groups.get(e.getKey()).getName());
+                            ArrayList<Group> finalGroups = new ArrayList<Group>();
+                            ArrayList<String> rawParents = getGroupParents(e.getValue());
+                            for (String s : rawParents) {
+                                for (Group testGroup : groups.values()) {
+                                    debug("Comparing " + s + " with " + testGroup.getId());
+                                    if (!s.isEmpty() && Integer.parseInt(s) == testGroup.getId()) {
+                                        finalGroups.add(testGroup);
+                                        debug("Added parent ID " + testGroup.getId() + " to group with ID " + e.getKey());
+                                        // debug("Added parent " + testGroup.getName() + " to " + groups.get(e.getKey()).getName());
+                                        break;
+                                    }
+                                }
+                            }
+                            Group temp = groups.get(e.getKey());
+                            if (temp != null)
+                                temp.setParents(finalGroups);
+                            else
+                                debug("Group with ID " + e.getKey() + " was null");
+                        }
+
+                        // Reload players too.
+                        Set<UUID> keysCopy = new HashSet<UUID>(players.keySet());
+                        for (UUID uuid : keysCopy) {
+                            if (plugin.isPlayerOnline(uuid))
+                                reloadPlayer(uuid);
+                        }
+
                     }
-                    loader.tempParents = tempParents;
                 }
             }
         });
-    }
-
-    public void continueLoadGroups(GroupLoader loader) {
-        Iterator<Entry<Integer, String>> it = loader.tempParents.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<Integer, String> e = it.next();
-            debug("Adding parents to group with ID " + e.getKey());// + " and name " + groups.get(e.getKey()).getName());
-            ArrayList<Group> finalGroups = new ArrayList<Group>();
-            ArrayList<String> rawParents = getGroupParents(e.getValue());
-            for (String s : rawParents) {
-                for (Group testGroup : groups.values()) {
-                    debug("Comparing " + s + " with " + testGroup.getId());
-                    if (!s.isEmpty() && Integer.parseInt(s) == testGroup.getId()) {
-                        finalGroups.add(testGroup);
-                        debug("Added parent ID " + testGroup.getId() + " to group with ID " + e.getKey());
-                        // debug("Added parent " + testGroup.getName() + " to " + groups.get(e.getKey()).getName());
-                        break;
-                    }
-                }
-            }
-            Group temp = groups.get(e.getKey());
-            if (temp != null)
-                temp.setParents(finalGroups);
-            else
-                debug("Group with ID " + e.getKey() + " was null");
-        }
-
-        // Reload players too.
-        Set<UUID> keysCopy = new HashSet<UUID>(players.keySet());
-        for (UUID uuid : keysCopy) {
-            if (plugin.isPlayerOnline(uuid))
-                reloadPlayer(uuid);
-        }
     }
 
     protected ArrayList<PowerfulPermission> loadGroupPermissions(DBResult result) {
@@ -671,7 +667,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                         perms.add(tempPerm);
                         resultRunnable.setResult(perms);
                     }
-                    db.scheduler.runSync(resultRunnable);
+                    db.scheduler.runSync(resultRunnable, resultRunnable.sameThread());
                 }
             }
         });
@@ -1253,39 +1249,20 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public void removeGroupPermission(String groupName, String permission, String world, String server, final ResponseRunnable response) {
         Group group = getGroup(groupName);
         if (group != null) {
-            ArrayList<PowerfulPermission> removed = new ArrayList<PowerfulPermission>();
-            ArrayList<PowerfulPermission> groupPermissions = group.getOwnPermissions();
-            Iterator<PowerfulPermission> it = groupPermissions.iterator();
-            while (it.hasNext()) {
-                PowerfulPermission current = it.next();
-                if (current.getPermissionString().equalsIgnoreCase(permission)) {
-                    if (world.equals(current.getWorld()) && server.equals(current.getServer())) {
-                        removed.add(current);
-                        it.remove();
-                    }
+            db.deleteGroupPermission(groupName, permission, world, server, new DBRunnable() {
+
+                @Override
+                public void run() {
+                    if (result.booleanValue()) {
+                        response.setResponse(true, "Removed " + result.rowsChanged() + " permissions from the group.");
+                        loadGroups();
+                        notifyReloadGroups();
+                    } else
+                        response.setResponse(false, "Group does not have the specified permission.");
+                    db.scheduler.runSync(response);
                 }
-            }
+            });
 
-            if (removed.size() <= 0) {
-                response.setResponse(false, "Group does not have the specified permission.");
-                db.scheduler.runSync(response);
-                return;
-            }
-
-            final Counter counter = new Counter();
-            for (PowerfulPermission current : removed) {
-                db.deleteGroupPermission(groupName, current.getPermissionString(), current.getWorld(), current.getServer(), new DBRunnable() {
-
-                    @Override
-                    public void run() {
-                        counter.add(result.rowsChanged());
-                    }
-                });
-            }
-
-            response.setResponse(true, "Removed " + counter.amount() + " permissions from the group.");
-            loadGroups();
-            notifyReloadGroups();
         } else {
             response.setResponse(false, "Group does not exist.");
             db.scheduler.runSync(response);
