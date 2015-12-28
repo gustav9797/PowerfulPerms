@@ -8,9 +8,9 @@ import org.bukkit.Bukkit;
 
 import com.github.cheesesoftware.PowerfulPerms.Group;
 import com.github.cheesesoftware.PowerfulPerms.IPermissionsPlayer;
-import com.github.cheesesoftware.PowerfulPerms.PMR;
 import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
+import com.github.cheesesoftware.PowerfulPerms.common.PMR;
 
 import net.milkbowl.vault.permission.Permission;
 
@@ -51,16 +51,17 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public String getPrimaryGroup(String world, String player) {
-        Group group = permissionManager.getPlayerPrimaryGroup(player);
+        /*Group group = permissionManager.getPlayerPrimaryGroup(player);
         if (group != null)
-            return group.getName();
+            return group.getName();*/
         return null;
     }
 
     @Override
     public boolean groupAdd(String world, String group, String permission) {
-        PMR result = permissionManager.addGroupPermission(group, permission, world, "");
-        return result.isSucceeded();
+        //PMR result = permissionManager.addGroupPermission(group, permission, world, "");
+        //return result.isSucceeded();
+        return false;
     }
 
     @Override
@@ -72,8 +73,9 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean groupRemove(String world, String group, String permission) {
-        PMR result = permissionManager.removeGroupPermission(group, permission, world, "");
-        return result.isSucceeded();
+        //PMR result = permissionManager.removeGroupPermission(group, permission, world, "");
+        //return result.isSucceeded();
+        return false;
     }
 
     @Override
@@ -93,14 +95,16 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerAdd(String world, String player, String permission) {
-        PMR result = permissionManager.addPlayerPermission(player, permission, world, "");
-        return result.isSucceeded();
+        //PMR result = permissionManager.addPlayerPermission(player, permission, world, "");
+        //return result.isSucceeded();
+        return false;
     }
 
     @Override
     public boolean playerAddGroup(String world, String player, String group) {
-        PMR result = permissionManager.addPlayerGroup(player, group);
-        return result.isSucceeded();
+        //PMR result = permissionManager.addPlayerGroup(player, group);
+        //return result.isSucceeded();
+        return false;
     }
 
     @Override
@@ -118,14 +122,16 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerRemove(String world, String player, String permission) {
-        PMR result = permissionManager.removePlayerPermission(player, permission, world, "");
-        return result.isSucceeded();
+        //PMR result = permissionManager.removePlayerPermission(player, permission, world, "");
+        //return result.isSucceeded();
+        return false;
     }
 
     @Override
     public boolean playerRemoveGroup(String world, String player, String group) {
-        PMR result = permissionManager.removePlayerGroup(player, group);
-        return result.isSucceeded();
+        //PMR result = permissionManager.removePlayerGroup(player, group);
+        //return result.isSucceeded();
+        return false;
     }
 
     @Override

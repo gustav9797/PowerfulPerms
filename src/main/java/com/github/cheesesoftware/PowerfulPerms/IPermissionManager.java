@@ -1,15 +1,16 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import com.github.cheesesoftware.PowerfulPerms.common.PMR;
+
 public interface IPermissionManager {
     
-    public void notifyReloadGroups();
+    /*public void notifyReloadGroups();
     
     public void notifyReloadPlayers();
     
@@ -22,8 +23,6 @@ public interface IPermissionManager {
     public IPermissionsPlayer getPermissionsPlayer(String playerName);
     
     public IPermissionsPlayer getPermissionsPlayer(UUID uuid);
-    
-    public ResultSet getPlayerData(String playerName);
     
     public Group getPlayerPrimaryGroup(String playerName);
     
@@ -91,5 +90,5 @@ public interface IPermissionManager {
     
     public PMR setGroupPrefix(String groupName, String prefix);
     
-    public PMR setGroupSuffix(String groupName, String suffix);
+    public PMR setGroupSuffix(String groupName, String suffix);*/
 }

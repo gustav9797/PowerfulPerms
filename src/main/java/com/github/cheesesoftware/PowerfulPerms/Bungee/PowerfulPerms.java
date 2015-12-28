@@ -13,6 +13,8 @@ import com.github.cheesesoftware.PowerfulPerms.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.IPlugin;
 import com.github.cheesesoftware.PowerfulPerms.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.SQL;
+import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
 import com.google.common.io.ByteStreams;
 
 import net.md_5.bungee.api.ChatColor;
@@ -64,11 +66,12 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
             e2.printStackTrace();
         }
 
-        permissionManager = new PermissionManager(sql, this);
+        Database db = new MySQLDatabase(new BungeeScheduler(this), sql);
+        permissionManager = new PermissionManager(db, this);
         this.getProxy().getPluginManager().registerListener(this, this);
         this.getProxy().getPluginManager().registerListener(this, permissionManager);
-        
-        if(bungee_command) {
+
+        if (bungee_command) {
             getLogger().info("Using Bungee sided command.");
             getProxy().getPluginManager().registerCommand(this, new PermissionCommandExecutor(permissionManager));
         }
@@ -113,7 +116,7 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
     public SQL getSQL() {
         return this.sql;
     }
-    
+
     @Override
     public void runTaskAsynchronously(Runnable runnable) {
         this.getProxy().getScheduler().runAsync(this, runnable);
@@ -123,7 +126,7 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
     public void runTaskLater(Runnable runnable, int delay) {
         this.getProxy().getScheduler().schedule(this, runnable, delay, TimeUnit.MILLISECONDS);
     }
-    
+
     @Override
     public boolean isDebug() {
         return debug;
@@ -131,16 +134,16 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
 
     @Override
     public boolean isPlayerOnline(UUID uuid) {
-       ProxiedPlayer player = this.getProxy().getPlayer(uuid);
-       if(player != null)
-           return true;
-       return false;
+        ProxiedPlayer player = this.getProxy().getPlayer(uuid);
+        if (player != null)
+            return true;
+        return false;
     }
 
     @Override
     public UUID getPlayerUUID(String name) {
         ProxiedPlayer player = this.getProxy().getPlayer(name);
-        if(player != null)
+        if (player != null)
             return player.getUniqueId();
         return null;
     }

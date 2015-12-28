@@ -1,7 +1,5 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -9,6 +7,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
+
+import com.github.cheesesoftware.PowerfulPerms.common.PMR;
+import com.github.cheesesoftware.PowerfulPerms.common.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPerms.common.ResultRunnable;
+import com.github.cheesesoftware.PowerfulPerms.database.DBDocument;
 
 public class PermissionCommand {
 
@@ -18,32 +21,35 @@ public class PermissionCommand {
         this.permissionManager = permissionManager;
     }
 
-    public boolean onCommand(ICommand invoker, String sender, String[] args) {
+    public boolean onCommand(final ICommand invoker, final String sender, String[] args) {
+        ResponseRunnable response = new ResponseRunnable() {
+            @Override
+            public void run() {
+                sendSender(invoker, sender, response);
+            }
+        };
+
         if (args.length >= 1 && args[0].equalsIgnoreCase("user") && args.length >= 2) {
-            String playerName = args[1];
+            final String playerName = args[1];
             int page = -1;
             if (args.length >= 3) {
                 if (args[2].equalsIgnoreCase("clearperms")) {
-                    PMR result = permissionManager.removePlayerPermissions(playerName);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.removePlayerPermissions(playerName, response);
                 } else if (args[2].equalsIgnoreCase("setprimarygroup") && args.length >= 4) {
                     String group = args[3];
-                    PMR result = permissionManager.setPlayerPrimaryGroup(playerName, group);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.setPlayerPrimaryGroup(playerName, group, response);
                 } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
                     String group = args[3];
                     String server = "";
                     if (args.length >= 5)
                         server = args[4];
-                    PMR result = permissionManager.addPlayerGroup(playerName, group, server);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.addPlayerGroup(playerName, group, server, response);
                 } else if (args[2].equalsIgnoreCase("removegroup") && args.length >= 4) {
                     String group = args[3];
                     String server = "";
                     if (args.length >= 5)
                         server = args[4];
-                    PMR result = permissionManager.removePlayerGroup(playerName, group, server);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.removePlayerGroup(playerName, group, server, response);
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
                     String permission = args[3];
                     String world = "";
@@ -56,8 +62,7 @@ public class PermissionCommand {
                         server = "";
                     if (world.equalsIgnoreCase("all"))
                         world = "";
-                    PMR result = permissionManager.addPlayerPermission(playerName, permission, world, server);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.addPlayerPermission(playerName, permission, world, server, response);
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("remove")) {
                     String permission = args[3];
                     String world = "";
@@ -70,8 +75,7 @@ public class PermissionCommand {
                         server = "";
                     if (world.equalsIgnoreCase("all"))
                         world = "";
-                    PMR result = permissionManager.removePlayerPermission(playerName, permission, world, server);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.removePlayerPermission(playerName, permission, world, server, response);
                 } else if (args[2].equalsIgnoreCase("prefix")) {
                     if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
                         String prefix = "";
@@ -95,14 +99,19 @@ public class PermissionCommand {
                         } else
                             prefix = args[4];
 
-                        PMR result = permissionManager.setPlayerPrefix(playerName, prefix);
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.setPlayerPrefix(playerName, prefix, response);
 
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        PMR result = permissionManager.setPlayerPrefix(playerName, "");
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.setPlayerPrefix(playerName, "", response);
                     } else
-                        sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": " + permissionManager.getPlayerPrefix(playerName));
+                        permissionManager.getPlayerPrefix(playerName, new ResultRunnable() {
+
+                            @Override
+                            public void run() {
+                                sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": " + (result != null ? (String) result : ""));
+                            }
+                        });
+
                 } else if (args[2].equalsIgnoreCase("suffix")) {
                     if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
                         String suffix = "";
@@ -126,14 +135,18 @@ public class PermissionCommand {
                         } else
                             suffix = args[4];
 
-                        PMR result = permissionManager.setPlayerSuffix(playerName, suffix);
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.setPlayerSuffix(playerName, suffix, response);
 
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        PMR result = permissionManager.setPlayerSuffix(playerName, "");
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.setPlayerSuffix(playerName, "", response);
                     } else
-                        sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": " + permissionManager.getPlayerSuffix(playerName));
+                        permissionManager.getPlayerSuffix(playerName, new ResultRunnable() {
+
+                            @Override
+                            public void run() {
+                                sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": " + (result != null ? (String) result : ""));
+                            }
+                        });
                 } else {
                     try {
                         page = Integer.parseInt(args[2]);
@@ -148,56 +161,80 @@ public class PermissionCommand {
                 page--;
                 if (page < 0)
                     sendSender(invoker, sender, "Invalid page. Page negative.");
+                final int pageCopy = page;
                 // List player permissions
-                Queue<String> rows = new java.util.ArrayDeque<String>();
+                final Queue<String> rows = new java.util.ArrayDeque<String>();
                 rows.add(ChatColor.BLUE + "Listing permissions for player " + playerName + ".");
-                ResultSet result = permissionManager.getPlayerData(playerName);
-                String tempUUID = "empty";
-                try {
-                    if (result != null)
-                        tempUUID = result.getString("uuid");
-                    rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
-                } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
-                HashMap<String, List<Group>> groups = permissionManager.getPlayerGroups(playerName);
-                Group primary = permissionManager.getPlayerPrimaryGroup(playerName);
-                rows.add(ChatColor.GREEN + "Primary Group" + ChatColor.WHITE + ": " + (primary != null ? primary.getName() : "Player has no group."));
 
-                String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
-                if (groups.size() > 0) {
-                    Iterator<Entry<String, List<Group>>> it = groups.entrySet().iterator();
-                    while (it.hasNext()) {
-                        Entry<String, List<Group>> current = it.next();
-                        Iterator<Group> itt = current.getValue().iterator();
-                        while (itt.hasNext()) {
-                            Group group = itt.next();
-                            if (group != null) {
-                                otherGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
-                                if (it.hasNext() || itt.hasNext())
-                                    otherGroups += ", ";
-                            }
+                permissionManager.getPlayerData(playerName, new ResultRunnable() {
+
+                    @Override
+                    public void run() {
+                        String tempUUID = "empty";
+                        DBDocument row = null;
+                        if (result != null) {
+                            row = (DBDocument) result;
+                            tempUUID = row.getString("uuid");
                         }
-                    }
-                }
-                rows.add(otherGroups);
+                        rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
 
-                ArrayList<PowerfulPermission> playerPerms = permissionManager.getPlayerPermissions(playerName);
-                if (playerPerms.size() > 0)
-                    for (PowerfulPermission e : playerPerms) {
-                        rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:" + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer())
-                                + " World:" + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
-                    }
-                else
-                    rows.add("Player has no permissions.");
+                        permissionManager.getPlayerGroups(playerName, new ResultRunnable() {
 
-                List<List<String>> list = createList(rows, 19);
-                sendSender(invoker, sender, ChatColor.BLUE + "Page " + (page + 1) + " of " + list.size());
-                if (page < list.size()) {
-                    for (String s : list.get(page))
-                        sendSender(invoker, sender, s);
-                } else
-                    sendSender(invoker, sender, "Invalid page. Page too high. ");
+                            @Override
+                            public void run() {
+                                HashMap<String, List<Group>> groups = (HashMap<String, List<Group>>) result;
+                                Group primary = permissionManager.getPlayerPrimaryGroup(groups);
+                                rows.add(ChatColor.GREEN + "Primary Group" + ChatColor.WHITE + ": " + (primary != null ? primary.getName() : "Player has no group."));
+
+                                String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
+                                if (groups.size() > 0) {
+                                    Iterator<Entry<String, List<Group>>> it = groups.entrySet().iterator();
+                                    while (it.hasNext()) {
+                                        Entry<String, List<Group>> current = it.next();
+                                        Iterator<Group> itt = current.getValue().iterator();
+                                        while (itt.hasNext()) {
+                                            Group group = itt.next();
+                                            if (group != null) {
+                                                otherGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
+                                                        + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
+                                                if (it.hasNext() || itt.hasNext())
+                                                    otherGroups += ", ";
+                                            }
+                                        }
+                                    }
+                                }
+                                rows.add(otherGroups);
+
+                                permissionManager.getPlayerPermissions(playerName, new ResultRunnable() {
+
+                                    @Override
+                                    public void run() {
+                                        ArrayList<PowerfulPermission> playerPerms = (ArrayList<PowerfulPermission>) result;
+                                        if (playerPerms.size() > 0)
+                                            for (PowerfulPermission e : playerPerms) {
+                                                rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
+                                                        + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
+                                                        + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
+                                            }
+                                        else
+                                            rows.add("Player has no permissions.");
+
+                                        List<List<String>> list = createList(rows, 19);
+                                        sendSender(invoker, sender, ChatColor.BLUE + "Page " + (pageCopy + 1) + " of " + list.size());
+
+                                        if (pageCopy < list.size()) {
+                                            for (String s : list.get(pageCopy))
+                                                sendSender(invoker, sender, s);
+                                        } else
+                                            sendSender(invoker, sender, "Invalid page. Page too high. ");
+                                    }
+                                });
+
+                            }
+                        });
+
+                    }
+                });
             }
 
             // /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,14 +245,11 @@ public class PermissionCommand {
             int page = -1;
             if (args.length >= 3) {
                 if (args[2].equalsIgnoreCase("clearperms")) {
-                    PMR result = permissionManager.removeGroupPermissions(groupName);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.removeGroupPermissions(groupName, response);
                 } else if (args[2].equalsIgnoreCase("create")) {
-                    PMR result = permissionManager.createGroup(groupName);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.createGroup(groupName, response);
                 } else if (args[2].equalsIgnoreCase("delete")) {
-                    PMR result = permissionManager.deleteGroup(groupName);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.deleteGroup(groupName, response);
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
                     String permission = args[3];
                     String world = "";
@@ -228,8 +262,7 @@ public class PermissionCommand {
                         server = "";
                     if (world.equalsIgnoreCase("all"))
                         world = "";
-                    PMR result = permissionManager.addGroupPermission(groupName, permission, world, server);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.addGroupPermission(groupName, permission, world, server, response);
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("remove")) {
                     String permission = args[3];
                     String world = "";
@@ -242,8 +275,7 @@ public class PermissionCommand {
                         server = "";
                     if (world.equalsIgnoreCase("all"))
                         world = "";
-                    PMR result = permissionManager.removeGroupPermission(groupName, permission, world, server);
-                    sendSender(invoker, sender, result.getResponse());
+                    permissionManager.removeGroupPermission(groupName, permission, world, server, response);
                 } else if (args[2].equalsIgnoreCase("prefix")) {
                     if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
                         String prefix = "";
@@ -267,11 +299,9 @@ public class PermissionCommand {
                         } else
                             prefix = args[4];
 
-                        PMR result = permissionManager.setGroupPrefix(groupName, prefix);
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.setGroupPrefix(groupName, prefix, response);
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        PMR result = permissionManager.setGroupPrefix(groupName, "");
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.setGroupPrefix(groupName, "", response);
                     } else {
                         String prefix = permissionManager.getGroupPrefix(groupName);
                         sendSender(invoker, sender, "Prefix for group " + groupName + ": " + (prefix.equals("") ? ChatColor.RED + "none" : prefix));
@@ -299,11 +329,9 @@ public class PermissionCommand {
                         } else
                             suffix = args[4];
 
-                        PMR result = permissionManager.setGroupSuffix(groupName, suffix);
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.setGroupSuffix(groupName, suffix, response);
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        PMR result = permissionManager.setGroupSuffix(groupName, "");
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.setGroupSuffix(groupName, "", response);
                     } else {
                         String suffix = permissionManager.getGroupSuffix(groupName);
                         sendSender(invoker, sender, "Suffix for group " + groupName + ": " + (suffix.equals("") ? ChatColor.RED + "none" : suffix));
@@ -311,12 +339,10 @@ public class PermissionCommand {
                 } else if (args[2].equalsIgnoreCase("parents")) {
                     if (args.length >= 5 && args[3].equalsIgnoreCase("add")) {
                         String parent = args[4];
-                        PMR result = permissionManager.addGroupParent(groupName, parent);
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.addGroupParent(groupName, parent, response);
                     } else if (args.length >= 5 && args[3].equalsIgnoreCase("remove")) {
                         String parent = args[4];
-                        PMR result = permissionManager.removeGroupParent(groupName, parent);
-                        sendSender(invoker, sender, result.getResponse());
+                        permissionManager.removeGroupParent(groupName, parent, response);
                     } else {
                         // List parents
                         Group group = permissionManager.getGroup(groupName);

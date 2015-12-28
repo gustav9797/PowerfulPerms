@@ -10,6 +10,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
+
 public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
 
     private SQL sql;
@@ -38,7 +41,8 @@ public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
             this.setEnabled(false);
         }
         
-        permissionManager = new PermissionManager(sql, this);
+        Database db = new MySQLDatabase(new BukkitScheduler(this), sql);
+        permissionManager = new PermissionManager(db, this);
         Bukkit.getPluginManager().registerEvents(permissionManager, this);
 
         if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {

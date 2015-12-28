@@ -1,12 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import redis.clients.jedis.Jedis;
@@ -15,8 +10,7 @@ import redis.clients.jedis.JedisPubSub;
 import com.github.cheesesoftware.PowerfulPerms.Group;
 import com.github.cheesesoftware.PowerfulPerms.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayerBase;
-import com.github.cheesesoftware.PowerfulPerms.PowerfulPermission;
-import com.github.cheesesoftware.PowerfulPerms.SQL;
+import com.github.cheesesoftware.PowerfulPerms.database.Database;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
@@ -32,8 +26,8 @@ public class PermissionManager extends PermissionManagerBase implements Listener
 
     private PowerfulPerms plugin;
 
-    public PermissionManager(SQL sql, PowerfulPerms plugin) {
-        super(sql, plugin);
+    public PermissionManager(Database database, PowerfulPerms plugin) {
+        super(database, plugin);
         this.plugin = plugin;
         this.serverName = "bungeeproxy" + (new Random()).nextInt(5000) + (new Date()).getTime();
 
@@ -169,60 +163,5 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             return gp.getPrimaryGroup();
         return null;
     }
-
-    /**
-     * Returns the primary group of a player.
-     */
-    public Group getPlayerPrimaryGroup(String playerName) {
-        ProxiedPlayer p = plugin.getProxy().getPlayer(playerName);
-        if (p != null)
-            return getPlayerPrimaryGroup(p);
-        Iterator<Group> it = getPlayerGroups(playerName).get("").iterator();
-        return it.next(); // First group is primary group.
-    }
-
-    /**
-     * Get the full list of groups a player has, if player isn't online it will be loaded from the database.
-     */
-    @Override
-    public HashMap<String, List<Group>> getPlayerGroups(String playerName) {
-        ProxiedPlayer p = plugin.getProxy().getPlayer(playerName);
-        if (p != null) {
-            PermissionsPlayer gp = (PermissionsPlayer) players.get(p.getUniqueId());
-            if (gp != null)
-                return gp.getServerGroups();
-        }
-        // Player is not online, load from MySQL
-        return super.getPlayerGroups(playerName);
-    }
-
-    /**
-     * Gets a map containing all the permissions a player has, including derived permissions. If player is not online data will be loaded from DB and will not return world-specific or server-specific
-     * permissions.
-     * 
-     * @param p
-     *            The player to get permissions from.
-     */
-    @Override
-    public ArrayList<PowerfulPermission> getPlayerPermissions(String playerName) {
-        ProxiedPlayer p = plugin.getProxy().getPlayer(playerName);
-        if (p != null) {
-            PermissionsPlayer gp = (PermissionsPlayer) players.get(p.getUniqueId());
-            if (gp != null)
-                return gp.getPermissions();
-        }
-
-        // Load from DB
-        return super.getPlayerPermissions(playerName);
-    }
-
-    /**
-     * Does a proper permissions check on the specified player. Same as PermissionsPlayer.hasPermission(Sting permission)
-     */
-    /*
-     * public boolean getPlayerHasPermission(ProxiedPlayer player, String permission) { IPermissionsPlayer permissionsPlayer = players.get(player.getUniqueId()); if (permissionsPlayer != null) {
-     * boolean hasPermission = permissionsPlayer.hasPermission(permission); debug("Permission check of " + permission + " on player " + player.getName() + " is " + hasPermission); return
-     * hasPermission; } return false; }
-     */
 
 }

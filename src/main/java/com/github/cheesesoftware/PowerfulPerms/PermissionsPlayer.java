@@ -48,7 +48,8 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
     }
     
     /**
-     * Internal function to update the PermissionAttachment.
+     * Internal function to update the permissions of this PermissionPlayer.
+     * Run for example when the player has changed world.
      */
     public void UpdatePermissions() {
         //Map<String, Boolean> destination = reflectMap(pa);
