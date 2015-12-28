@@ -164,7 +164,7 @@ public class CustomPermissibleBase extends PermissibleBase {
         Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp());
         Bukkit.getServer().getPluginManager().subscribeToDefaultPerms(isOp(), parent);
         for (Permission perm : defaults) {
-            Map<String, Boolean> allDefaultPerms = getAllPermissions(perm);
+            Map<String, Boolean> allDefaultPerms = getAllPermissions(perm, false);
             for (Map.Entry<String, Boolean> pair : allDefaultPerms.entrySet()) {
                 //Bukkit.getLogger().info("added bukkit default perm " + pair.getKey() + " value " + pair.getValue());
                 if (pair.getValue() == true)
@@ -190,17 +190,19 @@ public class CustomPermissibleBase extends PermissibleBase {
     }
 
     // Subscribes perms too
-    private Map<String, Boolean> getAllPermissions(Permission perm) {
+    private Map<String, Boolean> getAllPermissions(Permission perm, boolean invert) {
         Map<String, Boolean> output = new HashMap<String, Boolean>();
         if (perm != null) {
             for (Map.Entry<String, Boolean> pair : perm.getChildren().entrySet()) {
                 Permission child = Bukkit.getPluginManager().getPermission(pair.getKey());
+                boolean value = pair.getValue() ^ invert;
                 if (child != null) {
                     Bukkit.getServer().getPluginManager().subscribeToPermission(child.getName(), parent);
                     if (child.getChildren().size() > 0)
-                        output.putAll(getAllPermissions(child));
+                        output.putAll(getAllPermissions(child, !value));
                 }
-                output.put(pair.getKey(), pair.getValue());
+                
+                output.put(pair.getKey(), value);
             }
         }
         return output;
