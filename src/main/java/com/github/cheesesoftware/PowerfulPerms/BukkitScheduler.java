@@ -14,8 +14,25 @@ public class BukkitScheduler implements IScheduler {
     }
 
     @Override
-    public void runAsync(Runnable runnable) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, runnable);
+    public void runAsync(Runnable runnable, boolean sameThread) {
+        if (sameThread) {
+            runnable.run();
+            Bukkit.getLogger().info("Running async task on CURRENT thread");
+        } else {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, runnable);
+            Bukkit.getLogger().info("Running async task on NEW thread");
+        }
+    }
+
+    @Override
+    public void runSync(Runnable runnable, boolean sameThread) {
+        if (sameThread) {
+            runnable.run();
+            Bukkit.getLogger().info("Running sync task on CURRENT thread");
+        } else {
+            Bukkit.getScheduler().runTask(plugin, runnable);
+            Bukkit.getLogger().info("Running async task on MAIN thread");
+        }
     }
 
     @Override

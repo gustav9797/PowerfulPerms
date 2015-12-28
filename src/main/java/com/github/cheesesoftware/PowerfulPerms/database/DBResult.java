@@ -35,6 +35,10 @@ public class DBResult {
             return rows.get(index + 1) != null;
         return false;
     }
+    
+    public int getRows() {
+        return rows.size();
+    }
 
     public boolean booleanValue() {
         return this.result;

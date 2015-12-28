@@ -99,6 +99,14 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         debug("AsyncPlayerPreLoginEvent " + e.getName());
         if (e.getLoginResult() == AsyncPlayerPreLoginEvent.Result.ALLOWED) {
             loadPlayer(e.getUniqueId(), e.getName(), true);
+            /*try {
+                while (!cachedPlayers.containsKey(e.getUniqueId())) {
+                    Thread.sleep(100);
+                }
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }*/
+
         }
     }
 

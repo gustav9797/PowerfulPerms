@@ -16,8 +16,19 @@ public class BungeeScheduler implements IScheduler {
     }
 
     @Override
-    public void runAsync(Runnable runnable) {
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, runnable);
+    public void runAsync(Runnable runnable, boolean sameThread) {
+        if (sameThread)
+            runnable.run();
+        else
+            ProxyServer.getInstance().getScheduler().runAsync(plugin, runnable);
+    }
+
+    @Override
+    public void runSync(Runnable runnable, boolean sameThread) {
+        if (sameThread)
+            runnable.run();
+        else
+            ProxyServer.getInstance().getScheduler().schedule(plugin, runnable, 0, TimeUnit.MILLISECONDS);
     }
 
     @Override

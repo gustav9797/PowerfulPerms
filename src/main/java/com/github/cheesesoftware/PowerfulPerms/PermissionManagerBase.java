@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import com.github.cheesesoftware.PowerfulPerms.common.Counter;
+import com.github.cheesesoftware.PowerfulPerms.common.GroupLoader;
 import com.github.cheesesoftware.PowerfulPerms.common.ResponseRunnable;
 import com.github.cheesesoftware.PowerfulPerms.common.ResultRunnable;
 import com.github.cheesesoftware.PowerfulPerms.database.DBDocument;
@@ -207,7 +208,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     }
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
-        db.getPlayer(uuid, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable(login) {
 
             @Override
             public void run() {
@@ -225,7 +226,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                             // Check if name mismatch, update player name
                             if (!playerName_loaded.equals(name)) {
                                 debug("PLAYER NAME MISMATCH.");
-                                db.setPlayerName(uuid, name, new DBRunnable() {
+                                db.setPlayerName(uuid, name, new DBRunnable(login) {
 
                                     @Override
                                     public void run() {
@@ -234,10 +235,14 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                                     }
                                 });
                             }
+                            else
+                                loadPlayerFinished(row, login, uuid);
                         }
+                        else
+                            loadPlayerFinished(row, login, uuid);
                     } else if (name != null) {
                         // The player might exist in database but has no UUID yet.
-                        db.getPlayers(name, new DBRunnable() {
+                        db.getPlayers(name, new DBRunnable(login) {
 
                             @Override
                             public void run() {
@@ -256,7 +261,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
                                 if (row != null && tempUUID == null) {
                                     // Player exists in database but has no UUID. Lets enter it.
-                                    db.setPlayerUUID(name, uuid, new DBRunnable() {
+                                    db.setPlayerUUID(name, uuid, new DBRunnable(login) {
 
                                         @Override
                                         public void run() {
@@ -266,14 +271,14 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                                     });
                                 } else {
                                     // Player does not exist in database. Create a new player.
-                                    db.getPlayers("[default]", new DBRunnable() {
+                                    db.getPlayers("[default]", new DBRunnable(login) {
 
                                         @Override
                                         public void run() {
                                             final DBDocument row = result.next();
                                             if (row != null) {
 
-                                                db.insertPlayer(uuid, name, row.getString("groups"), row.getString("prefix"), row.getString("suffix"), new DBRunnable() {
+                                                db.insertPlayer(uuid, name, row.getString("groups"), row.getString("prefix"), row.getString("suffix"), new DBRunnable(login) {
 
                                                     @Override
                                                     public void run() {
@@ -302,7 +307,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         final String suffix_loaded = (row != null ? row.getString("suffix") : ": ");
 
         // ArrayList<PowerfulPermission> perms =
-        loadPlayerPermissions(uuid, new ResultRunnable() {
+        loadPlayerPermissions(uuid, new ResultRunnable(login) {
 
             @Override
             public void run() {
@@ -370,13 +375,15 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     protected void loadGroups() {
         groups.clear();
 
+        final PermissionManagerBase p = this;
+
         db.getGroups(new DBRunnable() {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     HashMap<Integer, String> tempParents = new HashMap<Integer, String>();
-
+                    final GroupLoader loader = new GroupLoader(result.getRows(), p);
                     while (result.hasNext()) {
                         DBDocument row = result.next();
                         final int groupId = row.getInt("id");
@@ -387,51 +394,54 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
                         tempParents.put(groupId, parents);
 
-                        db.getGroupPermissions(name, new DBRunnable() {
+                        db.getGroupPermissions(name, new DBRunnable(true) {
 
                             @Override
                             public void run() {
                                 Group group = new Group(groupId, name, loadGroupPermissions(result), prefix, suffix);
                                 groups.put(groupId, group);
+                                loader.add();
                             }
                         });
 
                     }
-
-                    // TODO: FIX THIS
-
-                    Iterator<Entry<Integer, String>> it = tempParents.entrySet().iterator();
-                    while (it.hasNext()) {
-                        Entry<Integer, String> e = it.next();
-                        // Bukkit.getLogger().info("Adding parents to " +
-                        // groups.get(e.getKey()).getName());
-                        ArrayList<Group> finalGroups = new ArrayList<Group>();
-                        ArrayList<String> rawParents = getGroupParents(e.getValue());
-                        for (String s : rawParents) {
-                            for (Group testGroup : groups.values()) {
-                                // Bukkit.getLogger().info("Comparing " + s + " with " +
-                                // testGroup.getId());
-                                if (!s.isEmpty() && Integer.parseInt(s) == testGroup.getId()) {
-                                    finalGroups.add(testGroup);
-                                    // Bukkit.getLogger().info("Added parent " +
-                                    // testGroup.getName() + " to " +
-                                    // groups.get(e.getKey()).getName());
-                                    break;
-                                }
-                            }
-                        }
-                        groups.get(e.getKey()).setParents(finalGroups);
-                    }
-
-                    // Reload players too.
-                    Set<UUID> keysCopy = new HashSet<UUID>(players.keySet());
-                    for (UUID uuid : keysCopy) {
-                        if (plugin.isPlayerOnline(uuid))
-                            reloadPlayer(uuid);
-                    }
+                    loader.tempParents = tempParents;
                 }
             }
         });
+    }
+
+    public void continueLoadGroups(GroupLoader loader) {
+        Iterator<Entry<Integer, String>> it = loader.tempParents.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<Integer, String> e = it.next();
+            debug("Adding parents to group with ID " + e.getKey());// + " and name " + groups.get(e.getKey()).getName());
+            ArrayList<Group> finalGroups = new ArrayList<Group>();
+            ArrayList<String> rawParents = getGroupParents(e.getValue());
+            for (String s : rawParents) {
+                for (Group testGroup : groups.values()) {
+                    debug("Comparing " + s + " with " + testGroup.getId());
+                    if (!s.isEmpty() && Integer.parseInt(s) == testGroup.getId()) {
+                        finalGroups.add(testGroup);
+                        debug("Added parent ID " + testGroup.getId() + " to group with ID " + e.getKey());
+                        // debug("Added parent " + testGroup.getName() + " to " + groups.get(e.getKey()).getName());
+                        break;
+                    }
+                }
+            }
+            Group temp = groups.get(e.getKey());
+            if (temp != null)
+                temp.setParents(finalGroups);
+            else
+                debug("Group with ID " + e.getKey() + " was null");
+        }
+
+        // Reload players too.
+        Set<UUID> keysCopy = new HashSet<UUID>(players.keySet());
+        for (UUID uuid : keysCopy) {
+            if (plugin.isPlayerOnline(uuid))
+                reloadPlayer(uuid);
+        }
     }
 
     protected ArrayList<PowerfulPermission> loadGroupPermissions(DBResult result) {
@@ -649,7 +659,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     }
 
     protected void loadPlayerPermissions(UUID uuid, final ResultRunnable resultRunnable) {
-        db.getPlayerPermissions(uuid, new DBRunnable() {
+        db.getPlayerPermissions(uuid, new DBRunnable(resultRunnable.sameThread()) {
 
             @Override
             public void run() {

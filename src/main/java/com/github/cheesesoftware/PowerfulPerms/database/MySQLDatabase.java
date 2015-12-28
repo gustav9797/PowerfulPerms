@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.database;
 
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -43,18 +44,18 @@ public class MySQLDatabase extends Database {
             public void run() {
                 boolean exists = false;
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SHOW TABLES LIKE " + table);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    if (r.next())
+
+                    DatabaseMetaData dbm = sql.getConnection().getMetaData();
+                    ResultSet tables = dbm.getTables(null, null, table, null);
+                    if (tables.next())
                         exists = true;
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
                 done.setResult(new DBResult(exists));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -79,9 +80,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -118,9 +119,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -142,9 +143,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -168,9 +169,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -196,9 +197,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -222,9 +223,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(result);
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -248,9 +249,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(result);
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -272,9 +273,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -296,9 +297,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -321,9 +322,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(result);
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -347,9 +348,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(result);
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -373,9 +374,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(result);
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -399,9 +400,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(result);
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -428,9 +429,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -458,9 +459,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -502,9 +503,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -530,9 +531,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -559,9 +560,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -585,9 +586,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -609,9 +610,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -633,9 +634,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -657,9 +658,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -683,9 +684,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -707,9 +708,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -731,9 +732,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
     @Override
@@ -755,9 +756,9 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
-                scheduler.runSync(done);
+                scheduler.runSync(done, done.sameThread());
             }
-        });
+        }, done.sameThread());
     }
 
 }
