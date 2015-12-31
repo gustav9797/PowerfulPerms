@@ -3,7 +3,6 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.cheesesoftware</groupId>
 	<artifactId>PowerfulPerms</artifactId>
-	<version>1.9.5</version>
 	<build>
 		<resources>
 			<resource>
@@ -161,4 +160,5 @@
 			<version>1.5</version>
 		</dependency>
 	</dependencies>
+	<version>2.1</version>
 </project>

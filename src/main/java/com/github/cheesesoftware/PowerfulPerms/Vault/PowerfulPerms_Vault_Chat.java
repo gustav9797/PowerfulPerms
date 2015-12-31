@@ -1,8 +1,9 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
-import com.github.cheesesoftware.PowerfulPerms.Group;
-import com.github.cheesesoftware.PowerfulPerms.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
+import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
+import com.github.cheesesoftware.PowerfulPerms.common.ResponseRunnable;
 
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
@@ -36,7 +37,13 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public void setPlayerPrefix(String world, String player, String prefix) {
-        permissionManager.setPlayerPrefix(player, prefix);
+        permissionManager.setPlayerPrefix(player, prefix, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
     }
 
     @Override
@@ -49,7 +56,13 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public void setPlayerSuffix(String world, String player, String suffix) {
-        permissionManager.setPlayerSuffix(player, suffix);
+        permissionManager.setPlayerSuffix(player, suffix, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
     }
 
     @Override
@@ -62,7 +75,13 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public void setGroupPrefix(String world, String group, String prefix) {
-        permissionManager.setGroupPrefix(group, prefix);
+        permissionManager.setGroupPrefix(group, prefix, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
     }
 
     @Override
@@ -75,7 +94,13 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public void setGroupSuffix(String world, String group, String suffix) {
-        permissionManager.setGroupSuffix(group, suffix);
+        permissionManager.setGroupSuffix(group, suffix, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
     }
 
     @Override

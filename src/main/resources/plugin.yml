@@ -3,6 +3,7 @@ main: com.github.cheesesoftware.PowerfulPerms.PowerfulPerms
 version: ${version}
 author: gustav9797
 softdepend: [Vault]
+load: startup
 
 commands:
  powerfulperms:

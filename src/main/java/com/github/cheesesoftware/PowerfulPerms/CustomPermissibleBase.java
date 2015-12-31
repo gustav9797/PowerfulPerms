@@ -171,6 +171,7 @@ public class CustomPermissibleBase extends PermissibleBase {
                     temporaryPermissions.add(pair.getKey());
                 else if (pair.getValue() == false)
                     temporaryPermissions.add("-" + pair.getKey());
+                Bukkit.getServer().getPluginManager().subscribeToPermission(pair.getKey(), parent);
             }
             Bukkit.getServer().getPluginManager().subscribeToPermission(perm.getName(), parent);
         }

@@ -7,21 +7,26 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PowerfulPermission;
+
 public class PermissionsPlayer extends PermissionsPlayerBase {
     private Player player;
 
-    public PermissionsPlayer(Player p, HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix) {
-        super(serverGroups, permissions, prefix, suffix);
+    public PermissionsPlayer(Player p, HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
+        super(serverGroups, permissions, prefix, suffix, plugin);
         this.player = p;
         this.UpdatePermissions();
     }
-    
-    public PermissionsPlayer(Player p, PermissionsPlayerBase base) {
-        super(base.getServerGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix());
+
+    public PermissionsPlayer(Player p, PermissionsPlayerBase base, IPlugin plugin) {
+        super(base.getServerGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix(), plugin);
         this.player = p;
         this.UpdatePermissions();
     }
-    
+
     /**
      * Update this PermissionsPlayerBase with data from another one.
      */
@@ -46,31 +51,24 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
         super.setServerGroups(serverGroups);
         this.UpdatePermissions();
     }
-    
+
     /**
-     * Internal function to update the PermissionAttachment.
+     * Internal function to update the permissions of this PermissionPlayer. Run for example when the player has changed world.
      */
     public void UpdatePermissions() {
-        //Map<String, Boolean> destination = reflectMap(pa);
-        //destination.clear();
+        // Map<String, Boolean> destination = reflectMap(pa);
+        // destination.clear();
         this.realPermissions = super.calculatePermissions(Bukkit.getServer().getServerName(), player.getWorld().getName());
-        //destination.putAll(this.realPermissions);
-        //player.recalculatePermissions();
+        // destination.putAll(this.realPermissions);
+        // player.recalculatePermissions();
     }
 
-    /*private Field pField;
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Boolean> reflectMap(PermissionAttachment attachment) {
-        try {
-            if (pField == null) {
-                pField = PermissionAttachment.class.getDeclaredField("permissions");
-                pField.setAccessible(true);
-            }
-            return (Map<String, Boolean>) pField.get(attachment);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }*/
+    /*
+     * private Field pField;
+     * 
+     * @SuppressWarnings("unchecked") private Map<String, Boolean> reflectMap(PermissionAttachment attachment) { try { if (pField == null) { pField =
+     * PermissionAttachment.class.getDeclaredField("permissions"); pField.setAccessible(true); } return (Map<String, Boolean>) pField.get(attachment); } catch (Exception e) { throw new
+     * RuntimeException(e); } }
+     */
 
 }

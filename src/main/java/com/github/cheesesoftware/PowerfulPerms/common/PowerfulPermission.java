@@ -1,4 +1,4 @@
-package com.github.cheesesoftware.PowerfulPerms;
+package com.github.cheesesoftware.PowerfulPerms.common;
 
 public class PowerfulPermission {
     private String permission;

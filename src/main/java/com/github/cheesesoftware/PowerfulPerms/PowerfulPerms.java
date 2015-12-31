@@ -10,13 +10,19 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
+import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
+import com.github.cheesesoftware.PowerfulPerms.database.SQL;
+
 public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
 
     private SQL sql;
     private PermissionManager permissionManager;
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
-    public static String serverName;
     public static boolean debug = false;
 
     public void onEnable() {
@@ -37,8 +43,14 @@ public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
             Bukkit.getLogger().severe(consolePrefix + "Could not access the database!");
             this.setEnabled(false);
         }
-        
-        permissionManager = new PermissionManager(sql, this);
+
+        IScheduler scheduler = new BukkitScheduler(this);
+        Database db = new MySQLDatabase(scheduler, sql);
+        String tablePrefix = getConfig().getString("prefix");
+        if (tablePrefix != null && !tablePrefix.isEmpty())
+            db.setTablePrefix(tablePrefix);
+        String serverName = getConfig().getString("servername");
+        permissionManager = new PermissionManager(db, this, serverName);
         Bukkit.getPluginManager().registerEvents(permissionManager, this);
 
         if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {
@@ -102,9 +114,15 @@ public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
 
     @Override
     public UUID getPlayerUUID(String name) {
-        Player toReload = Bukkit.getPlayer(name);
-        if (toReload != null)
-            return toReload.getUniqueId();
+        Player player = Bukkit.getPlayer(name);
+        if (player != null)
+            return player.getUniqueId();
         return null;
+    }
+
+    @Override
+    public void debug(String message) {
+        if (debug)
+            getLogger().info("[DEBUG] " + message);
     }
 }

@@ -1,9 +1,5 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -19,24 +15,25 @@ import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.github.cheesesoftware.PowerfulPerms.Group;
-import com.github.cheesesoftware.PowerfulPerms.PowerfulPermission;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
 import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayer;
+import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
+import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
+import com.github.cheesesoftware.PowerfulPerms.database.Database;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
 public class PermissionManager extends PermissionManagerBase implements Listener {
 
-    private PowerfulPerms plugin;
     private PermissibleBaseInjector injector;
 
-    public PermissionManager(SQL sql, PowerfulPerms plugin) {
-        super(sql, plugin);
-        this.plugin = plugin;
-        this.serverName = Bukkit.getServerName();
-        
+    public PermissionManager(Database database, PowerfulPerms plugin, String serverName) {
+        super(database, plugin, serverName);
+
         this.injector = new PermissibleBaseInjector();
 
         final Plugin tempPlugin = plugin;
@@ -80,15 +77,14 @@ public class PermissionManager extends PermissionManagerBase implements Listener
                     jedis.subscribe(subscriber, "PowerfulPerms");
                 } catch (Exception e) {
                     pool.returnBrokenResource(jedis);
-                    Bukkit.getLogger().warning(
-                            consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    Bukkit.getLogger().warning(consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                     return;
                 }
                 pool.returnResource(jedis);
             }
         });
 
-        loadGroups();
+        loadGroups(true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -117,12 +113,12 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(final PlayerJoinEvent e) {
         debug("PlayerJoinEvent " + e.getPlayer().getName());
-        
-        // Check again if
+
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.
             continueLoadPlayer(e.getPlayer().getUniqueId());
         } else {
+            // Player is not cached, Load directly on Bukkit main thread.
             debug("onPlayerJoin player isn't cached, loading directly");
             loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
             this.continueLoadPlayer(e.getPlayer().getUniqueId());
@@ -144,7 +140,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             permissionsPlayer.UpdatePermissions();
         }
     }
-    
+
     @Override
     public void onDisable() {
         super.onDisable();
@@ -156,8 +152,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (players.containsKey(p.getUniqueId())) {
                 loadPlayer(p);
-            }
-            else {
+            } else {
                 loadPlayer(p.getUniqueId(), p.getName(), true);
                 continueLoadPlayer(p.getUniqueId());
             }
@@ -175,9 +170,9 @@ public class PermissionManager extends PermissionManagerBase implements Listener
      * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
      */
     public IPermissionsPlayer getPermissionsPlayer(String playerName) {
-        Player p = Bukkit.getPlayer(playerName);
-        if (p != null)
-            return players.get(p.getUniqueId());
+        UUID uuid = plugin.getPlayerUUID(playerName);
+        if (uuid != null)
+            return players.get(uuid);
         return null;
     }
 
@@ -186,14 +181,15 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     }
 
     private void continueLoadPlayer(UUID uuid) {
+        debug("continueLoadPlayer begin");
         PermissionsPlayerBase base = super.loadCachedPlayer(uuid);
         if (base != null) {
             Player p = Bukkit.getServer().getPlayer(uuid);
-            if(p != null) {
-                if (players.containsKey(p.getUniqueId())) 
+            if (p != null) {
+                if (players.containsKey(p.getUniqueId()))
                     players.remove(p.getUniqueId());
-                
-                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base);
+
+                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base, plugin);
                 try {
                     injector.inject(p, new CustomPermissibleBase(permissionsPlayer));
                 } catch (NoSuchFieldException e) {
@@ -204,8 +200,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
                     e.printStackTrace();
                 }
                 players.put(uuid, permissionsPlayer);
-            }
-            else
+            } else
                 debug("continueLoadPlayer: Player is null");
         }
     }
@@ -218,89 +213,6 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         if (gp != null)
             return gp.getPrimaryGroup();
         return null;
-    }
-
-    /**
-     * Returns the primary group of a player.
-     */
-    public Group getPlayerPrimaryGroup(String playerName) {
-        Player p = Bukkit.getServer().getPlayer(playerName);
-        if (p != null)
-            return getPlayerPrimaryGroup(p);
-        HashMap<String, List<Group>> g = getPlayerGroups(playerName);
-        List<Group> primary = g.get("");
-        if(primary != null) {
-            Iterator<Group> it = primary.iterator();
-            return it.next(); // First group is primary group.
-        }
-        return null;
-    }
-
-    /**
-     * Get the full list of groups a player has, if player isn't online it will be loaded from the database.
-     */
-    @Override
-    public HashMap<String, List<Group>> getPlayerGroups(String playerName) {
-        Player p = Bukkit.getServer().getPlayer(playerName);
-        if (p != null) {
-            PermissionsPlayer gp = (PermissionsPlayer) players.get(p.getUniqueId());
-            if (gp != null)
-                return gp.getServerGroups();
-        }
-        // Player is not online, load from MySQL
-        return super.getPlayerGroups(playerName);
-    }
-
-    /**
-     * Gets a map containing all the permissions a player has, including derived permissions. If player is not online data will be loaded from DB and will not return world-specific or server-specific
-     * permissions.
-     * 
-     * @param p
-     *            The player to get permissions from.
-     */
-    @Override
-    public ArrayList<PowerfulPermission> getPlayerPermissions(String playerName) {
-        Player p = Bukkit.getPlayer(playerName);
-        if (p != null) {
-            PermissionsPlayer gp = (PermissionsPlayer) players.get(p.getUniqueId());
-            if (gp != null)
-                return gp.getPermissions();
-        }
-
-        // Load from DB
-        return super.getPlayerPermissions(playerName);
-    }
-
-    /**
-     * Gets the prefix of a player. Non-inherited.
-     * 
-     * @param p
-     *            The player to get prefix from.
-     */
-    public String getPlayerPrefix(String playerName) {
-        Player p = Bukkit.getPlayer(playerName);
-        if (p != null) {
-            IPermissionsPlayer gp = this.getPermissionsPlayer(playerName);
-            if(gp != null)
-                return gp.getPrefix();
-        }
-        return super.getPlayerPrefix(playerName);
-    }
-
-    /**
-     * Gets the suffix of a player. Non-inherited.
-     * 
-     * @param p
-     *            The player to get suffix from.
-     */
-    public String getPlayerSuffix(String playerName) {
-        Player p = Bukkit.getPlayer(playerName);
-        if (p != null) {
-            IPermissionsPlayer gp = this.getPermissionsPlayer(playerName);
-            if(gp != null)
-                return gp.getSuffix();
-        }
-        return super.getPlayerSuffix(playerName);
     }
 
 }

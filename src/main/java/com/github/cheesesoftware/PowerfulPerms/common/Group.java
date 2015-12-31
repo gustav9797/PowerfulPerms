@@ -1,4 +1,4 @@
-package com.github.cheesesoftware.PowerfulPerms;
+package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
 
@@ -45,19 +45,19 @@ public class Group {
     public ArrayList<PowerfulPermission> getPermissions() {
         ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>();
         for (Group parent : this.parents) {
-            temp.addAll(parent.getInheritedPermissions());
+            temp.addAll(parent.getPermissions());
         }
         temp.addAll(permissions);
         return temp;
     }
 
-    public ArrayList<PowerfulPermission> getInheritedPermissions() {
+    /*public ArrayList<PowerfulPermission> getInheritedPermissions() {
         ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions);
         for (Group parent : this.parents) {
             temp.addAll(parent.getPermissions());
         }
         return temp;
-    }
+    }*/
 
     /*
      * public String getRawPermissions() { String raw = getRawOwnPermissions(); for (Group g : parents) raw += g.getRawPermissions(); return raw; }
