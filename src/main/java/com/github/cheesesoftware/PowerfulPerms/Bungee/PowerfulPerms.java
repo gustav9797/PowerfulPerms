@@ -6,15 +6,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.SQLException;
+import java.util.Date;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.github.cheesesoftware.PowerfulPerms.IPermissionsPlayer;
-import com.github.cheesesoftware.PowerfulPerms.IPlugin;
-import com.github.cheesesoftware.PowerfulPerms.PermissionManagerBase;
-import com.github.cheesesoftware.PowerfulPerms.SQL;
+import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
+import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
+import com.github.cheesesoftware.PowerfulPerms.database.SQL;
 import com.google.common.io.ByteStreams;
 
 import net.md_5.bungee.api.ChatColor;
@@ -67,7 +69,11 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
         }
 
         Database db = new MySQLDatabase(new BungeeScheduler(this), sql);
-        permissionManager = new PermissionManager(db, this);
+        String tablePrefix = config.getString("prefix");
+        if (tablePrefix != null && !tablePrefix.isEmpty())
+            db.setTablePrefix(tablePrefix);
+        String serverName = "bungeeproxy" + (new Random()).nextInt(5000) + (new Date()).getTime();
+        permissionManager = new PermissionManager(db, this, serverName);
         this.getProxy().getPluginManager().registerListener(this, this);
         this.getProxy().getPluginManager().registerListener(this, permissionManager);
 
@@ -146,5 +152,11 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
         if (player != null)
             return player.getUniqueId();
         return null;
+    }
+
+    @Override
+    public void debug(String message) {
+        if (debug)
+            getLogger().info("[DEBUG] " + message);
     }
 }

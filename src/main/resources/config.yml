@@ -1,8 +1,10 @@
 # default config.yml
 
 # Database
+type: mysql
 host: localhost
 database: minecraft
+prefix: ""
 port: 3306
 username: root
 password: potato
@@ -15,3 +17,7 @@ redis_password: ""
 # Use Bungee-sided command
 # If this is enabled and you have PowerfulPerms installed in your Bungee proxy, it will send the /powerfulperms command through Bungee instead of Bukkit.
 bungee_command: false
+
+# Server name used for per-server Bukkit sided permissions to work. Use the same as in BungeeCord config.
+# This is not used Bungee-side.
+servername: ""

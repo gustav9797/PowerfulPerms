@@ -1,4 +1,4 @@
-package com.github.cheesesoftware.PowerfulPerms;
+package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
 
-import com.github.cheesesoftware.PowerfulPerms.common.PMR;
-import com.github.cheesesoftware.PowerfulPerms.common.ResponseRunnable;
-import com.github.cheesesoftware.PowerfulPerms.common.ResultRunnable;
 import com.github.cheesesoftware.PowerfulPerms.database.DBDocument;
 
 public class PermissionCommand {
@@ -202,8 +199,7 @@ public class PermissionCommand {
                                             }
                                         }
                                     }
-                                }
-                                else
+                                } else
                                     otherGroups += "Player has no groups.";
                                 rows.add(otherGroups);
 
@@ -412,15 +408,24 @@ public class PermissionCommand {
             sendSender(invoker, sender, "Groups: " + s);
         } else if (args.length >= 1 && args[0].equalsIgnoreCase("reload")) {
             permissionManager.reloadGroups();
-            permissionManager.reloadPlayers();
             sendSender(invoker, sender, "Groups and players have been reloaded.");
         } else if (args.length >= 1 && args[0].equalsIgnoreCase("globalreload")) {
             permissionManager.reloadGroups();
-            permissionManager.reloadPlayers();
 
             permissionManager.notifyReloadGroups();
             permissionManager.notifyReloadPlayers();
             sendSender(invoker, sender, "Groups and players have been reloaded globally.");
+        } else if (args.length >= 2 && args[0].equalsIgnoreCase("haspermission")) {
+            String permission = args[1];
+            IPermissionsPlayer p = permissionManager.getPermissionsPlayer(sender);
+            if (p != null) {
+                boolean has = p.hasPermission(permission);
+                if (has)
+                    sendSender(invoker, sender, "You have the permission \"" + permission + "\".");
+                else
+                    sendSender(invoker, sender, "You do not have the permission \"" + permission + "\".");
+            } else
+                sendSender(invoker, sender, "Could not check permission. Make sure you are in-game.");
         } else
             showCommandInfo(invoker, sender);
         return true;

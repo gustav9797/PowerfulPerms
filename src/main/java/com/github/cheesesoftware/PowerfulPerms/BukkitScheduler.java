@@ -1,15 +1,15 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
 import org.bukkit.Bukkit;
-import org.bukkit.plugin.Plugin;
 
-import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
+import com.github.cheesesoftware.PowerfulPerms.common.SchedulerBase;
 
-public class BukkitScheduler implements IScheduler {
+public class BukkitScheduler extends SchedulerBase {
 
-    private Plugin plugin;
+    private PowerfulPerms plugin;
 
-    public BukkitScheduler(Plugin plugin) {
+    public BukkitScheduler(PowerfulPerms plugin) {
+        super(plugin);
         this.plugin = plugin;
     }
 
@@ -17,27 +17,25 @@ public class BukkitScheduler implements IScheduler {
     public void runAsync(Runnable runnable, boolean sameThread) {
         if (sameThread) {
             runnable.run();
-            Bukkit.getLogger().info("Running async task on CURRENT thread");
         } else {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, runnable);
-            Bukkit.getLogger().info("Running async task on NEW thread");
         }
+        super.runAsync(runnable, sameThread);
     }
 
     @Override
     public void runSync(Runnable runnable, boolean sameThread) {
         if (sameThread) {
             runnable.run();
-            Bukkit.getLogger().info("Running sync task on CURRENT thread");
         } else {
             Bukkit.getScheduler().runTask(plugin, runnable);
-            Bukkit.getLogger().info("Running async task on MAIN thread");
         }
+        super.runSync(runnable, sameThread);
     }
 
     @Override
     public void runSync(Runnable runnable) {
-        Bukkit.getScheduler().runTask(plugin, runnable);
+        runSync(runnable, false);
     }
 
 }

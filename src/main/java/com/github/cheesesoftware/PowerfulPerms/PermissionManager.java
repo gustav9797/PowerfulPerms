@@ -15,9 +15,13 @@ import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 
-import com.github.cheesesoftware.PowerfulPerms.Group;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
 import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayer;
+import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
+import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 
 import redis.clients.jedis.Jedis;
@@ -27,9 +31,8 @@ public class PermissionManager extends PermissionManagerBase implements Listener
 
     private PermissibleBaseInjector injector;
 
-    public PermissionManager(Database database, PowerfulPerms plugin) {
-        super(database, plugin);
-        this.serverName = Bukkit.getServerName();
+    public PermissionManager(Database database, PowerfulPerms plugin, String serverName) {
+        super(database, plugin, serverName);
 
         this.injector = new PermissibleBaseInjector();
 
@@ -81,7 +84,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             }
         });
 
-        loadGroups();
+        loadGroups(true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -186,7 +189,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
                 if (players.containsKey(p.getUniqueId()))
                     players.remove(p.getUniqueId());
 
-                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base);
+                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base, plugin);
                 try {
                     injector.inject(p, new CustomPermissibleBase(permissionsPlayer));
                 } catch (NoSuchFieldException e) {

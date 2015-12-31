@@ -1,4 +1,4 @@
-package com.github.cheesesoftware.PowerfulPerms;
+package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
 

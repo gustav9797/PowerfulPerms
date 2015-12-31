@@ -1,8 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
-import com.github.cheesesoftware.PowerfulPerms.ICommand;
-import com.github.cheesesoftware.PowerfulPerms.PermissionCommand;
-import com.github.cheesesoftware.PowerfulPerms.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionCommand;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;

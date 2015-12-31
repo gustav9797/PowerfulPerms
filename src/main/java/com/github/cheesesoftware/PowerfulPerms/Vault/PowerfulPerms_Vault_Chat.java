@@ -1,8 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
-import com.github.cheesesoftware.PowerfulPerms.Group;
-import com.github.cheesesoftware.PowerfulPerms.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
+import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.common.ResponseRunnable;
 
 import net.milkbowl.vault.chat.Chat;

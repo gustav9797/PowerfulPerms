@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.github.cheesesoftware.PowerfulPerms.Group;
-import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayerBase;
-import com.github.cheesesoftware.PowerfulPerms.PowerfulPermission;
+import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PowerfulPermission;
 
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -14,13 +15,13 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 public class PermissionsPlayer extends PermissionsPlayerBase {
     private ProxiedPlayer player;
 
-    public PermissionsPlayer(ProxiedPlayer p, HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix) {
-        super(serverGroups, permissions, prefix, suffix);
+    public PermissionsPlayer(ProxiedPlayer p, HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
+        super(serverGroups, permissions, prefix, suffix, plugin);
         this.player = p;
     }
     
-    public PermissionsPlayer(ProxiedPlayer p, PermissionsPlayerBase base) {
-        super(base.getServerGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix());
+    public PermissionsPlayer(ProxiedPlayer p, PermissionsPlayerBase base, IPlugin plugin) {
+        super(base.getServerGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix(), plugin);
         this.player = p;
     }
     

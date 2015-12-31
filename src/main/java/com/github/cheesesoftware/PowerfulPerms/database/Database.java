@@ -10,9 +10,13 @@ public abstract class Database implements IDatabase {
     
     public Database(IScheduler scheduler) {
         this.scheduler = scheduler;
+        
+        tblPlayers = "players";
+        tblGroups = "groups";
+        tblPermissions = "permissions";
     }
 
-    public void setDatabasePrefix(String prefix) {
+    public void setTablePrefix(String prefix) {
         tblPlayers = prefix + tblPlayers;
         tblGroups = prefix + tblGroups;
         tblPermissions = prefix + tblPermissions;

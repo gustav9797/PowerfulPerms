@@ -7,9 +7,9 @@ import java.util.concurrent.TimeUnit;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
-import com.github.cheesesoftware.PowerfulPerms.Group;
-import com.github.cheesesoftware.PowerfulPerms.PermissionManagerBase;
-import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -26,10 +26,11 @@ public class PermissionManager extends PermissionManagerBase implements Listener
 
     private PowerfulPerms plugin;
 
-    public PermissionManager(Database database, PowerfulPerms plugin) {
-        super(database, plugin);
+    public PermissionManager(Database database, PowerfulPerms plugin, String serverName) {
+        super(database, plugin, serverName);
         this.plugin = plugin;
-        this.serverName = "bungeeproxy" + (new Random()).nextInt(5000) + (new Date()).getTime();
+
+        final String srvName = serverName;
 
         final Plugin tempPlugin = plugin;
         plugin.getProxy().getScheduler().runAsync(plugin, new Runnable() {
@@ -50,7 +51,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
 
                                         String server = split[1];
 
-                                        if (server.equals(serverName))
+                                        if (server.equals(srvName))
                                             return;
 
                                         if (first.equals("[groups]")) {
@@ -82,7 +83,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             }
         });
 
-        loadGroups();
+        loadGroups(true);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -147,7 +148,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         PermissionsPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
         if (base != null) {
             if (player != null) {
-                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(player, base);
+                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(player, base, plugin);
                 players.put(player.getUniqueId(), permissionsPlayer);
             } else
                 debug("continueLoadPlayer: ProxiedPlayer is null");

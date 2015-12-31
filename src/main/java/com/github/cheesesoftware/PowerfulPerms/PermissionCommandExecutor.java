@@ -5,6 +5,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
+import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionCommand;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+
 public class PermissionCommandExecutor implements ICommand, CommandExecutor {
     
     private PermissionManagerBase permissionManager;

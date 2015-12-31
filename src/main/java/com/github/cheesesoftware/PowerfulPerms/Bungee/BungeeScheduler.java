@@ -3,15 +3,15 @@ package com.github.cheesesoftware.PowerfulPerms.Bungee;
 import java.util.concurrent.TimeUnit;
 
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.plugin.Plugin;
 
-import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
+import com.github.cheesesoftware.PowerfulPerms.common.SchedulerBase;
 
-public class BungeeScheduler implements IScheduler {
+public class BungeeScheduler extends SchedulerBase {
 
-    private Plugin plugin;
+    private PowerfulPerms plugin;
 
-    public BungeeScheduler(Plugin plugin) {
+    public BungeeScheduler(PowerfulPerms plugin) {
+        super(plugin);
         this.plugin = plugin;
     }
 
@@ -21,6 +21,7 @@ public class BungeeScheduler implements IScheduler {
             runnable.run();
         else
             ProxyServer.getInstance().getScheduler().runAsync(plugin, runnable);
+        super.runAsync(runnable, sameThread);
     }
 
     @Override
@@ -29,11 +30,12 @@ public class BungeeScheduler implements IScheduler {
             runnable.run();
         else
             ProxyServer.getInstance().getScheduler().schedule(plugin, runnable, 0, TimeUnit.MILLISECONDS);
+        super.runSync(runnable, sameThread);
     }
 
     @Override
     public void runSync(Runnable runnable) {
-        ProxyServer.getInstance().getScheduler().schedule(plugin, runnable, 0, TimeUnit.MILLISECONDS);
+        runSync(runnable, false);
     }
 
 }

@@ -1,4 +1,4 @@
-package com.github.cheesesoftware.PowerfulPerms;
+package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,12 +14,14 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     protected List<String> temporaryPermissions = new ArrayList<String>();
     protected String prefix = "";
     protected String suffix = "";
+    protected IPlugin plugin;
 
-    public PermissionsPlayerBase(HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix) {
+    public PermissionsPlayerBase(HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
         this.serverGroups = serverGroups;
         this.permissions = permissions;
         this.prefix = prefix;
         this.suffix = suffix;
+        this.plugin = plugin;
     }
 
     /**
@@ -186,27 +188,25 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     protected List<String> calculatePermissions(String playerServer, String playerWorld) {
         ArrayList<PowerfulPermission> unprocessedPerms = new ArrayList<PowerfulPermission>();
 
+        Group primary = getPrimaryGroup();
+
         // Add permissions derived from groups.
+        plugin.debug("serverGroups count " + serverGroups.size());
         for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
-            if (entry.getKey().equals(playerServer)) {
+            //plugin.debug("playerServer: " + playerServer + " group key: " + entry.getKey());
+            if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("all") || entry.getKey().equals(playerServer)) {
                 for (Group group : entry.getValue()) {
-                    if (group != null) {
+                    //plugin.debug("Group add permission test: ID:" + group.getId() + " Primary ID:" + primary.getId());
+                    if (group != null && group.getId() != primary.getId()) {
                         unprocessedPerms.addAll(group.getPermissions());
+                        //plugin.debug("Added permissions from " + group.getName());
                     }
                 }
             }
         }
 
         // Add permissions from primary group and parents.
-        for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
-            if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("ALL")) {
-                for (Group group : entry.getValue()) {
-                    if (group != null) {
-                        unprocessedPerms.addAll(group.getPermissions());
-                    }
-                }
-            }
-        }
+        unprocessedPerms.addAll(primary.getPermissions());
 
         // Add own permissions.
         unprocessedPerms.addAll(this.permissions);
@@ -219,9 +219,13 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
             }
         }
 
-        /*
-         * for (String perm : permsToAdd) { output.put(perm, true); } /*for (String perm : negatedPerms) { output.put(perm.substring(1), false); }
-         */
+        if (plugin.isDebug()) {
+            Iterator<String> it = output.iterator();
+            while (it.hasNext()) {
+                String perm = it.next();
+                plugin.debug("added perm " + perm);
+            }
+        }
 
         return output;
     }

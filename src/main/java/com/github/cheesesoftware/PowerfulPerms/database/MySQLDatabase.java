@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.github.cheesesoftware.PowerfulPerms.SQL;
 import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
 
 public class MySQLDatabase extends Database {
@@ -466,6 +465,43 @@ public class MySQLDatabase extends Database {
         }, done.sameThread());
     }
 
+    // Run if name in permissions table doesn't match player name
+    @Override
+    public void updatePlayerPermissions(final UUID uuid, final String name, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                getPlayerPermissions(uuid, new DBRunnable(true) {
+
+                    @Override
+                    public void run() {
+                        while (result.hasNext()) {
+                            final DBDocument row = result.next();
+                            if (!row.getString("playername").equals(name)) {
+                                // Player name mismatch, update
+                                deletePlayerPermission(uuid, row.getString("permission"), row.getString("world"), row.getString("server"), new DBRunnable(true) {
+                                    @Override
+                                    public void run() {
+                                        insertPermission(uuid, name, "", row.getString("permission"), row.getString("world"), row.getString("server"), new DBRunnable(true) {
+
+                                            @Override
+                                            public void run() {
+                                                // One permission has been updated
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                        done.setResult(new DBResult(true));
+                        scheduler.runSync(done, done.sameThread());
+                    }
+                });
+            }
+        }, done.sameThread());
+    }
+
     @Override
     public void deletePlayerPermission(final String name, final String permission, final String world, final String server, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
@@ -476,26 +512,44 @@ public class MySQLDatabase extends Database {
                 int amount = 0;
 
                 try {
-                    boolean useWorld = false;
-                    boolean useServer = false;
-
-                    String statement = "DELETE FROM `" + tblPermissions + "` WHERE `playername`=? AND `permission`=?";
-                    if (!world.isEmpty() && !world.equalsIgnoreCase("ALL")) {
-                        statement += ", `world`=?";
-                        useWorld = true;
-                    }
-                    if (!server.isEmpty() && !server.equalsIgnoreCase("ALL")) {
-                        statement += ", `server`=?";
-                        useServer = true;
-                    }
-                    PreparedStatement s = sql.getConnection().prepareStatement(statement);
+                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM `" + tblPermissions + "` WHERE `playername`=? AND `permission`=? AND `server`=? AND `world`=?");
 
                     s.setString(1, name);
                     s.setString(2, permission);
-                    if (useWorld)
-                        s.setString(3, world);
-                    if (useServer)
-                        s.setString(4, server);
+                    s.setString(3, server);
+                    s.setString(4, world);
+
+                    amount = s.executeUpdate();
+                    if (amount <= 0)
+                        success = false;
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success, amount));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
+    public void deletePlayerPermission(final UUID uuid, final String permission, final String world, final String server, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+                int amount = 0;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM `" + tblPermissions + "` WHERE `playeruuid`=? AND `permission`=? AND `server`=? AND `world`=?");
+
+                    s.setString(1, uuid.toString());
+                    s.setString(2, permission);
+                    s.setString(3, server);
+                    s.setString(4, world);
+                    
                     amount = s.executeUpdate();
                     if (amount <= 0)
                         success = false;
