@@ -83,7 +83,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             }
         });
 
-        loadGroups(true);
+        loadGroups(true, true);
     }
 
     @EventHandler(priority = EventPriority.HIGH)

@@ -105,7 +105,7 @@ public abstract class PermissionManagerBase {
             pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0, redis_password);
     }
 
-    public void debug(String msg) {
+    protected void debug(String msg) {
         plugin.debug(msg);
     }
 
@@ -378,18 +378,19 @@ public abstract class PermissionManagerBase {
      * Loads groups from MySQL, removes old group data. Will reload all players too.
      */
     protected void loadGroups() {
-        loadGroups(false);
+        loadGroups(false, false);
     }
 
     /**
      * Loads groups from MySQL, removes old group data. Will reload all players too.
+     * beginSameThread: Set this to true if you want it to fetch group data on the same thread you call from. Set it to false and it will run asynchronously.
+     * endSameThread: Set this to true if you want to finish and insert groups on the same thread. Note: This -MUST- be Bukkit main thread you execute on. Set to false if you want to run it synchronously but scheduled.
      */
-    protected void loadGroups(boolean sameThread) {
+    protected void loadGroups(boolean beginSameThread, final boolean endSameThread) {
+        debug("loadGroups begin");
         groups.clear();
 
-        final PermissionManagerBase p = this;
-
-        db.getGroups(new DBRunnable(sameThread) {
+        db.getGroups(new DBRunnable(beginSameThread) {
 
             @Override
             public void run() {
@@ -453,8 +454,9 @@ public abstract class PermissionManagerBase {
                                 if (plugin.isPlayerOnline(uuid))
                                     reloadPlayer(uuid);
                             }
+                            debug("loadGroups end");
                         }
-                    });
+                    }, endSameThread);
                 }
             }
         });

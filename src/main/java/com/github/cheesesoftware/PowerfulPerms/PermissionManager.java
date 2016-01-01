@@ -84,7 +84,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             }
         });
 
-        loadGroups(true);
+        loadGroups(true, true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -203,6 +203,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
             } else
                 debug("continueLoadPlayer: Player is null");
         }
+        debug("continueLoadPlayer end");
     }
 
     /**
