@@ -62,10 +62,16 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
         List<String> perms = super.calculatePermissions(Bukkit.getServer().getServerName(), player.getWorld().getName());
         List<String> realPerms = new ArrayList<String>();
         for (String permString : perms) {
+            boolean invert = false;
+            if (permString.startsWith("-")) {
+                invert = true;
+                if (permString.length() > 1)
+                    permString = permString.substring(1);
+            }
             realPerms.add(permString);
             Permission perm = Bukkit.getPluginManager().getPermission(permString);
             if (perm != null)
-                realPerms.addAll(calculateChildPermissions(perm.getChildren(), permString.startsWith("-")));
+                realPerms.addAll(calculateChildPermissions(perm.getChildren(), invert));
         }
 
         this.realPermissions = realPerms;
