@@ -3,9 +3,12 @@ package com.github.cheesesoftware.PowerfulPerms;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.Permission;
 
 import com.github.cheesesoftware.PowerfulPerms.common.Group;
 import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
@@ -56,11 +59,43 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
      * Internal function to update the permissions of this PermissionPlayer. Run for example when the player has changed world.
      */
     public void UpdatePermissions() {
-        // Map<String, Boolean> destination = reflectMap(pa);
-        // destination.clear();
-        this.realPermissions = super.calculatePermissions(Bukkit.getServer().getServerName(), player.getWorld().getName());
-        // destination.putAll(this.realPermissions);
-        // player.recalculatePermissions();
+        List<String> perms = super.calculatePermissions(Bukkit.getServer().getServerName(), player.getWorld().getName());
+        List<String> realPerms = new ArrayList<String>();
+        for (String permString : perms) {
+            realPerms.add(permString);
+            Permission perm = Bukkit.getPluginManager().getPermission(permString);
+            if (perm != null)
+                realPerms.addAll(calculateChildPermissions(perm.getChildren(), permString.startsWith("-")));
+        }
+
+        this.realPermissions = realPerms;
+    }
+
+    private List<String> calculateChildPermissions(Map<String, Boolean> children, boolean invert) {
+        Set<String> keys = children.keySet();
+        if (keys.size() > 0) {
+            List<String> perms = new ArrayList<String>();
+
+            for (String name : keys) {
+                Permission perm = Bukkit.getServer().getPluginManager().getPermission(name);
+                boolean value = children.get(name) ^ invert;
+                String lname = name.toLowerCase();
+
+                if (value == true)
+                    perms.add(lname);
+                else if (value == false)
+                    perms.add("-" + lname);
+
+                plugin.debug("added perm " + lname + " value " + value);
+
+                if (perm != null) {
+                    perms.addAll(calculateChildPermissions(perm.getChildren(), !value));
+                }
+            }
+
+            return perms;
+        }
+        return new ArrayList<String>();
     }
 
     /*

@@ -223,7 +223,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
             Iterator<String> it = output.iterator();
             while (it.hasNext()) {
                 String perm = it.next();
-                plugin.debug("added perm " + perm);
+                plugin.debug("base added perm " + perm);
             }
         }
 

@@ -23,6 +23,7 @@ public class CustomPermissibleBase extends PermissibleBase {
     private PermissionsPlayer permissionsPlayer;
     private List<PermissionAttachment> ppAttachments = new LinkedList<PermissionAttachment>();
     private Permissible parent = this;
+    private List<String> temporaryPermissions = new ArrayList<String>();
 
     public CustomPermissibleBase(PermissionsPlayer permissionsPlayer) {
         super(permissionsPlayer.getPlayer());
@@ -158,55 +159,45 @@ public class CustomPermissibleBase extends PermissibleBase {
             return;
         }
 
-        List<String> temporaryPermissions = new ArrayList<String>();
+        temporaryPermissions.clear();
 
-        // Add default Bukkit permissions
         Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp());
         Bukkit.getServer().getPluginManager().subscribeToDefaultPerms(isOp(), parent);
+
         for (Permission perm : defaults) {
-            Map<String, Boolean> allDefaultPerms = getAllPermissions(perm, false);
-            for (Map.Entry<String, Boolean> pair : allDefaultPerms.entrySet()) {
-                //Bukkit.getLogger().info("added bukkit default perm " + pair.getKey() + " value " + pair.getValue());
-                if (pair.getValue() == true)
-                    temporaryPermissions.add(pair.getKey());
-                else if (pair.getValue() == false)
-                    temporaryPermissions.add("-" + pair.getKey());
-                Bukkit.getServer().getPluginManager().subscribeToPermission(pair.getKey(), parent);
-            }
-            Bukkit.getServer().getPluginManager().subscribeToPermission(perm.getName(), parent);
+            String name = perm.getName().toLowerCase();
+            temporaryPermissions.add(name);
+            Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
+            calculateChildPermissions(perm.getChildren(), false);
         }
 
-        // Add permissions added by plugins
         for (PermissionAttachment attachment : ppAttachments) {
-            for (Map.Entry<String, Boolean> perm : attachment.getPermissions().entrySet()) {
-                //Bukkit.getLogger().info("added perm attachment perm " + perm.getKey() + " value " + perm.getValue() + " by plugin " + attachment.getPlugin().getName());
-                if (perm.getValue() == true)
-                    temporaryPermissions.add(perm.getKey());
-                else if (perm.getValue() == false)
-                    temporaryPermissions.add("-" + perm.getKey());
-            }
+            calculateChildPermissions(attachment.getPermissions(), false);
         }
 
         permissionsPlayer.setTemporaryPermissions(temporaryPermissions);
     }
 
-    // Subscribes perms too
-    private Map<String, Boolean> getAllPermissions(Permission perm, boolean invert) {
-        Map<String, Boolean> output = new HashMap<String, Boolean>();
-        if (perm != null) {
-            for (Map.Entry<String, Boolean> pair : perm.getChildren().entrySet()) {
-                Permission child = Bukkit.getPluginManager().getPermission(pair.getKey());
-                boolean value = pair.getValue() ^ invert;
-                if (child != null) {
-                    Bukkit.getServer().getPluginManager().subscribeToPermission(child.getName(), parent);
-                    if (child.getChildren().size() > 0)
-                        output.putAll(getAllPermissions(child, !value));
+    private void calculateChildPermissions(Map<String, Boolean> children, boolean invert) {
+        Set<String> keys = children.keySet();
+        if (keys.size() > 0) {
+            for (String name : keys) {
+                Permission perm = Bukkit.getServer().getPluginManager().getPermission(name);
+                boolean value = children.get(name) ^ invert;
+                String lname = name.toLowerCase();
+
+                if (value == true)
+                    temporaryPermissions.add(lname);
+                else if (value == false)
+                    temporaryPermissions.add("-" + lname);
+
+                Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
+
+                if (perm != null) {
+                    calculateChildPermissions(perm.getChildren(), !value);
                 }
-                
-                output.put(pair.getKey(), value);
             }
         }
-        return output;
     }
 
     @Override
