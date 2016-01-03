@@ -37,8 +37,8 @@ public abstract class PermissionManagerBase {
     public static String redis_ip;
     public static int redis_port;
     public static String redis_password;
-    protected String serverName;
-
+    
+    public static String serverName;
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
 

@@ -54,7 +54,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
                                         String first = split[0];
                                         String server = split[1];
 
-                                        if (server.equals(Bukkit.getServerName()))
+                                        if (server.equals(PermissionManagerBase.serverName))
                                             return;
                                         if (first.equals("[groups]")) {
                                             loadGroups();

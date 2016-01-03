@@ -11,6 +11,7 @@ import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
 import com.github.cheesesoftware.PowerfulPerms.common.Group;
 import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.common.PMR;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 
 import net.milkbowl.vault.permission.Permission;
 
@@ -40,7 +41,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     public String[] getPlayerGroups(String world, String player) {
         IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null) {
-            List<Group> groups = p.getApplyingGroups(Bukkit.getServerName());
+            List<Group> groups = p.getApplyingGroups(PermissionManagerBase.serverName);
             List<String> groupNames = new ArrayList<String>();
             for (Group group : groups)
                 groupNames.add(group.getName());
@@ -106,7 +107,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     public boolean playerInGroup(String world, String player, String groupName) {
         IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null) {
-            List<Group> groups = p.getApplyingGroups(Bukkit.getServerName());
+            List<Group> groups = p.getApplyingGroups(PermissionManagerBase.serverName);
             for (Group group : groups) {
                 if (group.getName().equalsIgnoreCase(groupName))
                     return true;

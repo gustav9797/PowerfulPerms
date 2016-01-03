@@ -12,6 +12,7 @@ import org.bukkit.permissions.Permission;
 
 import com.github.cheesesoftware.PowerfulPerms.common.Group;
 import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PowerfulPermission;
 
@@ -59,7 +60,7 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
      * Internal function to update the permissions of this PermissionPlayer. Run for example when the player has changed world.
      */
     public void UpdatePermissions() {
-        List<String> perms = super.calculatePermissions(Bukkit.getServer().getServerName(), player.getWorld().getName());
+        List<String> perms = super.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName());
         List<String> realPerms = new ArrayList<String>();
         for (String permString : perms) {
             boolean invert = false;
