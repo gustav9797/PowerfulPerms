@@ -8,7 +8,11 @@ import java.util.Map.Entry;
 
 public class PermissionsPlayerBase implements IPermissionsPlayer {
 
-    protected HashMap<String, List<Group>> serverGroups = new HashMap<String, List<Group>>(); // Contains all player main groups. Server "" is the global default group.
+    protected HashMap<String, List<CachedGroup>> groups = new HashMap<String, List<CachedGroup>>(); // Contains -all- groups for this player.
+
+    protected List<Group> currentGroups = new ArrayList<Group>();
+    protected Group currentPrimaryGroup = null;
+
     protected ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
     protected List<String> realPermissions = new ArrayList<String>();
     protected List<String> temporaryPermissions = new ArrayList<String>();
@@ -16,76 +20,134 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     protected String suffix = "";
     protected IPlugin plugin;
 
-    public PermissionsPlayerBase(HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
-        this.serverGroups = serverGroups;
+    public PermissionsPlayerBase(HashMap<String, List<CachedGroup>> groups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
+        this.groups = groups;
         this.permissions = permissions;
         this.prefix = prefix;
         this.suffix = suffix;
         this.plugin = plugin;
     }
 
-    /**
-     * Update this PermissionsPlayerBase with data from another one.
-     */
     public void update(PermissionsPlayerBase base) {
-        this.serverGroups = base.serverGroups;
+        this.groups = base.groups;
         this.permissions = base.permissions;
         this.prefix = base.prefix;
         this.suffix = base.suffix;
     }
 
-    /**
-     * Returns the player's primary group.
-     */
-    public Group getPrimaryGroup() {
-        Iterator<Group> it = serverGroups.get("").iterator();
-        return it.next(); // First group is primary group.
-    }
-
-    /**
-     * Returns a list of groups which apply to a specific server.
-     */
-    public List<Group> getApplyingGroups(String server) {
+    public void updateGroups(String server) {
         if (server.equalsIgnoreCase("all"))
             server = "";
-        List<Group> groups = new ArrayList<Group>();
-        List<Group> serverGroupsTemp = serverGroups.get(server);
-        if (serverGroupsTemp != null)
-            groups.addAll(serverGroupsTemp);
-        if (!server.isEmpty())
-            groups.addAll(serverGroups.get(""));
-        return groups;
+
+        this.currentGroups = getGroups(server);
+        this.currentPrimaryGroup = this.getPrimaryGroup(server);
     }
 
     /**
-     * Returns all groups a player has, indexed by server name.
+     * Sets the player's groups as seen in getServerGroups() Changes won't save.
      */
-    public HashMap<String, List<Group>> getServerGroups() {
-        return this.serverGroups;
+    public void setGroups(HashMap<String, List<CachedGroup>> groups) {
+        this.groups = groups;
     }
 
+    public void setTemporaryPermissions(List<String> permissions) {
+        this.temporaryPermissions = permissions;
+    }
+    
     /**
      * Used when storing data in the database.
      */
-    public String getRawServerGroups() {
+    public String getRawGroups() {
         String output = "";
-        for (Entry<String, List<Group>> entry : this.serverGroups.entrySet()) {
-            for (Group group : entry.getValue())
-                output += entry.getKey() + ":" + group.getName() + ";";
+        for (Entry<String, List<CachedGroup>> entry : this.groups.entrySet()) {
+            for (CachedGroup cachedGroup : entry.getValue()) {
+                output += entry.getKey() + ":" + (cachedGroup.isNegated() ? "-" : "") + cachedGroup.getGroup().getId() + ":" + (cachedGroup.isPrimary() ? "p" : "") + ";";
+            }
         }
         return output;
     }
 
     /**
-     * Sets the player's groups as seen in getServerGroups() Changes won't save for now.
+     * Returns all primary groups a player has, indexed by server name.
      */
-    public void setServerGroups(HashMap<String, List<Group>> serverGroups) {
-        this.serverGroups = serverGroups;
+    @Override
+    public HashMap<String, Group> getPrimaryGroups() {
+        HashMap<String, Group> tempPrimaryGroups = new HashMap<String, Group>();
+        for (Entry<String, List<CachedGroup>> entry : groups.entrySet()) {
+            for (CachedGroup cachedGroup : entry.getValue()) {
+                if (cachedGroup.isPrimary())
+                    tempPrimaryGroups.put(entry.getKey(), cachedGroup.getGroup());
+            }
+        }
+        return tempPrimaryGroups;
+    }
+
+    /**
+     * Returns the primary group for a specific server.
+     */
+    @Override
+    public Group getPrimaryGroup(String server) {
+        HashMap<String, Group> primaryGroups = this.getPrimaryGroups();
+        Group primary = primaryGroups.get(server);
+        if (primary != null)
+            return primary;
+        return primaryGroups.get("");
+    }
+
+    /**
+     * Returns the primary group for the current server.
+     */
+    @Override
+    public Group getPrimaryGroup() {
+        return this.currentPrimaryGroup;
+    }
+
+    /**
+     * Returns all groups a player has, including primary groups, indexed by server name.
+     */
+    @Override
+    public HashMap<String, List<CachedGroup>> getCachedGroups() {
+        return this.groups;
+    }
+
+    /**
+     * Returns a list of cached groups including primary groups which apply to a specific server.
+     */
+    @Override
+    public List<CachedGroup> getCachedGroups(String server) {
+        List<CachedGroup> tempGroups = new ArrayList<CachedGroup>();
+
+        // Get server specific groups and add them
+        List<CachedGroup> serverGroupsTemp = groups.get(server);
+        if (serverGroupsTemp != null)
+            tempGroups.addAll(serverGroupsTemp);
+
+        // Get groups that apply on all servers and add them
+        if (!server.isEmpty())
+            tempGroups.addAll(groups.get(""));
+
+        return tempGroups;
+    }
+
+    /**
+     * Returns a list of groups including primary groups which apply to a specific server.
+     */
+    @Override
+    public List<Group> getGroups(String server) {
+        List<CachedGroup> tempGroups = getCachedGroups(server);
+        List<Group> output = new ArrayList<Group>();
+
+        for (CachedGroup cachedGroup : tempGroups) {
+            if (!cachedGroup.isNegated())
+                output.add(cachedGroup.getGroup());
+        }
+        return output;
     }
 
     /**
      * Returns all permissions for this player.
      */
+    @Override
     public ArrayList<PowerfulPermission> getPermissions() {
         return this.permissions;
     }
@@ -93,14 +155,12 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     /**
      * Returns all permissions in effect for this player.
      */
+    @Override
     public List<String> getPermissionsInEffect() {
         return this.realPermissions;
     }
 
-    public void setTemporaryPermissions(List<String> permissions) {
-        this.temporaryPermissions = permissions;
-    }
-
+    @Override
     public boolean isPermissionSet(String permission) {
         return preHasPermission(permission) != null;
     }
@@ -146,7 +206,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
                 }
                 if (lp.get(index).equalsIgnoreCase("*") || (index == 0 && lp.get(0).equalsIgnoreCase("-*"))) {
                     has = !lp.get(0).startsWith("-");
-                    //plugin.debug("wildcard perm check: has = " + has + " toCheckAgainst = " + toCheckAgainst);
+                    // plugin.debug("wildcard perm check: has = " + has + " toCheckAgainst = " + toCheckAgainst);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -158,6 +218,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     /**
      * Check if this player has the specified permission.
      */
+    @Override
     public Boolean hasPermission(String permission) {
         return preHasPermission(permission);
     }
@@ -167,6 +228,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
      * 
      * @return The prefix.
      */
+    @Override
     public String getPrefix() {
         Group group = getPrimaryGroup();
         return (!prefix.isEmpty() ? prefix : (group != null && group.getPrefix() != "" ? group.getPrefix() : ""));
@@ -177,6 +239,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
      * 
      * @return The suffix.
      */
+    @Override
     public String getSuffix() {
         Group group = getPrimaryGroup();
         return (!suffix.isEmpty() ? suffix : (group != null && group.getSuffix() != "" ? group.getSuffix() : ": "));
@@ -185,25 +248,19 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     protected List<String> calculatePermissions(String playerServer, String playerWorld) {
         ArrayList<PowerfulPermission> unprocessedPerms = new ArrayList<PowerfulPermission>();
 
-        Group primary = getPrimaryGroup();
+        Group primary = this.getPrimaryGroup();
 
-        // Add permissions derived from groups.
-        plugin.debug("serverGroups count " + serverGroups.size());
-        for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
-            // plugin.debug("playerServer: " + playerServer + " group key: " + entry.getKey());
-            if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("all") || entry.getKey().equals(playerServer)) {
-                for (Group group : entry.getValue()) {
-                    // plugin.debug("Group add permission test: ID:" + group.getId() + " Primary ID:" + primary.getId());
-                    if (group != null && group.getId() != primary.getId()) {
-                        unprocessedPerms.addAll(group.getPermissions());
-                        // plugin.debug("Added permissions from " + group.getName());
-                    }
-                }
+        // Add permissions derived from groups. Not from groups same as primary.
+        plugin.debug("current groups count " + currentGroups.size());
+        for (Group group : currentGroups) {
+            if (group != null && primary != null && group.getId() != primary.getId()) {
+                unprocessedPerms.addAll(group.getPermissions());
             }
         }
 
         // Add permissions from primary group and parents.
-        unprocessedPerms.addAll(primary.getPermissions());
+        if (primary != null)
+            unprocessedPerms.addAll(primary.getPermissions());
 
         // Add own permissions.
         unprocessedPerms.addAll(this.permissions);
@@ -228,9 +285,9 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     }
 
     /**
-     * Calculate if the player should have this permission. Does not care about negated permissions. Simply checks if player is same server and world.
+     * Checks if permission applies for server and world.
      */
-    private boolean permissionApplies(PowerfulPermission e, String playerServer, String playerWorld) {
+    private static boolean permissionApplies(PowerfulPermission e, String playerServer, String playerWorld) {
         boolean isSameServer = false;
         boolean isSameWorld = false;
 
