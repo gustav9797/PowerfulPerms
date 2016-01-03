@@ -110,7 +110,9 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
         if (e.getSender() instanceof ProxiedPlayer) {
             ProxiedPlayer player = (ProxiedPlayer) e.getSender();
             IPermissionsPlayer gp = permissionManager.getPermissionsPlayer(player.getUniqueId());
-            boolean hasPermission = gp.hasPermission(e.getPermission());
+            Boolean hasPermission = gp.hasPermission(e.getPermission());
+            if(hasPermission == null)
+                hasPermission = false;
             e.setHasPermission(hasPermission);
         }
     }

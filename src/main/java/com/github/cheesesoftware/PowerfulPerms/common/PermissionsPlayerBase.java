@@ -146,6 +146,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
                 }
                 if (lp.get(index).equalsIgnoreCase("*") || (index == 0 && lp.get(0).equalsIgnoreCase("-*"))) {
                     has = !lp.get(0).startsWith("-");
+                    //plugin.debug("wildcard perm check: has = " + has + " toCheckAgainst = " + toCheckAgainst);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -157,12 +158,8 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     /**
      * Check if this player has the specified permission.
      */
-    public boolean hasPermission(String permission) {
-        Boolean input = preHasPermission(permission);
-        boolean output = false;
-        if (input != null)
-            output = input.booleanValue();
-        return output;
+    public Boolean hasPermission(String permission) {
+        return preHasPermission(permission);
     }
 
     /**
@@ -193,13 +190,13 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         // Add permissions derived from groups.
         plugin.debug("serverGroups count " + serverGroups.size());
         for (Entry<String, List<Group>> entry : serverGroups.entrySet()) {
-            //plugin.debug("playerServer: " + playerServer + " group key: " + entry.getKey());
+            // plugin.debug("playerServer: " + playerServer + " group key: " + entry.getKey());
             if (entry.getKey().isEmpty() || entry.getKey().equalsIgnoreCase("all") || entry.getKey().equals(playerServer)) {
                 for (Group group : entry.getValue()) {
-                    //plugin.debug("Group add permission test: ID:" + group.getId() + " Primary ID:" + primary.getId());
+                    // plugin.debug("Group add permission test: ID:" + group.getId() + " Primary ID:" + primary.getId());
                     if (group != null && group.getId() != primary.getId()) {
                         unprocessedPerms.addAll(group.getPermissions());
-                        //plugin.debug("Added permissions from " + group.getName());
+                        // plugin.debug("Added permissions from " + group.getName());
                     }
                 }
             }

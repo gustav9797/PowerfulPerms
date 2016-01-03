@@ -64,11 +64,13 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
         for (String permString : perms) {
             boolean invert = false;
             if (permString.startsWith("-")) {
+                realPerms.add(permString);
                 invert = true;
                 if (permString.length() > 1)
                     permString = permString.substring(1);
             }
-            realPerms.add(permString);
+            else
+                realPerms.add(permString);
             Permission perm = Bukkit.getPluginManager().getPermission(permString);
             if (perm != null)
                 realPerms.addAll(calculateChildPermissions(perm.getChildren(), invert));

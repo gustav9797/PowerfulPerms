@@ -20,7 +20,7 @@ public interface IPermissionsPlayer {
     
     public ArrayList<PowerfulPermission> getPermissions();
 
-    public boolean hasPermission(String permission);
+    public Boolean hasPermission(String permission);
 
     public boolean isPermissionSet(String permission);
 

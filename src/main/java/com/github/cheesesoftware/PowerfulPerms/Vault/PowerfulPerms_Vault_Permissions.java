@@ -130,8 +130,11 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     @Override
     public boolean playerHas(String world, String player, String permission) {
         IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
-        if (p != null)
-            return p.hasPermission(permission);
+        if (p != null) {
+            Boolean has = p.hasPermission(permission);
+            if (has != null)
+                return has;
+        }
         return false;
     }
 

@@ -1044,12 +1044,6 @@ public abstract class PermissionManagerBase {
             return;
         }
 
-        if (server.isEmpty()) {
-            response.setResponse(false, "Can not remove player primary group.");
-            db.scheduler.runSync(response);
-            return;
-        }
-
         db.getPlayers(playerName, new DBRunnable() {
 
             @Override

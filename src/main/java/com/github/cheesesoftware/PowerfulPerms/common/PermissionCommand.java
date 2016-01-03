@@ -419,11 +419,14 @@ public class PermissionCommand {
             String permission = args[1];
             IPermissionsPlayer p = permissionManager.getPermissionsPlayer(sender);
             if (p != null) {
-                boolean has = p.hasPermission(permission);
-                if (has)
-                    sendSender(invoker, sender, "You have the permission \"" + permission + "\".");
-                else
-                    sendSender(invoker, sender, "You do not have the permission \"" + permission + "\".");
+                Boolean has = p.hasPermission(permission);
+                if (has != null) {
+                    if (has)
+                        sendSender(invoker, sender, "You have the permission \"" + permission + "\".");
+                    else
+                        sendSender(invoker, sender, "You do not have the permission \"" + permission + "\".");
+                } else
+                    sendSender(invoker, sender, "The permission \"" + permission + "\" is not set.");
             } else
                 sendSender(invoker, sender, "Could not check permission. Make sure you are in-game.");
         } else
