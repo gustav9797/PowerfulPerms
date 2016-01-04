@@ -75,8 +75,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
                     jedis.subscribe(subscriber, "PowerfulPerms");
                 } catch (Exception e) {
                     pool.returnBrokenResource(jedis);
-                    tempPlugin.getLogger().warning(
-                            PowerfulPerms.pluginPrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    tempPlugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                     return;
                 }
                 pool.returnResource(jedis);

@@ -45,19 +45,24 @@ public abstract class PermissionManagerBase {
     public PermissionManagerBase(Database database, IPlugin plugin, String serverName) {
         this.db = database;
         this.plugin = plugin;
-        this.serverName = serverName;
+        PermissionManagerBase.serverName = serverName;
+
+        final IPlugin tempPlugin = plugin;
 
         // Create table Groups, add group Guest
-        db.tableExists(Database.tblGroups, new DBRunnable() {
+        db.tableExists(Database.tblGroups, new DBRunnable(true) {
 
             @Override
             public void run() {
                 if (!result.booleanValue()) {
-                    db.createGroupsTable(new DBRunnable() {
+                    db.createGroupsTable(new DBRunnable(true) {
 
                         @Override
                         public void run() {
-
+                            if (result.booleanValue())
+                                tempPlugin.getLogger().info("Created table \"" + Database.tblGroups + "\"");
+                            else
+                                tempPlugin.getLogger().info("Could not create table \"" + Database.tblGroups + "\"");
                         }
                     });
                 }
@@ -65,16 +70,19 @@ public abstract class PermissionManagerBase {
         });
 
         // Create table Players
-        db.tableExists(Database.tblPlayers, new DBRunnable() {
+        db.tableExists(Database.tblPlayers, new DBRunnable(true) {
 
             @Override
             public void run() {
                 if (!result.booleanValue()) {
-                    db.createPlayersTable(new DBRunnable() {
+                    db.createPlayersTable(new DBRunnable(true) {
 
                         @Override
                         public void run() {
-
+                            if (result.booleanValue())
+                                tempPlugin.getLogger().info("Created table \"" + Database.tblPlayers + "\"");
+                            else
+                                tempPlugin.getLogger().info("Could not create table \"" + Database.tblPlayers + "\"");
                         }
                     });
                 }
@@ -82,16 +90,19 @@ public abstract class PermissionManagerBase {
         });
 
         // Create table Permissions
-        db.tableExists(Database.tblPermissions, new DBRunnable() {
+        db.tableExists(Database.tblPermissions, new DBRunnable(true) {
 
             @Override
             public void run() {
                 if (!result.booleanValue()) {
-                    db.createPermissionsTable(new DBRunnable() {
+                    db.createPermissionsTable(new DBRunnable(true) {
 
                         @Override
                         public void run() {
-
+                            if (result.booleanValue())
+                                tempPlugin.getLogger().info("Created table \"" + Database.tblPermissions + "\"");
+                            else
+                                tempPlugin.getLogger().info("Could not create table \"" + Database.tblPermissions + "\"");
                         }
                     });
                 }
@@ -205,6 +216,7 @@ public abstract class PermissionManagerBase {
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
         debug("loadPlayer begin");
+
         db.getPlayer(uuid, new DBRunnable(login) {
 
             @Override
@@ -289,7 +301,7 @@ public abstract class PermissionManagerBase {
                                                     }
                                                 });
                                             } else
-                                                plugin.getLogger().severe(consolePrefix + "Cannot get data from user [default]. Please create the default user.");
+                                                plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. Please create the default user.");
                                         }
                                     });
                                 }
@@ -1087,7 +1099,7 @@ public abstract class PermissionManagerBase {
                         }
                         newGroupList.add(new CachedGroupRaw(group.getId(), true, false));
                     }
-                    playerGroups.put("", newGroupList);
+                    playerGroups.put(server, newGroupList);
 
                     String playerGroupStringOutput = getPlayerGroupsRaw(playerGroups);
                     db.setPlayerGroups(playerName, playerGroupStringOutput, new DBRunnable() {
@@ -1395,6 +1407,7 @@ public abstract class PermissionManagerBase {
             });
 
             response.setResponse(true, "Removed " + counter.amount() + " permissions from the group.");
+            db.scheduler.runSync(response);
             loadGroups();
             notifyReloadGroups();
         } else {

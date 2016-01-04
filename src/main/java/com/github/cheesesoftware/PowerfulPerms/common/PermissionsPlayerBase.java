@@ -78,7 +78,17 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         Group primary = primaryGroups.get(server);
         if (primary != null)
             return primary;
-        return primaryGroups.get("");
+        Group second = primaryGroups.get("");
+        if (second != null)
+            return second;
+        // Has no primary groups, use old system
+        List<CachedGroup> temp = groups.get("");
+        if (temp != null) {
+            Iterator<CachedGroup> it = temp.iterator();
+            plugin.debug("Database syntax for player is old");
+            return it.next().getGroup();
+        }
+        return null;
     }
 
     /**
@@ -124,9 +134,25 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         List<CachedGroup> tempGroups = getCachedGroups(server);
         List<Group> output = new ArrayList<Group>();
 
-        for (CachedGroup cachedGroup : tempGroups) {
-            if (!cachedGroup.isNegated())
+        Iterator<CachedGroup> it1 = tempGroups.iterator();
+        while (it1.hasNext()) {
+            CachedGroup cachedGroup = it1.next();
+            if (!cachedGroup.isNegated()) {
                 output.add(cachedGroup.getGroup());
+                it1.remove();
+            }
+        }
+
+        // Remaining groups are negated
+        for (CachedGroup cachedGroup : tempGroups) {
+            Iterator<Group> it2 = output.iterator();
+            while (it2.hasNext()) {
+                Group temp = it2.next();
+                if (temp.getId() == cachedGroup.getGroup().getId()) {
+                    it2.remove();
+                    plugin.debug("Removed negated group " + temp.getId());
+                }
+            }
         }
         return output;
     }

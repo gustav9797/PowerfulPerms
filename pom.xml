@@ -55,6 +55,24 @@
 							</resources>
 						</configuration>
 					</execution>
+                    <execution>
+                        <id>copy-to-other</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>C:\Users\Gustav\Desktop\spigotother-bungee\plugins</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>C:\Users\Gustav\Desktop\spigotserver1.8\plugins\</directory>
+                                    <includes>
+                                        <include>${build.finalName}.jar</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
 					<execution>
 						<id>copy-to-my-desktop</id>
 						<phase>install</phase>

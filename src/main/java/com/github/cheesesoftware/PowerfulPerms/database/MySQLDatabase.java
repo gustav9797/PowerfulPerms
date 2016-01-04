@@ -97,23 +97,10 @@ public class MySQLDatabase extends Database {
                         + "` (`uuid` varchar(36) NOT NULL DEFAULT '',`name` varchar(32) NOT NULL,`groups` longtext NOT NULL,`prefix` text NOT NULL,`suffix` text NOT NULL,PRIMARY KEY (`name`,`uuid`),UNIQUE KEY `uuid_UNIQUE` (`uuid`)) ENGINE=InnoDB DEFAULT CHARSET=utf8";
                 try {
                     sql.getConnection().prepareStatement(playersTable).execute();
+                    // Insert player [default]
+                    sql.getConnection().prepareStatement("INSERT INTO `" + tblPlayers + "` (`name`, `groups`, `prefix`, `suffix`) VALUES ('[default]', ':1:p;', '', '');").execute();
                 } catch (SQLException e1) {
                     e1.printStackTrace();
-                    success = false;
-                }
-
-                // Insert [default] if not exists
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM players WHERE `name`=?");
-                    s.setString(1, "[default]");
-                    s.execute();
-                    ResultSet result = s.getResultSet();
-                    if (!result.next()) {
-                        // Default player doesn't exist. Create it.
-                        sql.getConnection().prepareStatement("INSERT INTO `" + tblPlayers + "` (`name`, `groups`, `prefix`, `suffix`) VALUES ('[default]', '1', '', '');").execute();
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
                     success = false;
                 }
 
@@ -549,7 +536,7 @@ public class MySQLDatabase extends Database {
                     s.setString(2, permission);
                     s.setString(3, server);
                     s.setString(4, world);
-                    
+
                     amount = s.executeUpdate();
                     if (amount <= 0)
                         success = false;

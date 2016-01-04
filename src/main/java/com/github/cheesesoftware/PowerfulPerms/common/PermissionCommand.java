@@ -32,7 +32,7 @@ public class PermissionCommand {
             if (args.length >= 3) {
                 if (args[2].equalsIgnoreCase("clearperms")) {
                     permissionManager.removePlayerPermissions(playerName, response);
-                } else if (args[2].equalsIgnoreCase("setprimary") && args.length >= 4) {
+                } else if (args[2].equalsIgnoreCase("addprimary") && args.length >= 4) {
                     String group = args[3];
                     String server = "";
                     if (args.length >= 5)
@@ -42,24 +42,27 @@ public class PermissionCommand {
                     String server = "";
                     if (args.length >= 4)
                         server = args[3];
+                    if (args.length >= 5)
+                        server = args[4];
+
                     permissionManager.setPlayerPrimaryGroup(playerName, "", server, response);
                 } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
                     String group = args[3];
                     String server = "";
                     if (args.length >= 5)
                         server = args[4];
-                    boolean negated = server.startsWith("-");
+                    boolean negated = group.startsWith("-");
                     if (negated)
-                        server = server.substring(1);
+                        group = group.substring(1);
                     permissionManager.addPlayerGroup(playerName, group, server, negated, response);
                 } else if (args[2].equalsIgnoreCase("removegroup") && args.length >= 4) {
                     String group = args[3];
                     String server = "";
                     if (args.length >= 5)
                         server = args[4];
-                    boolean negated = server.startsWith("-");
+                    boolean negated = group.startsWith("-");
                     if (negated)
-                        server = server.substring(1);
+                        group = group.substring(1);
                     permissionManager.removePlayerGroup(playerName, group, server, negated, response);
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
                     String permission = args[3];
@@ -207,13 +210,14 @@ public class PermissionCommand {
                                             if (group != null && cachedGroup.isPrimary()) {
                                                 primaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
                                                         + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
-                                                if (it.hasNext() || itt.hasNext())
-                                                    primaryGroups += ", ";
+                                                primaryGroups += ", ";
                                             }
                                         }
                                     }
                                 } else
                                     primaryGroups += "Player has no primary groups.";
+                                if (primaryGroups.endsWith(", "))
+                                    primaryGroups = primaryGroups.substring(0, primaryGroups.length() - 2);
                                 rows.add(primaryGroups);
 
                                 String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
@@ -228,13 +232,14 @@ public class PermissionCommand {
                                             if (group != null && !cachedGroup.isPrimary()) {
                                                 otherGroups += (cachedGroup.isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
                                                         + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
-                                                if (it.hasNext() || itt.hasNext())
-                                                    otherGroups += ", ";
+                                                otherGroups += ", ";
                                             }
                                         }
                                     }
                                 } else
                                     otherGroups += "Player has no groups.";
+                                if (otherGroups.endsWith(", "))
+                                    otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
                                 rows.add(otherGroups);
 
                                 permissionManager.getPlayerPermissions(playerName, new ResultRunnable() {
@@ -495,20 +500,19 @@ public class PermissionCommand {
         String helpPrefix = "§b ";
         command.sendSender(sender, ChatColor.RED + "~ " + ChatColor.BLUE + "PowerfulPerms" + ChatColor.BOLD + ChatColor.RED + " Reference ~");
         command.sendSender(sender, helpPrefix + "/pp user <username>");
-        command.sendSender(sender, helpPrefix + "/pp user <username> setprimary <group> (server)");
+        command.sendSender(sender, helpPrefix + "/pp user <username> addprimary <group> (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> removeprimary (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> addgroup/removegroup <group> (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp user <username> clearperms");
-        command.sendSender(sender, helpPrefix + "/pp user <username> prefix set/remove <prefix>");
-        command.sendSender(sender, helpPrefix + "/pp user <username> suffix set/remove <suffix>");
+        command.sendSender(sender, helpPrefix + "/pp user <username> prefix/suffix set/remove <prefix/suffix>");
         command.sendSender(sender, helpPrefix + "/pp groups");
         command.sendSender(sender, helpPrefix + "/pp group <group>");
         command.sendSender(sender, helpPrefix + "/pp group <group> create/delete/clearperms");
         command.sendSender(sender, helpPrefix + "/pp group <group> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp group <group> parents add/remove <parent>");
-        command.sendSender(sender, helpPrefix + "/pp group <group> prefix set/remove <prefix>");
-        command.sendSender(sender, helpPrefix + "/pp group <group> suffix set/remove <suffix>");
+        command.sendSender(sender, helpPrefix + "/pp group <group> prefix/suffix set/remove <prefix/suffix>");
+        command.sendSender(sender, helpPrefix + "/pp haspermission <permission>");
         command.sendSender(sender, helpPrefix + "/pp reload  |  /pp globalreload");
         command.sendSender(sender, helpPrefix + "PowerfulPerms version " + command.getVersion() + " by gustav9797");
     }
