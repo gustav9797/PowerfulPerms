@@ -122,7 +122,7 @@ public class PermissionCommand {
 
                             @Override
                             public void run() {
-                                sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": " + (result != null ? (String) result : ""));
+                                sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (result != null ? (String) result : "") + "\"");
                             }
                         });
 
@@ -158,7 +158,7 @@ public class PermissionCommand {
 
                             @Override
                             public void run() {
-                                sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": " + (result != null ? (String) result : ""));
+                                sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": \"" + (result != null ? (String) result : "") + "\"");
                             }
                         });
                 } else {
@@ -341,7 +341,7 @@ public class PermissionCommand {
                         permissionManager.setGroupPrefix(groupName, "", response);
                     } else {
                         String prefix = permissionManager.getGroupPrefix(groupName);
-                        sendSender(invoker, sender, "Prefix for group " + groupName + ": " + (prefix.equals("") ? ChatColor.RED + "none" : prefix));
+                        sendSender(invoker, sender, "Prefix for group " + groupName + ": \"" + prefix + "\"");
                     }
                 } else if (args[2].equalsIgnoreCase("suffix")) {
                     if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
@@ -371,7 +371,7 @@ public class PermissionCommand {
                         permissionManager.setGroupSuffix(groupName, "", response);
                     } else {
                         String suffix = permissionManager.getGroupSuffix(groupName);
-                        sendSender(invoker, sender, "Suffix for group " + groupName + ": " + (suffix.equals("") ? ChatColor.RED + "none" : suffix));
+                        sendSender(invoker, sender, "Suffix for group " + groupName + ": \"" + suffix + "\"");
                     }
                 } else if (args[2].equalsIgnoreCase("parents")) {
                     if (args.length >= 5 && args[3].equalsIgnoreCase("add")) {

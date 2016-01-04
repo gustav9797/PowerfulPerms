@@ -327,7 +327,7 @@ public abstract class PermissionManagerBase {
         debug("loadPlayerFinished begin");
         final String groups_loaded = (row != null ? row.getString("groups") : "");
         final String prefix_loaded = (row != null ? row.getString("prefix") : "");
-        final String suffix_loaded = (row != null ? row.getString("suffix") : ": ");
+        final String suffix_loaded = (row != null ? row.getString("suffix") : "");
 
         // ArrayList<PowerfulPermission> perms =
         loadPlayerPermissions(uuid, new ResultRunnable(login) {

@@ -255,7 +255,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     @Override
     public String getSuffix() {
         Group group = getPrimaryGroup();
-        return (!suffix.isEmpty() ? suffix : (group != null && group.getSuffix() != "" ? group.getSuffix() : ": "));
+        return (!suffix.isEmpty() ? suffix : (group != null && group.getSuffix() != "" ? group.getSuffix() : ""));
     }
 
     /**
