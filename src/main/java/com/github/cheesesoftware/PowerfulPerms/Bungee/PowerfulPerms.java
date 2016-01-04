@@ -53,9 +53,12 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
         }
 
         this.sql = new SQL(config.getString("host"), config.getString("database"), config.getInt("port"), config.getString("username"), config.getString("password"));
+
+        PermissionManagerBase.redis = config.getBoolean("redis", true);
         PermissionManagerBase.redis_ip = config.getString("redis_ip");
         PermissionManagerBase.redis_port = config.getInt("redis_port");
         PermissionManagerBase.redis_password = config.getString("redis_password");
+
         bungee_command = config.getBoolean("bungee_command");
         debug = config.getBoolean("debug");
 
@@ -107,13 +110,16 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPermissionCheck(PermissionCheckEvent e) {
-        if (e.getSender() instanceof ProxiedPlayer) {
+        if (e != null && e.getSender() != null && e.getSender() instanceof ProxiedPlayer) {
             ProxiedPlayer player = (ProxiedPlayer) e.getSender();
             IPermissionsPlayer gp = permissionManager.getPermissionsPlayer(player.getUniqueId());
-            Boolean hasPermission = gp.hasPermission(e.getPermission());
-            if(hasPermission == null)
-                hasPermission = false;
-            e.setHasPermission(hasPermission);
+            if (gp != null) {
+                Boolean hasPermission = gp.hasPermission(e.getPermission());
+                if (hasPermission == null)
+                    hasPermission = false;
+                e.setHasPermission(hasPermission);
+            } else
+                debug("PermissionsPlayer is null");
         }
     }
 

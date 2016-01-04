@@ -36,53 +36,55 @@ public class PermissionManager extends PermissionManagerBase implements Listener
 
         this.injector = new PermissibleBaseInjector();
 
-        final Plugin tempPlugin = plugin;
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-            @SuppressWarnings("deprecation")
-            public void run() {
-                Jedis jedis = null;
-                try {
-                    jedis = pool.getResource();
-                    subscriber = (new JedisPubSub() {
-                        @Override
-                        public void onMessage(String channel, final String msg) {
-                            Bukkit.getScheduler().runTaskAsynchronously(tempPlugin, new Runnable() {
-                                public void run() {
-                                    // Reload player or groups depending on message
-                                    String[] split = msg.split(" ");
-                                    if (split.length == 2) {
-                                        String first = split[0];
-                                        String server = split[1];
+        if (redis) {
+            final Plugin tempPlugin = plugin;
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+                @SuppressWarnings("deprecation")
+                public void run() {
+                    Jedis jedis = null;
+                    try {
+                        jedis = pool.getResource();
+                        subscriber = (new JedisPubSub() {
+                            @Override
+                            public void onMessage(String channel, final String msg) {
+                                Bukkit.getScheduler().runTaskAsynchronously(tempPlugin, new Runnable() {
+                                    public void run() {
+                                        // Reload player or groups depending on message
+                                        String[] split = msg.split(" ");
+                                        if (split.length == 2) {
+                                            String first = split[0];
+                                            String server = split[1];
 
-                                        if (server.equals(Bukkit.getServerName()))
-                                            return;
-                                        if (first.equals("[groups]")) {
-                                            loadGroups();
-                                            Bukkit.getLogger().info(consolePrefix + "Reloaded all groups.");
-                                        } else if (first.equals("[players]")) {
-                                            loadGroups();
-                                            Bukkit.getLogger().info(consolePrefix + "Reloaded all players. ");
-                                        } else {
-                                            Player player = Bukkit.getPlayer(first);
-                                            if (player != null) {
-                                                loadPlayer(player);
-                                                Bukkit.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");
+                                            if (server.equals(Bukkit.getServerName()))
+                                                return;
+                                            if (first.equals("[groups]")) {
+                                                loadGroups();
+                                                Bukkit.getLogger().info(consolePrefix + "Reloaded all groups.");
+                                            } else if (first.equals("[players]")) {
+                                                loadGroups();
+                                                Bukkit.getLogger().info(consolePrefix + "Reloaded all players. ");
+                                            } else {
+                                                Player player = Bukkit.getPlayer(first);
+                                                if (player != null) {
+                                                    loadPlayer(player);
+                                                    Bukkit.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            });
-                        }
-                    });
-                    jedis.subscribe(subscriber, "PowerfulPerms");
-                } catch (Exception e) {
-                    pool.returnBrokenResource(jedis);
-                    Bukkit.getLogger().warning(consolePrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
-                    return;
+                                });
+                            }
+                        });
+                        jedis.subscribe(subscriber, "PowerfulPerms");
+                    } catch (Exception e) {
+                        pool.returnBrokenResource(jedis);
+                        Bukkit.getLogger().warning(redisMessage);
+                        return;
+                    }
+                    pool.returnResource(jedis);
                 }
-                pool.returnResource(jedis);
-            }
-        });
+            });
+        }
 
         loadGroups(true, true);
     }

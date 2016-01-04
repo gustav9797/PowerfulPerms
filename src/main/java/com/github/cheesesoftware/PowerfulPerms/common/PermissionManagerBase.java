@@ -34,6 +34,7 @@ public abstract class PermissionManagerBase {
     private final Database db;
     protected IPlugin plugin;
 
+    public static boolean redis;
     public static String redis_ip;
     public static int redis_port;
     public static String redis_password;
@@ -41,6 +42,7 @@ public abstract class PermissionManagerBase {
 
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
+    public static String redisMessage = "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.";
 
     public PermissionManagerBase(Database database, IPlugin plugin, String serverName) {
         this.db = database;
@@ -121,61 +123,67 @@ public abstract class PermissionManagerBase {
     }
 
     public void notifyReloadGroups() {
-        plugin.runTaskAsynchronously(new Runnable() {
-            @SuppressWarnings("deprecation")
-            public void run() {
-                try {
-                    Jedis jedis = pool.getResource();
+        if (redis) {
+            plugin.runTaskAsynchronously(new Runnable() {
+                @SuppressWarnings("deprecation")
+                public void run() {
                     try {
-                        jedis.publish("PowerfulPerms", "[groups]" + " " + serverName);
+                        Jedis jedis = pool.getResource();
+                        try {
+                            jedis.publish("PowerfulPerms", "[groups]" + " " + serverName);
+                        } catch (Exception e) {
+                            pool.returnBrokenResource(jedis);
+                        }
+                        pool.returnResource(jedis);
                     } catch (Exception e) {
-                        pool.returnBrokenResource(jedis);
+                        plugin.getLogger().warning(redisMessage);
                     }
-                    pool.returnResource(jedis);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
-            }
-        });
+            });
+        }
     }
 
     public void notifyReloadPlayers() {
-        plugin.runTaskAsynchronously(new Runnable() {
-            @SuppressWarnings("deprecation")
-            public void run() {
-                try {
-                    Jedis jedis = pool.getResource();
+        if (redis) {
+            plugin.runTaskAsynchronously(new Runnable() {
+                @SuppressWarnings("deprecation")
+                public void run() {
                     try {
-                        jedis.publish("PowerfulPerms", "[players]" + " " + serverName);
-                    } catch (Exception e) {
-                        pool.returnBrokenResource(jedis);
-                    }
-                    pool.returnResource(jedis);
+                        Jedis jedis = pool.getResource();
+                        try {
+                            jedis.publish("PowerfulPerms", "[players]" + " " + serverName);
+                        } catch (Exception e) {
+                            pool.returnBrokenResource(jedis);
+                        }
+                        pool.returnResource(jedis);
 
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    } catch (Exception e) {
+                        plugin.getLogger().warning(redisMessage);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     public void notifyReloadPlayer(final String playerName) {
-        plugin.runTaskAsynchronously(new Runnable() {
-            @SuppressWarnings("deprecation")
-            public void run() {
-                try {
-                    Jedis jedis = pool.getResource();
+        if (redis) {
+            plugin.runTaskAsynchronously(new Runnable() {
+                @SuppressWarnings("deprecation")
+                public void run() {
                     try {
-                        jedis.publish("PowerfulPerms", playerName + " " + serverName);
+                        Jedis jedis = pool.getResource();
+                        try {
+                            jedis.publish("PowerfulPerms", playerName + " " + serverName);
+                        } catch (Exception e) {
+                            pool.returnBrokenResource(jedis);
+                        }
+                        pool.returnResource(jedis);
                     } catch (Exception e) {
-                        pool.returnBrokenResource(jedis);
+                        plugin.getLogger().warning(redisMessage);
                     }
-                    pool.returnResource(jedis);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
-            }
-        });
+            });
+        }
     }
 
     public void reloadPlayers() {
