@@ -31,4 +31,8 @@ public interface IPermissionsPlayer {
     public String getPrefix();
 
     public String getSuffix();
+    
+    public String getOwnPrefix();
+    
+    public String getOwnSuffix();
 }

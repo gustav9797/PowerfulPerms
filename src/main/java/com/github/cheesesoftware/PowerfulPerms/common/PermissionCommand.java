@@ -118,7 +118,7 @@ public class PermissionCommand {
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
                         permissionManager.setPlayerPrefix(playerName, "", response);
                     } else
-                        permissionManager.getPlayerPrefix(playerName, new ResultRunnable() {
+                        permissionManager.getPlayerOwnPrefix(playerName, new ResultRunnable() {
 
                             @Override
                             public void run() {
@@ -154,7 +154,7 @@ public class PermissionCommand {
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
                         permissionManager.setPlayerSuffix(playerName, "", response);
                     } else
-                        permissionManager.getPlayerSuffix(playerName, new ResultRunnable() {
+                        permissionManager.getPlayerOwnSuffix(playerName, new ResultRunnable() {
 
                             @Override
                             public void run() {

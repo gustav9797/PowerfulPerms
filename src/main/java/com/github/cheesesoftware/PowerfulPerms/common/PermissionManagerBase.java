@@ -903,6 +903,62 @@ public abstract class PermissionManagerBase {
     }
 
     /**
+     * Gets the own prefix of a player. If player isn't online it retrieves data from database.
+     */
+    public void getPlayerOwnPrefix(String playerName, final ResultRunnable resultRunnable) {
+        // If player is online, get data directly from player
+        UUID uuid = plugin.getPlayerUUID(playerName);
+        if (uuid != null) {
+            IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
+            if (gp != null) {
+                resultRunnable.setResult(gp.getOwnPrefix());
+                db.scheduler.runSync(resultRunnable);
+                return;
+            }
+        }
+
+        db.getPlayers(playerName, new DBRunnable() {
+
+            @Override
+            public void run() {
+                if (result.hasNext()) {
+                    DBDocument row = result.next();
+                    resultRunnable.setResult(row.getString("prefix"));
+                }
+                db.scheduler.runSync(resultRunnable);
+            }
+        });
+    }
+
+    /**
+     * Gets the own suffix of a player. If player isn't online it retrieves data from database.
+     */
+    public void getPlayerOwnSuffix(String playerName, final ResultRunnable resultRunnable) {
+        // If player is online, get data directly from player
+        UUID uuid = plugin.getPlayerUUID(playerName);
+        if (uuid != null) {
+            IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
+            if (gp != null) {
+                resultRunnable.setResult(gp.getOwnSuffix());
+                db.scheduler.runSync(resultRunnable);
+                return;
+            }
+        }
+
+        db.getPlayers(playerName, new DBRunnable() {
+
+            @Override
+            public void run() {
+                if (result.hasNext()) {
+                    DBDocument row = result.next();
+                    resultRunnable.setResult(row.getString("suffix"));
+                }
+                db.scheduler.runSync(resultRunnable);
+            }
+        });
+    }
+
+    /**
      * Gets the prefix of a group.
      */
     public String getGroupPrefix(String groupName) {

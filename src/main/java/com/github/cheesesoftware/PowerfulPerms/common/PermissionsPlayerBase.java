@@ -258,6 +258,26 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         return (!suffix.isEmpty() ? suffix : (group != null && group.getSuffix() != "" ? group.getSuffix() : ": "));
     }
 
+    /**
+     * Returns the player's own prefix.
+     * 
+     * @return The prefix.
+     */
+    @Override
+    public String getOwnPrefix() {
+        return prefix;
+    }
+
+    /**
+     * Returns the player's own suffix.
+     * 
+     * @return The suffix.
+     */
+    @Override
+    public String getOwnSuffix() {
+        return suffix;
+    }
+
     protected List<String> calculatePermissions(String playerServer, String playerWorld) {
         ArrayList<PowerfulPermission> unprocessedPerms = new ArrayList<PowerfulPermission>();
 
