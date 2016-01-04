@@ -130,7 +130,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         debug("serverconnected event " + e.getServer().getInfo().getName());
         if (players.containsKey(e.getPlayer().getUniqueId())) {
             PermissionsPlayer player = (PermissionsPlayer) players.get(e.getPlayer().getUniqueId());
-            player.UpdatePermissions(e.getServer().getInfo());
+            player.updatePermissions(e.getServer().getInfo());
         }
     }
 

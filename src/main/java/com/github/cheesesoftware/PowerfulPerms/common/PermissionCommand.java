@@ -32,21 +32,35 @@ public class PermissionCommand {
             if (args.length >= 3) {
                 if (args[2].equalsIgnoreCase("clearperms")) {
                     permissionManager.removePlayerPermissions(playerName, response);
-                } else if (args[2].equalsIgnoreCase("setprimarygroup") && args.length >= 4) {
+                } else if (args[2].equalsIgnoreCase("setprimary") && args.length >= 4) {
                     String group = args[3];
-                    permissionManager.setPlayerPrimaryGroup(playerName, group, response);
+                    String server = "";
+                    if (args.length >= 5)
+                        server = args[4];
+                    permissionManager.setPlayerPrimaryGroup(playerName, group, server, response);
+                } else if (args[2].equalsIgnoreCase("removeprimary")) {
+                    String server = "";
+                    if (args.length >= 4)
+                        server = args[3];
+                    permissionManager.setPlayerPrimaryGroup(playerName, "", server, response);
                 } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
                     String group = args[3];
                     String server = "";
                     if (args.length >= 5)
                         server = args[4];
-                    permissionManager.addPlayerGroup(playerName, group, server, response);
+                    boolean negated = server.startsWith("-");
+                    if (negated)
+                        server = server.substring(1);
+                    permissionManager.addPlayerGroup(playerName, group, server, negated, response);
                 } else if (args[2].equalsIgnoreCase("removegroup") && args.length >= 4) {
                     String group = args[3];
                     String server = "";
                     if (args.length >= 5)
                         server = args[4];
-                    permissionManager.removePlayerGroup(playerName, group, server, response);
+                    boolean negated = server.startsWith("-");
+                    if (negated)
+                        server = server.substring(1);
+                    permissionManager.removePlayerGroup(playerName, group, server, negated, response);
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
                     String permission = args[3];
                     String world = "";
@@ -179,20 +193,40 @@ public class PermissionCommand {
 
                             @Override
                             public void run() {
-                                HashMap<String, List<Group>> groups = (HashMap<String, List<Group>>) result;
-                                Group primary = permissionManager.getPlayerPrimaryGroup(groups);
-                                rows.add(ChatColor.GREEN + "Primary Group" + ChatColor.WHITE + ": " + (primary != null ? primary.getName() : "Player has no group."));
+                                HashMap<String, List<CachedGroup>> groups = (HashMap<String, List<CachedGroup>>) result;
+
+                                String primaryGroups = ChatColor.GREEN + "Primary Groups" + ChatColor.WHITE + ": ";
+                                if (groups != null && groups.size() > 0) {
+                                    Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
+                                    while (it.hasNext()) {
+                                        Entry<String, List<CachedGroup>> current = it.next();
+                                        Iterator<CachedGroup> itt = current.getValue().iterator();
+                                        while (itt.hasNext()) {
+                                            CachedGroup cachedGroup = itt.next();
+                                            Group group = cachedGroup.getGroup();
+                                            if (group != null && cachedGroup.isPrimary()) {
+                                                primaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
+                                                        + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
+                                                if (it.hasNext() || itt.hasNext())
+                                                    primaryGroups += ", ";
+                                            }
+                                        }
+                                    }
+                                } else
+                                    primaryGroups += "Player has no primary groups.";
+                                rows.add(primaryGroups);
 
                                 String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
                                 if (groups != null && groups.size() > 0) {
-                                    Iterator<Entry<String, List<Group>>> it = groups.entrySet().iterator();
+                                    Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
                                     while (it.hasNext()) {
-                                        Entry<String, List<Group>> current = it.next();
-                                        Iterator<Group> itt = current.getValue().iterator();
+                                        Entry<String, List<CachedGroup>> current = it.next();
+                                        Iterator<CachedGroup> itt = current.getValue().iterator();
                                         while (itt.hasNext()) {
-                                            Group group = itt.next();
-                                            if (group != null) {
-                                                otherGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
+                                            CachedGroup cachedGroup = itt.next();
+                                            Group group = cachedGroup.getGroup();
+                                            if (group != null && !cachedGroup.isPrimary()) {
+                                                otherGroups += (cachedGroup.isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
                                                         + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
                                                 if (it.hasNext() || itt.hasNext())
                                                     otherGroups += ", ";
@@ -461,9 +495,9 @@ public class PermissionCommand {
         String helpPrefix = "§b ";
         command.sendSender(sender, ChatColor.RED + "~ " + ChatColor.BLUE + "PowerfulPerms" + ChatColor.BOLD + ChatColor.RED + " Reference ~");
         command.sendSender(sender, helpPrefix + "/pp user <username>");
-        command.sendSender(sender, helpPrefix + "/pp user <username> setprimarygroup <group>");
-        command.sendSender(sender, helpPrefix + "/pp user <username> addgroup <group> (server)");
-        command.sendSender(sender, helpPrefix + "/pp user <username> removegroup <group> (server)");
+        command.sendSender(sender, helpPrefix + "/pp user <username> setprimary <group> (server)");
+        command.sendSender(sender, helpPrefix + "/pp user <username> removeprimary (server)");
+        command.sendSender(sender, helpPrefix + "/pp user <username> addgroup/removegroup <group> (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp user <username> clearperms");
         command.sendSender(sender, helpPrefix + "/pp user <username> prefix set/remove <prefix>");

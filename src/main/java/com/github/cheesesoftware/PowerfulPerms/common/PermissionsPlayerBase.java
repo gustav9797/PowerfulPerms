@@ -53,19 +53,6 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     public void setTemporaryPermissions(List<String> permissions) {
         this.temporaryPermissions = permissions;
     }
-    
-    /**
-     * Used when storing data in the database.
-     */
-    public String getRawGroups() {
-        String output = "";
-        for (Entry<String, List<CachedGroup>> entry : this.groups.entrySet()) {
-            for (CachedGroup cachedGroup : entry.getValue()) {
-                output += entry.getKey() + ":" + (cachedGroup.isNegated() ? "-" : "") + cachedGroup.getGroup().getId() + ":" + (cachedGroup.isPrimary() ? "p" : "") + ";";
-            }
-        }
-        return output;
-    }
 
     /**
      * Returns all primary groups a player has, indexed by server name.

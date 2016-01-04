@@ -137,7 +137,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         debug("Player " + p.getName() + " changed world from " + event.getFrom().getName() + " to " + p.getWorld().getName());
         if (players.containsKey(p.getUniqueId())) {
             PermissionsPlayer permissionsPlayer = (PermissionsPlayer) players.get(p.getUniqueId());
-            permissionsPlayer.UpdatePermissions();
+            permissionsPlayer.updatePermissions();
         }
     }
 
