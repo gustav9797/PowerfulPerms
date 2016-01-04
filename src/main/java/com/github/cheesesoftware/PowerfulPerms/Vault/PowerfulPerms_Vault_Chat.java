@@ -3,6 +3,7 @@ package com.github.cheesesoftware.PowerfulPerms.Vault;
 import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
 import com.github.cheesesoftware.PowerfulPerms.common.Group;
 import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.ResponseRunnable;
 
 import net.milkbowl.vault.chat.Chat;
@@ -69,7 +70,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
     public String getGroupPrefix(String world, String groupName) {
         Group group = permissionManager.getGroup(groupName);
         if (group != null)
-            return group.getPrefix();
+            return group.getPrefix(PermissionManagerBase.serverName);
         return null;
     }
 
@@ -88,7 +89,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
     public String getGroupSuffix(String world, String groupName) {
         Group group = permissionManager.getGroup(groupName);
         if (group != null)
-            return group.getSuffix();
+            return group.getSuffix(PermissionManagerBase.serverName);
         return null;
     }
 

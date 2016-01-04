@@ -1,21 +1,51 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 public class Group {
     private int id;
     private String name;
     private ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
     private ArrayList<Group> parents;
-    private String prefix;
-    private String suffix;
 
-    public Group(int id, String name, ArrayList<PowerfulPermission> permissions, String prefix, String suffix) {
+    // private String prefixRaw;
+    // private String suffixRaw;
+    private HashMap<String, String> serverPrefix = new HashMap<String, String>();
+    private HashMap<String, String> serverSuffix = new HashMap<String, String>();
+
+    public Group(int id, String name, ArrayList<PowerfulPermission> permissions, String prefixRaw, String suffixRaw) {
         this.id = id;
         this.name = name;
         this.permissions = permissions;
-        this.prefix = prefix;
-        this.suffix = suffix;
+        // this.prefixRaw = prefixRaw;
+        // this.suffixRaw = suffixRaw;
+        this.serverPrefix = getPrefixSuffix(prefixRaw);
+        this.serverSuffix = getPrefixSuffix(suffixRaw);
+    }
+
+    public static HashMap<String, String> getPrefixSuffix(String input) {
+        HashMap<String, String> output = new HashMap<String, String>();
+        String[] splitted = input.split(";");
+        for (String one : splitted) {
+            String[] server_prefixSuffix = one.split(":");
+            if (server_prefixSuffix.length >= 2) {
+                String server = server_prefixSuffix[0];
+                String prefixSuffix = server_prefixSuffix[1];
+                output.put(server, prefixSuffix);
+            } else
+                output.put("", one);
+        }
+        return output;
+    }
+
+    public static String encodePrefixSuffix(HashMap<String, String> input) {
+        String output = "";
+        for (Entry<String, String> entry : input.entrySet()) {
+            output += entry.getKey() + ":" + entry.getValue() + ";";
+        }
+        return output;
     }
 
     public int getId() {
@@ -30,12 +60,26 @@ public class Group {
         return this.parents;
     }
 
-    public String getPrefix() {
-        return prefix;
+    public String getPrefix(String server) {
+        String prefix = serverPrefix.get(server);
+        if (prefix != null)
+            return prefix;
+        return serverPrefix.get("");
     }
 
-    public String getSuffix() {
-        return suffix;
+    public String getSuffix(String server) {
+        String suffix = serverSuffix.get(server);
+        if (suffix != null)
+            return suffix;
+        return serverSuffix.get("");
+    }
+
+    public HashMap<String, String> getServerPrefix() {
+        return this.serverPrefix;
+    }
+
+    public HashMap<String, String> getServerSuffix() {
+        return this.serverSuffix;
     }
 
     public ArrayList<PowerfulPermission> getOwnPermissions() {
@@ -51,13 +95,10 @@ public class Group {
         return temp;
     }
 
-    /*public ArrayList<PowerfulPermission> getInheritedPermissions() {
-        ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions);
-        for (Group parent : this.parents) {
-            temp.addAll(parent.getPermissions());
-        }
-        return temp;
-    }*/
+    /*
+     * public ArrayList<PowerfulPermission> getInheritedPermissions() { ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions); for (Group parent : this.parents) {
+     * temp.addAll(parent.getPermissions()); } return temp; }
+     */
 
     /*
      * public String getRawPermissions() { String raw = getRawOwnPermissions(); for (Group g : parents) raw += g.getRawPermissions(); return raw; }

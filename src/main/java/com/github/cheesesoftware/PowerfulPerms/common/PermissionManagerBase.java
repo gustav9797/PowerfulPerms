@@ -961,20 +961,40 @@ public abstract class PermissionManagerBase {
     /**
      * Gets the prefix of a group.
      */
-    public String getGroupPrefix(String groupName) {
+    public String getGroupPrefix(String groupName, String server) {
         Group g = getGroup(groupName);
         if (g != null)
-            return g.getPrefix();
+            return g.getPrefix(server);
         return null;
     }
 
     /**
      * Gets the suffix of a group.
      */
-    public String getGroupSuffix(String groupName) {
+    public String getGroupSuffix(String groupName, String server) {
         Group g = getGroup(groupName);
         if (g != null)
-            return g.getSuffix();
+            return g.getSuffix(server);
+        return null;
+    }
+
+    /**
+     * Gets the map of prefixes of a group.
+     */
+    public HashMap<String, String> getGroupServerPrefix(String groupName) {
+        Group g = getGroup(groupName);
+        if (g != null)
+            return g.getServerPrefix();
+        return null;
+    }
+
+    /**
+     * Gets the map of suffixes of a group.
+     */
+    public HashMap<String, String> getGroupServerSuffix(String groupName) {
+        Group g = getGroup(groupName);
+        if (g != null)
+            return g.getServerSuffix();
         return null;
     }
 
@@ -1556,7 +1576,28 @@ public abstract class PermissionManagerBase {
     }
 
     public void setGroupPrefix(String groupName, String prefix, final ResponseRunnable response) {
-        db.setGroupPrefix(groupName, prefix, new DBRunnable() {
+        setGroupPrefix(groupName, prefix, "", response);
+    }
+
+    public void setGroupPrefix(String groupName, String prefix, String server, final ResponseRunnable response) {
+        if (server.equalsIgnoreCase("all"))
+            server = "";
+
+        Group group = getGroup(groupName);
+        if (group == null) {
+            response.setResponse(false, "Group does not exist.");
+            db.scheduler.runSync(response);
+            return;
+        }
+
+        HashMap<String, String> currentPrefix = group.getServerPrefix();
+        if (prefix.isEmpty())
+            currentPrefix.remove(server);
+        else
+            currentPrefix.put(server, prefix);
+        final String output = Group.encodePrefixSuffix(currentPrefix);
+
+        db.setGroupPrefix(groupName, output, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1572,7 +1613,28 @@ public abstract class PermissionManagerBase {
     }
 
     public void setGroupSuffix(String groupName, String suffix, final ResponseRunnable response) {
-        db.setGroupSuffix(groupName, suffix, new DBRunnable() {
+        setGroupSuffix(groupName, suffix, "", response);
+    }
+
+    public void setGroupSuffix(String groupName, String suffix, String server, final ResponseRunnable response) {
+        if (server.equalsIgnoreCase("all"))
+            server = "";
+
+        Group group = getGroup(groupName);
+        if (group == null) {
+            response.setResponse(false, "Group does not exist.");
+            db.scheduler.runSync(response);
+            return;
+        }
+
+        HashMap<String, String> currentSuffix = group.getServerSuffix();
+        if (suffix.isEmpty())
+            currentSuffix.remove(server);
+        else
+            currentSuffix.put(server, suffix);
+        final String output = Group.encodePrefixSuffix(currentSuffix);
+
+        db.setGroupSuffix(groupName, output, new DBRunnable() {
 
             @Override
             public void run() {

@@ -242,9 +242,44 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
      * @return The prefix.
      */
     @Override
-    public String getPrefix() {
+    public String getPrefix(String server) {
         Group group = getPrimaryGroup();
-        return (!prefix.isEmpty() ? prefix : (group != null && group.getPrefix() != "" ? group.getPrefix() : ""));
+        if (!prefix.isEmpty())
+            return prefix;
+        if (group != null) {
+            String groupPrefix = group.getPrefix(server);
+            if (groupPrefix != null)
+                return groupPrefix;
+        }
+        return "";
+    }
+
+    /**
+     * Returns the player's suffix. If player has no suffix set, return the suffix of the primary group.
+     * 
+     * @return The suffix.
+     */
+    @Override
+    public String getSuffix(String server) {
+        Group group = getPrimaryGroup();
+        if (!suffix.isEmpty())
+            return suffix;
+        if (group != null) {
+            String groupSuffix = group.getSuffix(server);
+            if (groupSuffix != null)
+                return groupSuffix;
+        }
+        return "";
+    }
+
+    /**
+     * Returns the player's prefix. If player has no prefix set, return the prefix of the primary group.
+     * 
+     * @return The prefix.
+     */
+    @Override
+    public String getPrefix() {
+        return getPrefix(PermissionManagerBase.serverName);
     }
 
     /**
@@ -254,8 +289,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
      */
     @Override
     public String getSuffix() {
-        Group group = getPrimaryGroup();
-        return (!suffix.isEmpty() ? suffix : (group != null && group.getSuffix() != "" ? group.getSuffix() : ""));
+        return getSuffix(PermissionManagerBase.serverName);
     }
 
     /**

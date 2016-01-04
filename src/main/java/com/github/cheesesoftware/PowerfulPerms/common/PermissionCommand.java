@@ -314,19 +314,35 @@ public class PermissionCommand {
                         world = "";
                     permissionManager.removeGroupPermission(groupName, permission, world, server, response);
                 } else if (args[2].equalsIgnoreCase("prefix")) {
+                    String server = "";
                     if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
                         String prefix = "";
+                        if (args.length >= 6 && args[4].toCharArray()[0] != '"')
+                            server = args[5];
                         if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
                             // Input is between quote marks.
                             String result = "";
                             result += args[4].substring(1) + " ";
 
-                            if (args.length >= 6) {
-                                for (int i = 5; i < args.length; i++) {
-                                    result += args[i] + " ";
+                            int lastArg = 4;
+                            if (!result.endsWith("\" ")) {
+                                if (args.length >= 6) {
+                                    for (int i = 5; i < args.length; i++) {
+                                        result += args[i] + " ";
+                                        if (args[i].endsWith("\"")) {
+                                            lastArg = i;
+                                            break;
+                                        }
+                                    }
                                 }
                             }
 
+                            // If server is specified set server to argument after
+                            if (args.length >= lastArg + 2) {
+                                server = args[lastArg + 1];
+                            }
+
+                            // remove '" '
                             if (result.toCharArray()[result.length() - 1] == ' ')
                                 result = result.substring(0, result.length() - 1);
                             if (result.toCharArray()[result.length() - 1] == '"')
@@ -336,25 +352,45 @@ public class PermissionCommand {
                         } else
                             prefix = args[4];
 
-                        permissionManager.setGroupPrefix(groupName, prefix, response);
+                        permissionManager.setGroupPrefix(groupName, prefix, server, response);
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        permissionManager.setGroupPrefix(groupName, "", response);
+                        permissionManager.setGroupPrefix(groupName, "", (args.length >= 5 ? args[4] : ""), response);
                     } else {
-                        String prefix = permissionManager.getGroupPrefix(groupName);
-                        sendSender(invoker, sender, "Prefix for group " + groupName + ": \"" + prefix + "\"");
+                        HashMap<String, String> prefix = permissionManager.getGroupServerPrefix(groupName);
+                        String output = "";
+                        Iterator<Entry<String, String>> it = prefix.entrySet().iterator();
+                        while (it.hasNext()) {
+                            Entry<String, String> entry = it.next();
+                            output += ChatColor.WHITE + "\"" + entry.getValue() + "\":" + (entry.getKey().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : entry.getKey());
+                            if (it.hasNext())
+                                output += ", ";
+                        }
+                        sendSender(invoker, sender, "Prefixes for group " + groupName + ": " + output);
                     }
                 } else if (args[2].equalsIgnoreCase("suffix")) {
+                    String server = "";
                     if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
                         String suffix = "";
+                        if (args.length >= 6 && args[4].toCharArray()[0] != '"')
+                            server = args[5];
                         if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
                             // Input is between quote marks.
                             String result = "";
                             result += args[4].substring(1) + " ";
 
+                            int lastArg = 4;
                             if (args.length >= 6) {
                                 for (int i = 5; i < args.length; i++) {
                                     result += args[i] + " ";
+                                    lastArg = i;
+                                    if (args[i].toCharArray()[args[i].length() - 1] == '"') {
+                                        break;
+                                    }
                                 }
+                            }
+
+                            if (args.length >= lastArg + 2) {
+                                server = args[lastArg + 1];
                             }
 
                             if (result.toCharArray()[result.length() - 1] == ' ')
@@ -366,12 +402,20 @@ public class PermissionCommand {
                         } else
                             suffix = args[4];
 
-                        permissionManager.setGroupSuffix(groupName, suffix, response);
+                        permissionManager.setGroupSuffix(groupName, suffix, server, response);
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        permissionManager.setGroupSuffix(groupName, "", response);
+                        permissionManager.setGroupSuffix(groupName, "", (args.length >= 5 ? args[4] : ""), response);
                     } else {
-                        String suffix = permissionManager.getGroupSuffix(groupName);
-                        sendSender(invoker, sender, "Suffix for group " + groupName + ": \"" + suffix + "\"");
+                        HashMap<String, String> suffix = permissionManager.getGroupServerSuffix(groupName);
+                        String output = "";
+                        Iterator<Entry<String, String>> it = suffix.entrySet().iterator();
+                        while (it.hasNext()) {
+                            Entry<String, String> entry = it.next();
+                            output += ChatColor.WHITE + "\"" + entry.getValue() + "\":" + (entry.getKey().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : entry.getKey());
+                            if (it.hasNext())
+                                output += ", ";
+                        }
+                        sendSender(invoker, sender, "Suffixes for group " + groupName + ": " + output);
                     }
                 } else if (args[2].equalsIgnoreCase("parents")) {
                     if (args.length >= 5 && args[3].equalsIgnoreCase("add")) {
@@ -511,7 +555,7 @@ public class PermissionCommand {
         command.sendSender(sender, helpPrefix + "/pp group <group> create/delete/clearperms");
         command.sendSender(sender, helpPrefix + "/pp group <group> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp group <group> parents add/remove <parent>");
-        command.sendSender(sender, helpPrefix + "/pp group <group> prefix/suffix set/remove <prefix/suffix>");
+        command.sendSender(sender, helpPrefix + "/pp group <group> prefix/suffix set/remove <prefix/suffix> (server)");
         command.sendSender(sender, helpPrefix + "/pp haspermission <permission>");
         command.sendSender(sender, helpPrefix + "/pp reload  |  /pp globalreload");
         command.sendSender(sender, helpPrefix + "PowerfulPerms version " + command.getVersion() + " by gustav9797");
