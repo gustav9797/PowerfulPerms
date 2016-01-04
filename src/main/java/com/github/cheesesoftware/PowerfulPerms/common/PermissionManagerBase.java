@@ -34,30 +34,37 @@ public abstract class PermissionManagerBase {
     private final Database db;
     protected IPlugin plugin;
 
+    public static boolean redis;
     public static String redis_ip;
     public static int redis_port;
     public static String redis_password;
-    
+
     public static String serverName;
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
+    public static String redisMessage = "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.";
 
     public PermissionManagerBase(Database database, IPlugin plugin, String serverName) {
         this.db = database;
         this.plugin = plugin;
-        this.serverName = serverName;
+        PermissionManagerBase.serverName = serverName;
+
+        final IPlugin tempPlugin = plugin;
 
         // Create table Groups, add group Guest
-        db.tableExists(Database.tblGroups, new DBRunnable() {
+        db.tableExists(Database.tblGroups, new DBRunnable(true) {
 
             @Override
             public void run() {
                 if (!result.booleanValue()) {
-                    db.createGroupsTable(new DBRunnable() {
+                    db.createGroupsTable(new DBRunnable(true) {
 
                         @Override
                         public void run() {
-
+                            if (result.booleanValue())
+                                tempPlugin.getLogger().info("Created table \"" + Database.tblGroups + "\"");
+                            else
+                                tempPlugin.getLogger().info("Could not create table \"" + Database.tblGroups + "\"");
                         }
                     });
                 }
@@ -65,16 +72,19 @@ public abstract class PermissionManagerBase {
         });
 
         // Create table Players
-        db.tableExists(Database.tblPlayers, new DBRunnable() {
+        db.tableExists(Database.tblPlayers, new DBRunnable(true) {
 
             @Override
             public void run() {
                 if (!result.booleanValue()) {
-                    db.createPlayersTable(new DBRunnable() {
+                    db.createPlayersTable(new DBRunnable(true) {
 
                         @Override
                         public void run() {
-
+                            if (result.booleanValue())
+                                tempPlugin.getLogger().info("Created table \"" + Database.tblPlayers + "\"");
+                            else
+                                tempPlugin.getLogger().info("Could not create table \"" + Database.tblPlayers + "\"");
                         }
                     });
                 }
@@ -82,16 +92,19 @@ public abstract class PermissionManagerBase {
         });
 
         // Create table Permissions
-        db.tableExists(Database.tblPermissions, new DBRunnable() {
+        db.tableExists(Database.tblPermissions, new DBRunnable(true) {
 
             @Override
             public void run() {
                 if (!result.booleanValue()) {
-                    db.createPermissionsTable(new DBRunnable() {
+                    db.createPermissionsTable(new DBRunnable(true) {
 
                         @Override
                         public void run() {
-
+                            if (result.booleanValue())
+                                tempPlugin.getLogger().info("Created table \"" + Database.tblPermissions + "\"");
+                            else
+                                tempPlugin.getLogger().info("Could not create table \"" + Database.tblPermissions + "\"");
                         }
                     });
                 }
@@ -110,61 +123,67 @@ public abstract class PermissionManagerBase {
     }
 
     public void notifyReloadGroups() {
-        plugin.runTaskAsynchronously(new Runnable() {
-            @SuppressWarnings("deprecation")
-            public void run() {
-                try {
-                    Jedis jedis = pool.getResource();
+        if (redis) {
+            plugin.runTaskAsynchronously(new Runnable() {
+                @SuppressWarnings("deprecation")
+                public void run() {
                     try {
-                        jedis.publish("PowerfulPerms", "[groups]" + " " + serverName);
+                        Jedis jedis = pool.getResource();
+                        try {
+                            jedis.publish("PowerfulPerms", "[groups]" + " " + serverName);
+                        } catch (Exception e) {
+                            pool.returnBrokenResource(jedis);
+                        }
+                        pool.returnResource(jedis);
                     } catch (Exception e) {
-                        pool.returnBrokenResource(jedis);
+                        plugin.getLogger().warning(redisMessage);
                     }
-                    pool.returnResource(jedis);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
-            }
-        });
+            });
+        }
     }
 
     public void notifyReloadPlayers() {
-        plugin.runTaskAsynchronously(new Runnable() {
-            @SuppressWarnings("deprecation")
-            public void run() {
-                try {
-                    Jedis jedis = pool.getResource();
+        if (redis) {
+            plugin.runTaskAsynchronously(new Runnable() {
+                @SuppressWarnings("deprecation")
+                public void run() {
                     try {
-                        jedis.publish("PowerfulPerms", "[players]" + " " + serverName);
-                    } catch (Exception e) {
-                        pool.returnBrokenResource(jedis);
-                    }
-                    pool.returnResource(jedis);
+                        Jedis jedis = pool.getResource();
+                        try {
+                            jedis.publish("PowerfulPerms", "[players]" + " " + serverName);
+                        } catch (Exception e) {
+                            pool.returnBrokenResource(jedis);
+                        }
+                        pool.returnResource(jedis);
 
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
+                    } catch (Exception e) {
+                        plugin.getLogger().warning(redisMessage);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     public void notifyReloadPlayer(final String playerName) {
-        plugin.runTaskAsynchronously(new Runnable() {
-            @SuppressWarnings("deprecation")
-            public void run() {
-                try {
-                    Jedis jedis = pool.getResource();
+        if (redis) {
+            plugin.runTaskAsynchronously(new Runnable() {
+                @SuppressWarnings("deprecation")
+                public void run() {
                     try {
-                        jedis.publish("PowerfulPerms", playerName + " " + serverName);
+                        Jedis jedis = pool.getResource();
+                        try {
+                            jedis.publish("PowerfulPerms", playerName + " " + serverName);
+                        } catch (Exception e) {
+                            pool.returnBrokenResource(jedis);
+                        }
+                        pool.returnResource(jedis);
                     } catch (Exception e) {
-                        pool.returnBrokenResource(jedis);
+                        plugin.getLogger().warning(redisMessage);
                     }
-                    pool.returnResource(jedis);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
                 }
-            }
-        });
+            });
+        }
     }
 
     public void reloadPlayers() {
@@ -205,6 +224,7 @@ public abstract class PermissionManagerBase {
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
         debug("loadPlayer begin");
+
         db.getPlayer(uuid, new DBRunnable(login) {
 
             @Override
@@ -289,7 +309,7 @@ public abstract class PermissionManagerBase {
                                                     }
                                                 });
                                             } else
-                                                plugin.getLogger().severe(consolePrefix + "Cannot get data from user [default]. Please create the default user.");
+                                                plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. Please create the default user.");
                                         }
                                     });
                                 }
@@ -329,7 +349,7 @@ public abstract class PermissionManagerBase {
                     // Player should be reloaded if "login" is false. Reload already loaded player.
                     if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
                         IPermissionsPlayer toUpdate = players.get(uuid);
-                        PermissionsPlayerBase base = new PermissionsPlayerBase(getPlayerGroups(getPlayerGroupsRaw(groups_loaded)), perms, prefix_loaded, suffix_loaded, plugin);
+                        PermissionsPlayerBase base = new PermissionsPlayerBase(getPlayerGroups(groups_loaded), perms, prefix_loaded, suffix_loaded, plugin);
                         toUpdate.update(base);
 
                         if (cachedPlayers.get(uuid) != null)
@@ -354,8 +374,8 @@ public abstract class PermissionManagerBase {
             players.remove(uuid);
         }
 
-        PermissionsPlayerBase base = new PermissionsPlayerBase(this.getPlayerGroups(getPlayerGroupsRaw(cachedPlayer.getGroups())), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(),
-                cachedPlayer.getSuffix(), plugin);
+        PermissionsPlayerBase base = new PermissionsPlayerBase(this.getPlayerGroups(cachedPlayer.getGroups()), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(),
+                plugin);
 
         cachedPlayers.remove(uuid);
         return base;
@@ -382,9 +402,9 @@ public abstract class PermissionManagerBase {
     }
 
     /**
-     * Loads groups from MySQL, removes old group data. Will reload all players too.
-     * beginSameThread: Set this to true if you want it to fetch group data on the same thread you call from. Set it to false and it will run asynchronously.
-     * endSameThread: Set this to true if you want to finish and insert groups on the same thread. Note: This -MUST- be Bukkit main thread you execute on. Set to false if you want to run it synchronously but scheduled.
+     * Loads groups from MySQL, removes old group data. Will reload all players too. beginSameThread: Set this to true if you want it to fetch group data on the same thread you call from. Set it to
+     * false and it will run asynchronously. endSameThread: Set this to true if you want to finish and insert groups on the same thread. Note: This -MUST- be Bukkit main thread you execute on. Set to
+     * false if you want to run it synchronously but scheduled.
      */
     protected void loadGroups(boolean beginSameThread, final boolean endSameThread) {
         debug("loadGroups begin");
@@ -505,42 +525,113 @@ public abstract class PermissionManagerBase {
         return (Collection<Group>) this.groups.values();
     }
 
-    protected static HashMap<String, List<Integer>> getPlayerGroupsRaw(String groupsString) {
-        HashMap<String, List<Integer>> groups = new HashMap<String, List<Integer>>();
-        if (groupsString.contains(";")) {
-            for (String s : groupsString.split(";")) {
-                String[] split = s.split(":");
-                if (split.length >= 2) {
-                    List<Integer> input = groups.get(split[0]);
-                    if (input == null)
-                        input = new ArrayList<Integer>();
-                    input.add(Integer.parseInt(split[1]));
-                    groups.put(split[0], input);
-                } else {
-                    List<Integer> input = groups.get("");
-                    if (input == null)
-                        input = new ArrayList<Integer>();
-                    input.add(Integer.parseInt(s));
-                    groups.put("", input);
-                }
+    /*
+     * protected static HashMap<String, List<Integer>> getPlayerGroupsRaw(String groupsString) { HashMap<String, List<Integer>> groups = new HashMap<String, List<Integer>>(); if
+     * (groupsString.contains(";")) { for (String s : groupsString.split(";")) { String[] split = s.split(":"); if (split.length >= 2) { List<Integer> input = groups.get(split[0]); if (input == null)
+     * input = new ArrayList<Integer>(); input.add(Integer.parseInt(split[1])); groups.put(split[0], input); } else { List<Integer> input = groups.get(""); if (input == null) input = new
+     * ArrayList<Integer>(); input.add(Integer.parseInt(s)); groups.put("", input); } } } else if (!groupsString.isEmpty()) { ArrayList<Integer> tempList = new ArrayList<Integer>();
+     * tempList.add(Integer.parseInt(groupsString)); groups.put("", tempList); } return groups; }
+     * 
+     * protected HashMap<String, List<Group>> getPlayerGroups(HashMap<String, List<Integer>> playerGroupsRaw) { HashMap<String, List<Group>> playerGroups = new HashMap<String, List<Group>>(); for
+     * (Entry<String, List<Integer>> entry : playerGroupsRaw.entrySet()) { ArrayList<Group> groupList = new ArrayList<Group>(); for (Integer groupId : entry.getValue())
+     * groupList.add(groups.get(groupId)); playerGroups.put(entry.getKey(), groupList); } return playerGroups; }
+     */
+
+    protected HashMap<String, List<CachedGroup>> getPlayerGroups(String raw) {
+        HashMap<String, List<CachedGroup>> tempGroups = new HashMap<String, List<CachedGroup>>();
+        for (String s : raw.split(";")) {
+            // Each group entry
+            String[] split = s.split(":");
+            if (split.length >= 2) {
+                String server = split[0];
+
+                // If list null, initialize list
+                List<CachedGroup> input = tempGroups.get(server);
+                if (input == null)
+                    input = new ArrayList<CachedGroup>();
+
+                boolean negated = split[1].startsWith("-");
+                if (negated)
+                    split[1] = split[1].substring(1);
+
+                int groupId = Integer.parseInt(split[1]);
+
+                boolean primary = false;
+                if (split.length >= 3 && split[2].equals("p"))
+                    primary = true;
+
+                input.add(new CachedGroup(groups.get(groupId), primary, negated));
+                tempGroups.put(server, input);
+            } else {
+                // If list null, initialize list
+                List<CachedGroup> input = tempGroups.get("");
+                if (input == null)
+                    input = new ArrayList<CachedGroup>();
+
+                boolean negated = s.startsWith("-");
+                if (negated)
+                    s = s.substring(1);
+
+                input.add(new CachedGroup(groups.get(Integer.parseInt(s)), false, negated));
+                tempGroups.put("", input);
             }
-        } else if (!groupsString.isEmpty()) {
-            ArrayList<Integer> tempList = new ArrayList<Integer>();
-            tempList.add(Integer.parseInt(groupsString));
-            groups.put("", tempList);
         }
-        return groups;
+        return tempGroups;
     }
 
-    protected HashMap<String, List<Group>> getPlayerGroups(HashMap<String, List<Integer>> playerGroupsRaw) {
-        HashMap<String, List<Group>> playerGroups = new HashMap<String, List<Group>>();
-        for (Entry<String, List<Integer>> entry : playerGroupsRaw.entrySet()) {
-            ArrayList<Group> groupList = new ArrayList<Group>();
-            for (Integer groupId : entry.getValue())
-                groupList.add(groups.get(groupId));
-            playerGroups.put(entry.getKey(), groupList);
+    protected HashMap<String, List<CachedGroupRaw>> getPlayerGroupsRaw(String raw) {
+        HashMap<String, List<CachedGroupRaw>> tempGroups = new HashMap<String, List<CachedGroupRaw>>();
+        for (String s : raw.split(";")) {
+            // Each group entry
+            String[] split = s.split(":");
+            if (split.length >= 2) {
+                String server = split[0];
+
+                // If list null, initialize list
+                List<CachedGroupRaw> input = tempGroups.get(server);
+                if (input == null)
+                    input = new ArrayList<CachedGroupRaw>();
+
+                boolean negated = split[1].startsWith("-");
+                if (negated)
+                    split[1] = split[1].substring(1);
+
+                int groupId = Integer.parseInt(split[1]);
+
+                boolean primary = false;
+                if (split.length >= 3 && split[2].equals("p"))
+                    primary = true;
+
+                input.add(new CachedGroupRaw(groupId, primary, negated));
+                tempGroups.put(server, input);
+            } else {
+                // If list null, initialize list
+                List<CachedGroupRaw> input = tempGroups.get("");
+                if (input == null)
+                    input = new ArrayList<CachedGroupRaw>();
+
+                boolean negated = s.startsWith("-");
+                if (negated)
+                    s = s.substring(1);
+
+                input.add(new CachedGroupRaw(Integer.parseInt(s), false, negated));
+                tempGroups.put("", input);
+            }
         }
-        return playerGroups;
+        return tempGroups;
+    }
+
+    /**
+     * Used when storing data in the database.
+     */
+    public String getPlayerGroupsRaw(HashMap<String, List<CachedGroupRaw>> input) {
+        String output = "";
+        for (Entry<String, List<CachedGroupRaw>> entry : input.entrySet()) {
+            for (CachedGroupRaw cachedGroup : entry.getValue()) {
+                output += entry.getKey() + ":" + (cachedGroup.isNegated() ? "-" : "") + cachedGroup.getGroupId() + ":" + (cachedGroup.isPrimary() ? "p" : "") + ";";
+            }
+        }
+        return output;
     }
 
     public void getPlayerGroups(String playerName, final ResultRunnable resultRunnable) {
@@ -549,7 +640,7 @@ public abstract class PermissionManagerBase {
         if (uuid != null) {
             IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
             if (gp != null) {
-                resultRunnable.setResult(gp.getServerGroups());
+                resultRunnable.setResult(gp.getCachedGroups());
                 db.scheduler.runSync(resultRunnable);
                 return;
             }
@@ -561,7 +652,7 @@ public abstract class PermissionManagerBase {
             public void run() {
                 if (result.hasNext()) {
                     DBDocument row = result.next();
-                    HashMap<String, List<Group>> output = getPlayerGroups(getPlayerGroupsRaw(row.getString("groups")));
+                    HashMap<String, List<CachedGroup>> output = getPlayerGroups(row.getString("groups"));
                     resultRunnable.setResult(output);
                 }
                 db.scheduler.runSync(resultRunnable);
@@ -583,12 +674,12 @@ public abstract class PermissionManagerBase {
         });
     }
 
-    public Group getPlayerPrimaryGroup(HashMap<String, List<Group>> groups) {
+    public Group getPlayerPrimaryGroup(HashMap<String, List<CachedGroup>> groups) {
         if (groups != null) {
-            List<Group> g = groups.get("");
+            List<CachedGroup> g = groups.get("");
             if (g != null) {
-                Iterator<Group> it = g.iterator();
-                return it.next();
+                Iterator<CachedGroup> it = g.iterator();
+                return it.next().getGroup();
             }
         }
         return null;
@@ -611,7 +702,7 @@ public abstract class PermissionManagerBase {
             @Override
             public void run() {
                 if (result != null) {
-                    HashMap<String, List<Group>> groups = (HashMap<String, List<Group>>) result;
+                    HashMap<String, List<CachedGroup>> groups = (HashMap<String, List<CachedGroup>>) result;
                     Group primaryGroup = getPlayerPrimaryGroup(groups);
                     resultRunnable.setResult(primaryGroup);
                     db.scheduler.runSync(resultRunnable);
@@ -963,12 +1054,14 @@ public abstract class PermissionManagerBase {
         });
     }
 
-    public void setPlayerPrimaryGroup(final String playerName, String groupName, final ResponseRunnable response) {
-        final Group group = getGroup(groupName);
-        if (group == null) {
-            response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
-            return;
+    public void setPlayerPrimaryGroup(final String playerName, final String groupName, final String server, final ResponseRunnable response) {
+        if (groupName != null && !groupName.isEmpty()) {
+            Group group = getGroup(groupName);
+            if (group == null) {
+                response.setResponse(false, "Group does not exist.");
+                db.scheduler.runSync(response);
+                return;
+            }
         }
 
         db.getPlayers(playerName, new DBRunnable() {
@@ -979,30 +1072,44 @@ public abstract class PermissionManagerBase {
                     DBDocument row = result.next();
                     String playerGroupString = row.getString("groups");
 
-                    // Add group. Put it first.
-                    HashMap<String, List<Integer>> playerGroups = getPlayerGroupsRaw(playerGroupString);
-                    List<Integer> groupList = playerGroups.get("");
+                    // Set existing primary groups for specified server to not primary.
+                    HashMap<String, List<CachedGroupRaw>> playerGroups = getPlayerGroupsRaw(playerGroupString);
+                    List<CachedGroupRaw> groupList = playerGroups.get(server);
                     if (groupList == null)
-                        groupList = new ArrayList<Integer>();
-
-                    // Remove existing primary
-                    Iterator<Integer> it = groupList.iterator();
-                    if (it.hasNext()) {
-                        it.next();
-                        it.remove();
+                        groupList = new ArrayList<CachedGroupRaw>();
+                    List<CachedGroupRaw> newGroupList = new ArrayList<CachedGroupRaw>();
+                    Iterator<CachedGroupRaw> it = groupList.iterator();
+                    while (it.hasNext()) {
+                        CachedGroupRaw cachedGroup = it.next();
+                        if (cachedGroup.isPrimary() && !cachedGroup.isNegated())
+                            newGroupList.add(new CachedGroupRaw(cachedGroup.getGroupId(), false, cachedGroup.isNegated()));
+                        else
+                            newGroupList.add(cachedGroup);
                     }
 
-                    ArrayList<Integer> newList = new ArrayList<Integer>();
-                    newList.add(group.getId());
-                    newList.addAll(groupList);
-                    playerGroups.put("", newList);
+                    // If groupName null or empty, un-set primary group
+                    if (groupName != null && !groupName.isEmpty()) {
+                        Group group = getGroup(groupName);
+                        if (group == null) {
+                            response.setResponse(false, "Group does not exist.");
+                            db.scheduler.runSync(response);
+                            return;
+                        }
 
-                    String playerGroupStringOutput = "";
-                    for (Entry<String, List<Integer>> entry : playerGroups.entrySet()) {
-                        for (Integer groupId : entry.getValue())
-                            playerGroupStringOutput += entry.getKey() + ":" + groupId + ";";
+                        // Set new primary group
+                        it = newGroupList.iterator();
+                        while (it.hasNext()) {
+                            CachedGroupRaw cachedGroup = it.next();
+                            if (cachedGroup.getGroupId() == group.getId()) {
+                                it.remove();
+                                break;
+                            }
+                        }
+                        newGroupList.add(new CachedGroupRaw(group.getId(), true, false));
                     }
+                    playerGroups.put(server, newGroupList);
 
+                    String playerGroupStringOutput = getPlayerGroupsRaw(playerGroups);
                     db.setPlayerGroups(playerName, playerGroupStringOutput, new DBRunnable() {
 
                         @Override
@@ -1025,10 +1132,14 @@ public abstract class PermissionManagerBase {
     }
 
     public void removePlayerGroup(String playerName, String groupName, ResponseRunnable response) {
-        removePlayerGroup(playerName, groupName, "", response);
+        removePlayerGroup(playerName, groupName, "", false, response);
     }
 
-    public void removePlayerGroup(final String playerName, String groupName, String server, final ResponseRunnable response) {
+    public void removePlayerGroup(String playerName, String groupName, boolean negated, ResponseRunnable response) {
+        removePlayerGroup(playerName, groupName, "", negated, response);
+    }
+
+    public void removePlayerGroup(final String playerName, String groupName, String server, final boolean negated, final ResponseRunnable response) {
         if (server.equalsIgnoreCase("all"))
             server = "";
 
@@ -1053,17 +1164,16 @@ public abstract class PermissionManagerBase {
                     String playerGroupString = row.getString("groups");
 
                     boolean removed = false;
-                    HashMap<String, List<Integer>> playerGroups = getPlayerGroupsRaw(playerGroupString);
-
-                    List<Integer> groupList = playerGroups.get(serv);
-                    if (groupList != null) {
-                        Iterator<Integer> it = groupList.iterator();
-                        while (it.hasNext()) {
-                            final int groupId = it.next();
-                            if (groupId == groupId_new) {
-                                it.remove();
-                                removed = true;
-                            }
+                    HashMap<String, List<CachedGroupRaw>> playerGroups = getPlayerGroupsRaw(playerGroupString);
+                    List<CachedGroupRaw> groupList = playerGroups.get(serv);
+                    if (groupList == null)
+                        groupList = new ArrayList<CachedGroupRaw>();
+                    Iterator<CachedGroupRaw> it = groupList.iterator();
+                    while (it.hasNext()) {
+                        CachedGroupRaw cachedGroup = it.next();
+                        if (cachedGroup.getGroupId() == groupId_new && !cachedGroup.isPrimary() && cachedGroup.isNegated() == negated) {
+                            it.remove();
+                            removed = true;
                         }
                     }
 
@@ -1075,12 +1185,7 @@ public abstract class PermissionManagerBase {
                         return;
                     }
 
-                    String playerGroupStringOutput = "";
-                    for (Entry<String, List<Integer>> entry : playerGroups.entrySet()) {
-                        for (Integer groupId : entry.getValue())
-                            playerGroupStringOutput += entry.getKey() + ":" + groupId + ";";
-                    }
-
+                    String playerGroupStringOutput = getPlayerGroupsRaw(playerGroups);
                     db.setPlayerGroups(playerName, playerGroupStringOutput, new DBRunnable() {
 
                         @Override
@@ -1103,10 +1208,14 @@ public abstract class PermissionManagerBase {
     }
 
     public void addPlayerGroup(String playerName, String groupName, ResponseRunnable response) {
-        addPlayerGroup(playerName, groupName, "", response);
+        addPlayerGroup(playerName, groupName, false, response);
     }
 
-    public void addPlayerGroup(final String playerName, String groupName, String server, final ResponseRunnable response) {
+    public void addPlayerGroup(String playerName, String groupName, final boolean negated, ResponseRunnable response) {
+        addPlayerGroup(playerName, groupName, "", negated, response);
+    }
+
+    public void addPlayerGroup(final String playerName, String groupName, String server, final boolean negated, final ResponseRunnable response) {
         if (server.equalsIgnoreCase("all"))
             server = "";
 
@@ -1128,24 +1237,24 @@ public abstract class PermissionManagerBase {
                     String playerGroupString = row.getString("groups");
 
                     // Add group. Put it first.
-                    HashMap<String, List<Integer>> playerGroups = getPlayerGroupsRaw(playerGroupString);
-                    List<Integer> groupList = playerGroups.get(serv);
+                    HashMap<String, List<CachedGroupRaw>> playerGroups = getPlayerGroupsRaw(playerGroupString);
+                    List<CachedGroupRaw> groupList = playerGroups.get(serv);
                     if (groupList == null)
-                        groupList = new ArrayList<Integer>();
-                    if (groupList.contains(group.getId())) {
-                        response.setResponse(false, "Player already has this group.");
-                        db.scheduler.runSync(response);
-                        return;
+                        groupList = new ArrayList<CachedGroupRaw>();
+                    Iterator<CachedGroupRaw> it = groupList.iterator();
+                    while (it.hasNext()) {
+                        CachedGroupRaw cachedGroup = it.next();
+                        if (cachedGroup.getGroupId() == group.getId() && !cachedGroup.isPrimary() && cachedGroup.isNegated() == negated) {
+                            response.setResponse(false, "Player already has this group.");
+                            db.scheduler.runSync(response);
+                            return;
+                        }
                     }
-                    groupList.add(group.getId());
+
+                    groupList.add(new CachedGroupRaw(group.getId(), false, negated));
                     playerGroups.put(serv, groupList);
 
-                    String playerGroupStringOutput = "";
-                    for (Entry<String, List<Integer>> entry : playerGroups.entrySet()) {
-                        for (Integer groupId : entry.getValue())
-                            playerGroupStringOutput += entry.getKey() + ":" + groupId + ";";
-                    }
-
+                    String playerGroupStringOutput = getPlayerGroupsRaw(playerGroups);
                     db.setPlayerGroups(playerName, playerGroupStringOutput, new DBRunnable() {
 
                         @Override
@@ -1306,6 +1415,7 @@ public abstract class PermissionManagerBase {
             });
 
             response.setResponse(true, "Removed " + counter.amount() + " permissions from the group.");
+            db.scheduler.runSync(response);
             loadGroups();
             notifyReloadGroups();
         } else {

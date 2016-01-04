@@ -30,58 +30,59 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         super(database, plugin, serverName);
         this.plugin = plugin;
 
-        final String srvName = serverName;
+        if (redis) {
+            final String srvName = serverName;
 
-        final Plugin tempPlugin = plugin;
-        plugin.getProxy().getScheduler().runAsync(plugin, new Runnable() {
-            @SuppressWarnings("deprecation")
-            public void run() {
-                Jedis jedis = null;
-                try {
-                    jedis = pool.getResource();
-                    subscriber = (new JedisPubSub() {
-                        @Override
-                        public void onMessage(String channel, final String msg) {
-                            tempPlugin.getProxy().getScheduler().runAsync(tempPlugin, new Runnable() {
-                                public void run() {
-                                    // Reload player or groups depending on message
-                                    String[] split = msg.split(" ");
-                                    if (split.length == 2) {
-                                        String first = split[0];
+            final Plugin tempPlugin = plugin;
+            plugin.getProxy().getScheduler().runAsync(plugin, new Runnable() {
+                @SuppressWarnings("deprecation")
+                public void run() {
+                    Jedis jedis = null;
+                    try {
+                        jedis = pool.getResource();
+                        subscriber = (new JedisPubSub() {
+                            @Override
+                            public void onMessage(String channel, final String msg) {
+                                tempPlugin.getProxy().getScheduler().runAsync(tempPlugin, new Runnable() {
+                                    public void run() {
+                                        // Reload player or groups depending on message
+                                        String[] split = msg.split(" ");
+                                        if (split.length == 2) {
+                                            String first = split[0];
 
-                                        String server = split[1];
+                                            String server = split[1];
 
-                                        if (server.equals(srvName))
-                                            return;
+                                            if (server.equals(srvName))
+                                                return;
 
-                                        if (first.equals("[groups]")) {
-                                            loadGroups();
-                                            tempPlugin.getLogger().info(consolePrefix + "Reloaded all groups.");
-                                        } else if (first.equals("[players]")) {
-                                            loadGroups();
-                                            tempPlugin.getLogger().info(consolePrefix + "Reloaded all players. ");
-                                        } else {
-                                            ProxiedPlayer player = tempPlugin.getProxy().getPlayer(first);
-                                            if (player != null) {
-                                                loadPlayer(player);
-                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");
+                                            if (first.equals("[groups]")) {
+                                                loadGroups();
+                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all groups.");
+                                            } else if (first.equals("[players]")) {
+                                                loadGroups();
+                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all players. ");
+                                            } else {
+                                                ProxiedPlayer player = tempPlugin.getProxy().getPlayer(first);
+                                                if (player != null) {
+                                                    loadPlayer(player);
+                                                    tempPlugin.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            });
-                        }
-                    });
-                    jedis.subscribe(subscriber, "PowerfulPerms");
-                } catch (Exception e) {
-                    pool.returnBrokenResource(jedis);
-                    tempPlugin.getLogger().warning(
-                            PowerfulPerms.pluginPrefix + "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.");
-                    return;
+                                });
+                            }
+                        });
+                        jedis.subscribe(subscriber, "PowerfulPerms");
+                    } catch (Exception e) {
+                        pool.returnBrokenResource(jedis);
+                        tempPlugin.getLogger().warning(redisMessage);
+                        return;
+                    }
+                    pool.returnResource(jedis);
                 }
-                pool.returnResource(jedis);
-            }
-        });
+            });
+        }
 
         loadGroups(true, true);
     }
@@ -130,7 +131,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         debug("serverconnected event " + e.getServer().getInfo().getName());
         if (players.containsKey(e.getPlayer().getUniqueId())) {
             PermissionsPlayer player = (PermissionsPlayer) players.get(e.getPlayer().getUniqueId());
-            player.UpdatePermissions(e.getServer().getInfo());
+            player.updatePermissions(e.getServer().getInfo());
         }
     }
 

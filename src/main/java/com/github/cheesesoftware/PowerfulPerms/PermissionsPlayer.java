@@ -10,7 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 
-import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.CachedGroup;
 import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
@@ -19,16 +19,16 @@ import com.github.cheesesoftware.PowerfulPerms.common.PowerfulPermission;
 public class PermissionsPlayer extends PermissionsPlayerBase {
     private Player player;
 
-    public PermissionsPlayer(Player p, HashMap<String, List<Group>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
+    public PermissionsPlayer(Player p, HashMap<String, List<CachedGroup>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
         super(serverGroups, permissions, prefix, suffix, plugin);
         this.player = p;
-        this.UpdatePermissions();
+        this.updatePermissions();
     }
 
     public PermissionsPlayer(Player p, PermissionsPlayerBase base, IPlugin plugin) {
-        super(base.getServerGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix(), plugin);
+        super(base.getCachedGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix(), plugin);
         this.player = p;
-        this.UpdatePermissions();
+        this.updatePermissions();
     }
 
     /**
@@ -37,7 +37,7 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
     @Override
     public void update(PermissionsPlayerBase base) {
         super.update(base);
-        this.UpdatePermissions();
+        this.updatePermissions();
     }
 
     /**
@@ -51,15 +51,17 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
      * Sets the player's groups as seen in getServerGroups() Changes won't save for now.
      */
     @Override
-    public void setServerGroups(HashMap<String, List<Group>> serverGroups) {
-        super.setServerGroups(serverGroups);
-        this.UpdatePermissions();
+    public void setGroups(HashMap<String, List<CachedGroup>> serverGroups) {
+        super.setGroups(serverGroups);
+        this.updatePermissions();
     }
 
     /**
      * Internal function to update the permissions of this PermissionPlayer. Run for example when the player has changed world.
      */
-    public void UpdatePermissions() {
+    public void updatePermissions() {
+        this.updateGroups(PermissionManagerBase.serverName);
+        
         List<String> perms = super.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName());
         List<String> realPerms = new ArrayList<String>();
         for (String permString : perms) {
@@ -69,8 +71,7 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
                 invert = true;
                 if (permString.length() > 1)
                     permString = permString.substring(1);
-            }
-            else
+            } else
                 realPerms.add(permString);
             Permission perm = Bukkit.getPluginManager().getPermission(permString);
             if (perm != null)
@@ -106,13 +107,5 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
         }
         return new ArrayList<String>();
     }
-
-    /*
-     * private Field pField;
-     * 
-     * @SuppressWarnings("unchecked") private Map<String, Boolean> reflectMap(PermissionAttachment attachment) { try { if (pField == null) { pField =
-     * PermissionAttachment.class.getDeclaredField("permissions"); pField.setAccessible(true); } return (Map<String, Boolean>) pField.get(attachment); } catch (Exception e) { throw new
-     * RuntimeException(e); } }
-     */
 
 }

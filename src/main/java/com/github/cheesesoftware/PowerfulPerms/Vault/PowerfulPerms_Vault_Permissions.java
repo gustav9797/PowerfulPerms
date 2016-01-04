@@ -41,7 +41,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     public String[] getPlayerGroups(String world, String player) {
         IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null) {
-            List<Group> groups = p.getApplyingGroups(PermissionManagerBase.serverName);
+            List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
             List<String> groupNames = new ArrayList<String>();
             for (Group group : groups)
                 groupNames.add(group.getName());
@@ -107,7 +107,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     public boolean playerInGroup(String world, String player, String groupName) {
         IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null) {
-            List<Group> groups = p.getApplyingGroups(PermissionManagerBase.serverName);
+            List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
             for (Group group : groups) {
                 if (group.getName().equalsIgnoreCase(groupName))
                     return true;

@@ -10,12 +10,15 @@ username: root
 password: potato
 
 # Redis
+redis: true
 redis_ip: 127.0.0.1
 redis_port: 6379
 redis_password: ""
 
 # Use Bungee-sided command
 # If this is enabled and you have PowerfulPerms installed in your Bungee proxy, it will send the /powerfulperms command through Bungee instead of Bukkit.
+# Note: This is only meant to be used if you're using Redis or/and you are running PowerfulPerms on Bungee side only.
+# If you're not using Redis your Spigot servers won't be notified of permission changes and you will have to reload all servers manually.
 bungee_command: false
 
 # Server name used for per-server Bukkit sided permissions to work. Use the same as in BungeeCord config.

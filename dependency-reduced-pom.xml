@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.cheesesoftware</groupId>
   <artifactId>PowerfulPerms</artifactId>
-  <version>2.0.5</version>
+  <version>2.1</version>
   <build>
     <resources>
       <resource>
@@ -45,6 +45,24 @@
             </goals>
             <configuration>
               <outputDirectory>C:\Users\Gustav\Desktop\bungee\plugins</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>C:\Users\Gustav\Desktop\spigotserver1.8\plugins\</directory>
+                  <includes>
+                    <include>${build.finalName}.jar</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-to-other</id>
+            <phase>install</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>C:\Users\Gustav\Desktop\spigotother-bungee\plugins</outputDirectory>
               <resources>
                 <resource>
                   <directory>C:\Users\Gustav\Desktop\spigotserver1.8\plugins\</directory>
