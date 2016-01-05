@@ -53,8 +53,11 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     @Override
     public String getPrimaryGroup(String world, String player) {
         IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
-        if (p != null)
-            return p.getPrimaryGroup().getName();
+        if (p != null) {
+            Group primary = p.getPrimaryGroup();
+            if (primary != null)
+                return primary.getName();
+        }
         return null;
     }
 

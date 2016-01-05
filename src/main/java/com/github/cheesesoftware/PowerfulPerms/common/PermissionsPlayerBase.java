@@ -86,7 +86,8 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         if (temp != null) {
             Iterator<CachedGroup> it = temp.iterator();
             Group group = it.next().getGroup();
-            plugin.debug("Database syntax for player is old. " + group.getName());
+            if (group != null)
+                plugin.debug("Database syntax for player is old. Setting " + group.getName() + " as current primary.");
             return group;
         }
         return null;
@@ -121,8 +122,11 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
             tempGroups.addAll(serverGroupsTemp);
 
         // Get groups that apply on all servers and add them
-        if (!server.isEmpty())
-            tempGroups.addAll(groups.get(""));
+        if (!server.isEmpty()) {
+            List<CachedGroup> all = groups.get("");
+            if (all != null)
+                tempGroups.addAll(all);
+        }
 
         return tempGroups;
     }

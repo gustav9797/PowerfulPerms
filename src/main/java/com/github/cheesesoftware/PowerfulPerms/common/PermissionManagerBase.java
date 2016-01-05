@@ -1158,7 +1158,7 @@ public abstract class PermissionManagerBase {
                     // Remove existing primary groups
                     while (it.hasNext()) {
                         CachedGroupRaw cachedGroup = it.next();
-                        if (!cachedGroup.isPrimary() || cachedGroup.isNegated())
+                        if (!cachedGroup.isPrimary())
                             newGroupList.add(cachedGroup);
                     }
 

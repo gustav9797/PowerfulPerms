@@ -27,9 +27,9 @@ public class Group {
 
     public static HashMap<String, String> getPrefixSuffix(String input) {
         HashMap<String, String> output = new HashMap<String, String>();
-        String[] splitted = input.split(";");
+        String[] splitted = input.split("█");
         for (String one : splitted) {
-            String[] server_prefixSuffix = one.split(":");
+            String[] server_prefixSuffix = one.split("▄");
             if (server_prefixSuffix.length >= 2) {
                 String server = server_prefixSuffix[0];
                 String prefixSuffix = server_prefixSuffix[1];
@@ -43,7 +43,7 @@ public class Group {
     public static String encodePrefixSuffix(HashMap<String, String> input) {
         String output = "";
         for (Entry<String, String> entry : input.entrySet()) {
-            output += entry.getKey() + ":" + entry.getValue() + ";";
+            output += entry.getKey() + "▄" + entry.getValue() + "█";
         }
         return output;
     }

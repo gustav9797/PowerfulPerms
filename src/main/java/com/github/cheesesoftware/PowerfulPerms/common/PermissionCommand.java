@@ -40,10 +40,10 @@ public class PermissionCommand {
                     permissionManager.setPlayerPrimaryGroup(playerName, group, server, response);
                 } else if (args[2].equalsIgnoreCase("removeprimary") || args[2].equalsIgnoreCase("removeprimarygroup")) {
                     String server = "";
-                    if (args.length >= 4)
-                        server = args[3];
                     if (args.length >= 5)
                         server = args[4];
+                    if (args.length >= 6)
+                        server = args[5];
 
                     permissionManager.setPlayerPrimaryGroup(playerName, "", server, response);
                 } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
@@ -192,12 +192,21 @@ public class PermissionCommand {
                         }
                         rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
 
+                        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(playerName);
+                        if (p != null) {
+                            Group pri = p.getPrimaryGroup();
+                            if (pri != null)
+                                rows.add(ChatColor.GREEN + "Current Primary Group" + ChatColor.WHITE + ": " + pri.getName());
+                            else
+                                rows.add(ChatColor.RED + "Player has no current primary group." + ChatColor.WHITE);
+                        }
+
                         permissionManager.getPlayerGroups(playerName, new ResultRunnable() {
 
                             @Override
                             public void run() {
                                 HashMap<String, List<CachedGroup>> groups = (HashMap<String, List<CachedGroup>>) result;
-
+                                boolean has = false;
                                 String primaryGroups = ChatColor.GREEN + "Primary Groups" + ChatColor.WHITE + ": ";
                                 if (groups != null && groups.size() > 0) {
                                     Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
@@ -211,10 +220,12 @@ public class PermissionCommand {
                                                 primaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
                                                         + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
                                                 primaryGroups += ", ";
+                                                has = true;
                                             }
                                         }
                                     }
-                                } else
+                                }
+                                if (!has)
                                     primaryGroups += "Player has no primary groups.";
                                 if (primaryGroups.endsWith(", "))
                                     primaryGroups = primaryGroups.substring(0, primaryGroups.length() - 2);
@@ -379,16 +390,19 @@ public class PermissionCommand {
                             result += args[4].substring(1) + " ";
 
                             int lastArg = 4;
-                            if (args.length >= 6) {
-                                for (int i = 5; i < args.length; i++) {
-                                    result += args[i] + " ";
-                                    lastArg = i;
-                                    if (args[i].toCharArray()[args[i].length() - 1] == '"') {
-                                        break;
+                            if (!result.endsWith("\" ")) {
+                                if (args.length >= 6) {
+                                    for (int i = 5; i < args.length; i++) {
+                                        result += args[i] + " ";
+                                        if (args[i].endsWith("\"")) {
+                                            lastArg = i;
+                                            break;
+                                        }
                                     }
                                 }
                             }
 
+                            // If server is specified set server to argument after
                             if (args.length >= lastArg + 2) {
                                 server = args[lastArg + 1];
                             }
