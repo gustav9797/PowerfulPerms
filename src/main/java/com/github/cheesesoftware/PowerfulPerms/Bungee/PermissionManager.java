@@ -1,7 +1,5 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
-import java.util.Date;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import redis.clients.jedis.Jedis;
