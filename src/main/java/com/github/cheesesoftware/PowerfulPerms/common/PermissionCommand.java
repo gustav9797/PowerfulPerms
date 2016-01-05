@@ -32,13 +32,13 @@ public class PermissionCommand {
             if (args.length >= 3) {
                 if (args[2].equalsIgnoreCase("clearperms")) {
                     permissionManager.removePlayerPermissions(playerName, response);
-                } else if (args[2].equalsIgnoreCase("addprimary") && args.length >= 4) {
+                } else if ((args[2].equalsIgnoreCase("addprimary") || args[2].equalsIgnoreCase("setprimary") || args[2].equalsIgnoreCase("setprimarygroup")) && args.length >= 4) {
                     String group = args[3];
                     String server = "";
                     if (args.length >= 5)
                         server = args[4];
                     permissionManager.setPlayerPrimaryGroup(playerName, group, server, response);
-                } else if (args[2].equalsIgnoreCase("removeprimary")) {
+                } else if (args[2].equalsIgnoreCase("removeprimary") || args[2].equalsIgnoreCase("removeprimarygroup")) {
                     String server = "";
                     if (args.length >= 4)
                         server = args[3];
@@ -544,7 +544,7 @@ public class PermissionCommand {
         String helpPrefix = "§b ";
         command.sendSender(sender, ChatColor.RED + "~ " + ChatColor.BLUE + "PowerfulPerms" + ChatColor.BOLD + ChatColor.RED + " Reference ~");
         command.sendSender(sender, helpPrefix + "/pp user <username>");
-        command.sendSender(sender, helpPrefix + "/pp user <username> addprimary <group> (server)");
+        command.sendSender(sender, helpPrefix + "/pp user <username> setprimary <group> (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> removeprimary (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> addgroup/removegroup <group> (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> add/remove <permission> (server) (world)");

@@ -560,20 +560,20 @@ public abstract class PermissionManagerBase {
                 if (split.length >= 3 && split[2].equals("p"))
                     primary = true;
 
+                debug("add group " + groupId + " " + primary);
                 input.add(new CachedGroup(groups.get(groupId), primary, negated));
                 tempGroups.put(server, input);
             } else {
-                // If list null, initialize list
-                List<CachedGroup> input = tempGroups.get("");
-                if (input == null)
-                    input = new ArrayList<CachedGroup>();
+                if (!s.isEmpty()) {
+                    // If list null, initialize list
+                    List<CachedGroup> input = tempGroups.get("");
+                    if (input == null)
+                        input = new ArrayList<CachedGroup>();
 
-                boolean negated = s.startsWith("-");
-                if (negated)
-                    s = s.substring(1);
-
-                input.add(new CachedGroup(groups.get(Integer.parseInt(s)), false, negated));
-                tempGroups.put("", input);
+                    input.add(new CachedGroup(groups.get(Integer.parseInt(s)), true, false));
+                    tempGroups.put("", input);
+                    debug(s + " old ");
+                }
             }
         }
         return tempGroups;
@@ -602,20 +602,20 @@ public abstract class PermissionManagerBase {
                 if (split.length >= 3 && split[2].equals("p"))
                     primary = true;
 
+                debug("add group " + groupId + " " + primary);
                 input.add(new CachedGroupRaw(groupId, primary, negated));
                 tempGroups.put(server, input);
             } else {
-                // If list null, initialize list
-                List<CachedGroupRaw> input = tempGroups.get("");
-                if (input == null)
-                    input = new ArrayList<CachedGroupRaw>();
+                if (!s.isEmpty()) {
+                    // If list null, initialize list
+                    List<CachedGroupRaw> input = tempGroups.get("");
+                    if (input == null)
+                        input = new ArrayList<CachedGroupRaw>();
 
-                boolean negated = s.startsWith("-");
-                if (negated)
-                    s = s.substring(1);
-
-                input.add(new CachedGroupRaw(Integer.parseInt(s), false, negated));
-                tempGroups.put("", input);
+                    input.add(new CachedGroupRaw(Integer.parseInt(s), true, false));
+                    tempGroups.put("", input);
+                    debug(s + " old ");
+                }
             }
         }
         return tempGroups;
@@ -1148,22 +1148,20 @@ public abstract class PermissionManagerBase {
                     DBDocument row = result.next();
                     String playerGroupString = row.getString("groups");
 
-                    // Set existing primary groups for specified server to not primary.
                     HashMap<String, List<CachedGroupRaw>> playerGroups = getPlayerGroupsRaw(playerGroupString);
                     List<CachedGroupRaw> groupList = playerGroups.get(server);
                     if (groupList == null)
                         groupList = new ArrayList<CachedGroupRaw>();
                     List<CachedGroupRaw> newGroupList = new ArrayList<CachedGroupRaw>();
                     Iterator<CachedGroupRaw> it = groupList.iterator();
+
+                    // Remove existing primary groups
                     while (it.hasNext()) {
                         CachedGroupRaw cachedGroup = it.next();
-                        if (cachedGroup.isPrimary() && !cachedGroup.isNegated())
-                            newGroupList.add(new CachedGroupRaw(cachedGroup.getGroupId(), false, cachedGroup.isNegated()));
-                        else
+                        if (!cachedGroup.isPrimary() || cachedGroup.isNegated())
                             newGroupList.add(cachedGroup);
                     }
 
-                    // If groupName null or empty, un-set primary group
                     if (groupName != null && !groupName.isEmpty()) {
                         Group group = getGroup(groupName);
                         if (group == null) {
@@ -1172,7 +1170,7 @@ public abstract class PermissionManagerBase {
                             return;
                         }
 
-                        // Set new primary group
+                        // Remove groups same id
                         it = newGroupList.iterator();
                         while (it.hasNext()) {
                             CachedGroupRaw cachedGroup = it.next();
@@ -1181,8 +1179,10 @@ public abstract class PermissionManagerBase {
                                 break;
                             }
                         }
+                        // Set new primary group
                         newGroupList.add(new CachedGroupRaw(group.getId(), true, false));
                     }
+
                     playerGroups.put(server, newGroupList);
 
                     String playerGroupStringOutput = getPlayerGroupsRaw(playerGroups);

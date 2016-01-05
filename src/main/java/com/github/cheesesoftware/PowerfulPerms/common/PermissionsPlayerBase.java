@@ -85,8 +85,9 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         List<CachedGroup> temp = groups.get("");
         if (temp != null) {
             Iterator<CachedGroup> it = temp.iterator();
-            plugin.debug("Database syntax for player is old");
-            return it.next().getGroup();
+            Group group = it.next().getGroup();
+            plugin.debug("Database syntax for player is old. " + group.getName());
+            return group;
         }
         return null;
     }
