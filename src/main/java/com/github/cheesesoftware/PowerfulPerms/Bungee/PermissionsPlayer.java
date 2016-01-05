@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.github.cheesesoftware.PowerfulPerms.common.CachedGroup;
 import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PowerfulPermission;
 

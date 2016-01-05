@@ -10,7 +10,6 @@ import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
 import com.github.cheesesoftware.PowerfulPerms.common.Group;
 import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
-import com.github.cheesesoftware.PowerfulPerms.common.PMR;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 
 import net.milkbowl.vault.permission.Permission;
