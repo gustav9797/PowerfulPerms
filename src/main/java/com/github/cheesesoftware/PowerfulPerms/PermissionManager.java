@@ -92,39 +92,49 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent e) {
         debug("PlayerQuitEvent " + e.getPlayer().getName());
-        if (players.containsKey(e.getPlayer().getUniqueId())) {
-            players.remove(e.getPlayer().getUniqueId());
-        }
-        if (cachedPlayers.containsKey(e.getPlayer().getUniqueId()))
-            cachedPlayers.remove(e.getPlayer().getUniqueId());
+
+        players.remove(e.getPlayer().getUniqueId());
+        cachedPlayers.remove(e.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onAsyncPlayerPreLogin(final AsyncPlayerPreLoginEvent e) {
         debug("AsyncPlayerPreLoginEvent " + e.getName());
+
         if (e.getLoginResult() == AsyncPlayerPreLoginEvent.Result.ALLOWED) {
             loadPlayer(e.getUniqueId(), e.getName(), true);
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerLogin(PlayerLoginEvent e) {
         debug("PlayerLoginEvent " + e.getPlayer().getName());
+
+        if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
+            // Player is cached. Continue load it.
+            continueLoadPlayer(e.getPlayer());
+        } else {
+            // Player is not cached, Load directly on Bukkit main thread.
+            debug("onPlayerJoin player isn't cached, loading directly");
+            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
+            this.continueLoadPlayer(e.getPlayer());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerLoginMonitor(PlayerLoginEvent e) {
+        debug("PlayerLoginEvent Monitor" + e.getPlayer().getName());
+
+        if (e.getResult() != PlayerLoginEvent.Result.ALLOWED) {
+            debug("onPlayerLoginMonitor player not allowed, removing cached");
+            cachedPlayers.remove(e.getPlayer().getUniqueId());
+            players.remove(e.getPlayer().getUniqueId());
+        }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(final PlayerJoinEvent e) {
         debug("PlayerJoinEvent " + e.getPlayer().getName());
-
-        if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
-            // Player is cached. Continue load it.
-            continueLoadPlayer(e.getPlayer().getUniqueId());
-        } else {
-            // Player is not cached, Load directly on Bukkit main thread.
-            debug("onPlayerJoin player isn't cached, loading directly");
-            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
-            this.continueLoadPlayer(e.getPlayer().getUniqueId());
-        }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -156,7 +166,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
                 loadPlayer(p);
             } else {
                 loadPlayer(p.getUniqueId(), p.getName(), true);
-                continueLoadPlayer(p.getUniqueId());
+                continueLoadPlayer(p);
             }
         }
     }
@@ -182,28 +192,24 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         loadPlayer(player.getUniqueId(), player.getName(), false);
     }
 
-    private void continueLoadPlayer(UUID uuid) {
+    private void continueLoadPlayer(Player p) {
         debug("continueLoadPlayer begin");
-        PermissionsPlayerBase base = super.loadCachedPlayer(uuid);
+        PermissionsPlayerBase base = super.loadCachedPlayer(p.getUniqueId());
         if (base != null) {
-            Player p = Bukkit.getServer().getPlayer(uuid);
-            if (p != null) {
-                if (players.containsKey(p.getUniqueId()))
-                    players.remove(p.getUniqueId());
+            if (players.containsKey(p.getUniqueId()))
+                players.remove(p.getUniqueId());
 
-                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base, plugin);
-                try {
-                    injector.inject(p, new CustomPermissibleBase(permissionsPlayer));
-                } catch (NoSuchFieldException e) {
-                    Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "You're not using Spigot. Spigot must be used for permissions to work properly. 2");
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "Could not inject permissible. Using default Bukkit permissions. 2");
-                    e.printStackTrace();
-                }
-                players.put(uuid, permissionsPlayer);
-            } else
-                debug("continueLoadPlayer: Player is null");
+            PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base, plugin);
+            try {
+                injector.inject(p, new CustomPermissibleBase(permissionsPlayer));
+            } catch (NoSuchFieldException e) {
+                Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "You're not using Spigot. Spigot must be used for permissions to work properly. 2");
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "Could not inject permissible. Using default Bukkit permissions. 2");
+                e.printStackTrace();
+            }
+            players.put(p.getUniqueId(), permissionsPlayer);
         }
         debug("continueLoadPlayer end");
     }

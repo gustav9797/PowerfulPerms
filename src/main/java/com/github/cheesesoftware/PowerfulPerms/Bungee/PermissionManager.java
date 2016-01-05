@@ -111,7 +111,8 @@ public class PermissionManager extends PermissionManagerBase implements Listener
                     e.completeIntent(plugin);
                 }
             }, 0, TimeUnit.MILLISECONDS);
-        }
+        } else
+            debug("LoginEvent player not allowed");
     }
 
     @EventHandler(priority = EventPriority.LOW)
