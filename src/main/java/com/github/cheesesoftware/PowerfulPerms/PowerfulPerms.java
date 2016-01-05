@@ -10,6 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.github.cheesesoftware.PowerfulPerms.Vault.VaultHook;
 import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
 import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
@@ -59,13 +60,8 @@ public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
 
         if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {
             Bukkit.getLogger().info(consolePrefix + "Found Vault. Enabling Vault integration.");
-
-            com.github.cheesesoftware.PowerfulPerms.Vault.PowerfulPerms_Vault_Permissions vaultPermsHook = new com.github.cheesesoftware.PowerfulPerms.Vault.PowerfulPerms_Vault_Permissions(
-                    permissionManager);
-            com.github.cheesesoftware.PowerfulPerms.Vault.PowerfulPerms_Vault_Chat vaultChatHook = new com.github.cheesesoftware.PowerfulPerms.Vault.PowerfulPerms_Vault_Chat(vaultPermsHook,
-                    permissionManager);
-            Bukkit.getServicesManager().register(net.milkbowl.vault.permission.Permission.class, vaultPermsHook, Bukkit.getPluginManager().getPlugin("Vault"), ServicePriority.Normal);
-            Bukkit.getServicesManager().register(net.milkbowl.vault.chat.Chat.class, vaultChatHook, Bukkit.getPluginManager().getPlugin("Vault"), ServicePriority.Normal);
+            VaultHook vaultHook = new VaultHook();
+            vaultHook.hook(permissionManager);
         }
 
         this.getCommand("powerfulperms").setExecutor(new PermissionCommandExecutor(permissionManager));
