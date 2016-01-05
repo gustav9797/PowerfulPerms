@@ -40,10 +40,8 @@ public class PermissionCommand {
                     permissionManager.setPlayerPrimaryGroup(playerName, group, server, response);
                 } else if (args[2].equalsIgnoreCase("removeprimary") || args[2].equalsIgnoreCase("removeprimarygroup")) {
                     String server = "";
-                    if (args.length >= 5)
-                        server = args[4];
-                    if (args.length >= 6)
-                        server = args[5];
+                    if (args.length >= 4)
+                        server = args[3];
 
                     permissionManager.setPlayerPrimaryGroup(playerName, "", server, response);
                 } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
