@@ -1,7 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -518,12 +517,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return parents;
     }
 
-    /**
-     * Gets a group from its name.
-     * 
-     * @param groupName
-     *            The name of the group to get.
-     */
     @Override
     public Group getGroup(String groupName) {
         for (Map.Entry<Integer, Group> e : groups.entrySet())
@@ -532,14 +525,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return null;
     }
 
-    /**
-     * Get all groups.
-     * 
-     * @return All groups.
-     */
     @Override
-    public Collection<Group> getGroups() {
-        return (Collection<Group>) this.groups.values();
+    public Group getGroup(int id) {
+        return groups.get(id);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Map<Integer, Group> getGroups() {
+        return (Map<Integer, Group>) this.groups.clone();
     }
 
     protected HashMap<String, List<CachedGroup>> getPlayerGroups(String raw) {
@@ -637,7 +631,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void getPlayerGroups(String playerName, final ResultRunnable<HashMap<String, List<CachedGroup>>> resultRunnable) {
+    public void getPlayerGroups(String playerName, final ResultRunnable<Map<String, List<CachedGroup>>> resultRunnable) {
         // If player is online, get data directly from player
         UUID uuid = plugin.getPlayerUUID(playerName);
         if (uuid != null) {
@@ -678,7 +672,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         });
     }
 
-    protected Group getPlayerPrimaryGroup(HashMap<String, List<CachedGroup>> groups) {
+    protected Group getPlayerPrimaryGroup(Map<String, List<CachedGroup>> groups) {
         if (groups != null) {
             List<CachedGroup> g = groups.get("");
             if (g != null) {
@@ -702,12 +696,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
             }
         }
 
-        getPlayerGroups(playerName, new ResultRunnable<HashMap<String, List<CachedGroup>>>() {
+        getPlayerGroups(playerName, new ResultRunnable<Map<String, List<CachedGroup>>>() {
 
             @Override
             public void run() {
                 if (result != null) {
-                    HashMap<String, List<CachedGroup>> groups = result;
+                    Map<String, List<CachedGroup>> groups = result;
                     Group primaryGroup = getPlayerPrimaryGroup(groups);
                     resultRunnable.setResult(primaryGroup);
                     db.scheduler.runSync(resultRunnable);

@@ -1,10 +1,10 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 
@@ -204,11 +204,11 @@ public class PermissionCommand {
                                 rows.add(ChatColor.RED + "Player has no current primary group." + ChatColor.WHITE);
                         }
 
-                        permissionManager.getPlayerGroups(playerName, new ResultRunnable<HashMap<String, List<CachedGroup>>>() {
+                        permissionManager.getPlayerGroups(playerName, new ResultRunnable<Map<String, List<CachedGroup>>>() {
 
                             @Override
                             public void run() {
-                                HashMap<String, List<CachedGroup>> groups = result;
+                                Map<String, List<CachedGroup>> groups = result;
                                 boolean has = false;
                                 String primaryGroups = ChatColor.GREEN + "Primary Groups" + ChatColor.WHITE + ": ";
                                 if (groups != null && groups.size() > 0) {
@@ -497,9 +497,9 @@ public class PermissionCommand {
                 }
             }
         } else if (args.length >= 1 && args[0].equalsIgnoreCase("groups")) {
-            Collection<Group> groups = permissionManager.getGroups();
+            Map<Integer, Group> groups = permissionManager.getGroups();
             String s = "";
-            for (Group group : groups) {
+            for (Group group : groups.values()) {
                 s += group.getName() + ", ";
             }
             if (s.length() > 0 && groups.size() > 0) {
