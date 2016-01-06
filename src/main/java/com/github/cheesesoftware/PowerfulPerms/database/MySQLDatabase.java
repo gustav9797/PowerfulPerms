@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
+import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
 
 public class MySQLDatabase extends Database {
 

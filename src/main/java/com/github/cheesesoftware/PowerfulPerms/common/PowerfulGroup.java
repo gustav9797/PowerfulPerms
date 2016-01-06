@@ -2,20 +2,24 @@ package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
-public class Group {
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
+
+public class PowerfulGroup implements Group {
     private int id;
     private String name;
-    private ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
-    private ArrayList<Group> parents;
+    private List<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
+    private List<Group> parents;
 
     // private String prefixRaw;
     // private String suffixRaw;
     private HashMap<String, String> serverPrefix = new HashMap<String, String>();
     private HashMap<String, String> serverSuffix = new HashMap<String, String>();
 
-    public Group(int id, String name, ArrayList<PowerfulPermission> permissions, String prefixRaw, String suffixRaw) {
+    public PowerfulGroup(int id, String name, List<PowerfulPermission> permissions, String prefixRaw, String suffixRaw) {
         this.id = id;
         this.name = name;
         this.permissions = permissions;
@@ -48,18 +52,22 @@ public class Group {
         return output;
     }
 
+    @Override
     public int getId() {
         return this.id;
     }
 
+    @Override
     public String getName() {
         return this.name;
     }
 
-    public ArrayList<Group> getParents() {
+    @Override
+    public List<Group> getParents() {
         return this.parents;
     }
 
+    @Override
     public String getPrefix(String server) {
         String prefix = serverPrefix.get(server);
         if (prefix != null)
@@ -67,6 +75,7 @@ public class Group {
         return serverPrefix.get("");
     }
 
+    @Override
     public String getSuffix(String server) {
         String suffix = serverSuffix.get(server);
         if (suffix != null)
@@ -74,20 +83,24 @@ public class Group {
         return serverSuffix.get("");
     }
 
+    @Override
     public HashMap<String, String> getServerPrefix() {
         return this.serverPrefix;
     }
 
+    @Override
     public HashMap<String, String> getServerSuffix() {
         return this.serverSuffix;
     }
 
-    public ArrayList<PowerfulPermission> getOwnPermissions() {
-        return new ArrayList<PowerfulPermission>(permissions);
+    @Override
+    public ArrayList<Permission> getOwnPermissions() {
+        return new ArrayList<Permission>(permissions);
     }
 
-    public ArrayList<PowerfulPermission> getPermissions() {
-        ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>();
+    @Override
+    public ArrayList<Permission> getPermissions() {
+        ArrayList<Permission> temp = new ArrayList<Permission>();
         for (Group parent : this.parents) {
             temp.addAll(parent.getPermissions());
         }
@@ -95,19 +108,7 @@ public class Group {
         return temp;
     }
 
-    /*
-     * public ArrayList<PowerfulPermission> getInheritedPermissions() { ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions); for (Group parent : this.parents) {
-     * temp.addAll(parent.getPermissions()); } return temp; }
-     */
-
-    /*
-     * public String getRawPermissions() { String raw = getRawOwnPermissions(); for (Group g : parents) raw += g.getRawPermissions(); return raw; }
-     * 
-     * public String getRawOwnPermissions() { String raw = ""; for (Map.Entry<String, SimplePermission> e : permissions.entrySet()) { raw += e.getKey(); if(!e.getValue().getWorld().isEmpty() &&
-     * !e.getValue().getWorld().equalsIgnoreCase("ALL")) raw += ":" + e.getValue().getWorld(); if(!e.getValue().getWorld().isEmpty() && !e.getValue().getWorld().equalsIgnoreCase("ALL")) raw += ":" +
-     * e.getValue().getWorld(); raw += ";"; } return raw; }
-     */
-
+    @Override
     public String getRawOwnParents() {
         String raw = "";
         for (Group g : parents)
@@ -115,7 +116,8 @@ public class Group {
         return raw;
     }
 
-    public void setParents(ArrayList<Group> parents) {
+    @Override
+    public void setParents(List<Group> parents) {
         this.parents = parents;
     }
 }

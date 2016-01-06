@@ -6,21 +6,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-public class PermissionsPlayerBase implements IPermissionsPlayer {
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
+
+public class PermissionPlayerBase implements PermissionPlayer {
 
     protected HashMap<String, List<CachedGroup>> groups = new HashMap<String, List<CachedGroup>>(); // Contains -all- groups for this player.
 
     protected List<Group> currentGroups = new ArrayList<Group>();
     protected Group currentPrimaryGroup = null;
 
-    protected ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
+    protected List<Permission> permissions = new ArrayList<Permission>();
     protected List<String> realPermissions = new ArrayList<String>();
     protected List<String> temporaryPermissions = new ArrayList<String>();
     protected String prefix = "";
     protected String suffix = "";
-    protected IPlugin plugin;
+    protected PowerfulPermsPlugin plugin;
 
-    public PermissionsPlayerBase(HashMap<String, List<CachedGroup>> groups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
+    public PermissionPlayerBase(HashMap<String, List<CachedGroup>> groups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin) {
         this.groups = groups;
         this.permissions = permissions;
         this.prefix = prefix;
@@ -28,7 +34,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         this.plugin = plugin;
     }
 
-    public void update(PermissionsPlayerBase base) {
+    public void update(PermissionPlayerBase base) {
         this.groups = base.groups;
         this.permissions = base.permissions;
         this.prefix = base.prefix;
@@ -43,9 +49,6 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
         this.currentPrimaryGroup = this.getPrimaryGroup(server);
     }
 
-    /**
-     * Sets the player's groups as seen in getServerGroups() Changes won't save.
-     */
     public void setGroups(HashMap<String, List<CachedGroup>> groups) {
         this.groups = groups;
     }
@@ -163,10 +166,18 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     }
 
     /**
+     * Returns a list of groups including primary groups which apply to the current server.
+     */
+    @Override
+    public List<Group> getGroups() {
+        return this.currentGroups;
+    }
+
+    /**
      * Returns all permissions for this player.
      */
     @Override
-    public ArrayList<PowerfulPermission> getPermissions() {
+    public List<Permission> getPermissions() {
         return this.permissions;
     }
 
@@ -318,7 +329,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     }
 
     protected List<String> calculatePermissions(String playerServer, String playerWorld) {
-        ArrayList<PowerfulPermission> unprocessedPerms = new ArrayList<PowerfulPermission>();
+        ArrayList<Permission> unprocessedPerms = new ArrayList<Permission>();
 
         Group primary = this.getPrimaryGroup();
 
@@ -339,7 +350,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
 
         List<String> output = new ArrayList<String>();
 
-        for (PowerfulPermission e : unprocessedPerms) {
+        for (Permission e : unprocessedPerms) {
             if (permissionApplies(e, playerServer, playerWorld)) {
                 output.add(e.getPermissionString());
             }
@@ -359,7 +370,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     /**
      * Checks if permission applies for server and world.
      */
-    private static boolean permissionApplies(PowerfulPermission e, String playerServer, String playerWorld) {
+    private static boolean permissionApplies(Permission e, String playerServer, String playerWorld) {
         boolean isSameServer = false;
         boolean isSameWorld = false;
 

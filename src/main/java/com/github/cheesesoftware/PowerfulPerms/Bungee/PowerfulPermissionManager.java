@@ -5,10 +5,10 @@ import java.util.concurrent.TimeUnit;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
-import com.github.cheesesoftware.PowerfulPerms.common.Group;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
@@ -20,11 +20,11 @@ import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-public class PermissionManager extends PermissionManagerBase implements Listener {
+public class PowerfulPermissionManager extends PermissionManagerBase implements Listener {
 
     private PowerfulPerms plugin;
 
-    public PermissionManager(Database database, PowerfulPerms plugin, String serverName) {
+    public PowerfulPermissionManager(Database database, PowerfulPerms plugin, String serverName) {
         super(database, plugin, serverName);
         this.plugin = plugin;
 
@@ -129,7 +129,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     public void onServerConnected(final ServerConnectedEvent e) {
         debug("serverconnected event " + e.getServer().getInfo().getName());
         if (players.containsKey(e.getPlayer().getUniqueId())) {
-            PermissionsPlayer player = (PermissionsPlayer) players.get(e.getPlayer().getUniqueId());
+            PowerfulPermissionPlayer player = (PowerfulPermissionPlayer) players.get(e.getPlayer().getUniqueId());
             player.updatePermissions(e.getServer().getInfo());
         }
     }
@@ -145,21 +145,19 @@ public class PermissionManager extends PermissionManagerBase implements Listener
      * Continues loading a previously cached player.
      */
     private void continueLoadPlayer(ProxiedPlayer player) {
-        PermissionsPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
-        if (base != null) {
-            if (player != null) {
-                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(player, base, plugin);
-                players.put(player.getUniqueId(), permissionsPlayer);
-            } else
-                debug("continueLoadPlayer: ProxiedPlayer is null");
-        }
+        PermissionPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
+        if (base != null && player != null) {
+            PowerfulPermissionPlayer permissionsPlayer = new PowerfulPermissionPlayer(player, base, plugin);
+            players.put(player.getUniqueId(), permissionsPlayer);
+        } else
+            debug("continueLoadPlayer: ProxiedPlayer or PermissionPlayerBase is null");
     }
 
     /**
      * Returns the primary group of an online player.
      */
     public Group getPlayerPrimaryGroup(ProxiedPlayer p) {
-        PermissionsPlayer gp = (PermissionsPlayer) players.get(p.getUniqueId());
+        PowerfulPermissionPlayer gp = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
         if (gp != null)
             return gp.getPrimaryGroup();
         return null;

@@ -4,7 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.ServicePriority;
 
-import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
+import com.github.cheesesoftware.PowerfulPerms.PowerfulPermissionManager;
 
 public class VaultHook {
 
@@ -12,7 +12,7 @@ public class VaultHook {
 
     }
 
-    public void hook(PermissionManager permissionManager) {
+    public void hook(PowerfulPermissionManager permissionManager) {
         Plugin vault = Bukkit.getPluginManager().getPlugin("Vault");
         PowerfulPerms_Vault_Permissions vaultPermsHook = new PowerfulPerms_Vault_Permissions(permissionManager);
         PowerfulPerms_Vault_Chat vaultChatHook = new PowerfulPerms_Vault_Chat(vaultPermsHook, permissionManager);

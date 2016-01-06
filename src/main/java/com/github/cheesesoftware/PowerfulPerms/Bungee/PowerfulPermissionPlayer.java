@@ -1,26 +1,25 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.github.cheesesoftware.PowerfulPerms.common.CachedGroup;
-import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
-import com.github.cheesesoftware.PowerfulPerms.common.PowerfulPermission;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
+import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-public class PermissionsPlayer extends PermissionsPlayerBase {
+public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     private ProxiedPlayer player;
 
-    public PermissionsPlayer(ProxiedPlayer p, HashMap<String, List<CachedGroup>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
+    public PowerfulPermissionPlayer(ProxiedPlayer p, HashMap<String, List<CachedGroup>> serverGroups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin) {
         super(serverGroups, permissions, prefix, suffix, plugin);
         this.player = p;
     }
 
-    public PermissionsPlayer(ProxiedPlayer p, PermissionsPlayerBase base, IPlugin plugin) {
+    public PowerfulPermissionPlayer(ProxiedPlayer p, PermissionPlayerBase base, PowerfulPermsPlugin plugin) {
         super(base.getCachedGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix(), plugin);
         this.player = p;
     }
@@ -29,7 +28,7 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
      * Update this PermissionsPlayerBase with data from another one.
      */
     @Override
-    public void update(PermissionsPlayerBase base) {
+    public void update(PermissionPlayerBase base) {
         super.update(base);
         this.updatePermissions();
     }

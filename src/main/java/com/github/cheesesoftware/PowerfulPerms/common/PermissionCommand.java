@@ -8,13 +8,20 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
 
-import com.github.cheesesoftware.PowerfulPerms.database.DBDocument;
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
+import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 
 public class PermissionCommand {
 
-    private PermissionManagerBase permissionManager;
+    private PermissionManager permissionManager;
 
-    public PermissionCommand(PermissionManagerBase permissionManager) {
+    public PermissionCommand(PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
     }
 
@@ -116,11 +123,11 @@ public class PermissionCommand {
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
                         permissionManager.setPlayerPrefix(playerName, "", response);
                     } else
-                        permissionManager.getPlayerOwnPrefix(playerName, new ResultRunnable() {
+                        permissionManager.getPlayerOwnPrefix(playerName, new ResultRunnable<String>() {
 
                             @Override
                             public void run() {
-                                sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (result != null ? (String) result : "") + "\"");
+                                sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
                             }
                         });
 
@@ -152,11 +159,11 @@ public class PermissionCommand {
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
                         permissionManager.setPlayerSuffix(playerName, "", response);
                     } else
-                        permissionManager.getPlayerOwnSuffix(playerName, new ResultRunnable() {
+                        permissionManager.getPlayerOwnSuffix(playerName, new ResultRunnable<String>() {
 
                             @Override
                             public void run() {
-                                sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": \"" + (result != null ? (String) result : "") + "\"");
+                                sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
                             }
                         });
                 } else {
@@ -178,19 +185,17 @@ public class PermissionCommand {
                 final Queue<String> rows = new java.util.ArrayDeque<String>();
                 rows.add(ChatColor.BLUE + "Listing permissions for player " + playerName + ".");
 
-                permissionManager.getPlayerData(playerName, new ResultRunnable() {
+                permissionManager.getPlayerData(playerName, new ResultRunnable<DBDocument>() {
 
                     @Override
                     public void run() {
                         String tempUUID = "empty";
-                        DBDocument row = null;
-                        if (result != null) {
-                            row = (DBDocument) result;
+                        DBDocument row = result;
+                        if (result != null)
                             tempUUID = row.getString("uuid");
-                        }
                         rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
 
-                        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(playerName);
+                        PermissionPlayer p = permissionManager.getPermissionsPlayer(playerName);
                         if (p != null) {
                             Group pri = p.getPrimaryGroup();
                             if (pri != null)
@@ -199,11 +204,11 @@ public class PermissionCommand {
                                 rows.add(ChatColor.RED + "Player has no current primary group." + ChatColor.WHITE);
                         }
 
-                        permissionManager.getPlayerGroups(playerName, new ResultRunnable() {
+                        permissionManager.getPlayerGroups(playerName, new ResultRunnable<HashMap<String, List<CachedGroup>>>() {
 
                             @Override
                             public void run() {
-                                HashMap<String, List<CachedGroup>> groups = (HashMap<String, List<CachedGroup>>) result;
+                                HashMap<String, List<CachedGroup>> groups = result;
                                 boolean has = false;
                                 String primaryGroups = ChatColor.GREEN + "Primary Groups" + ChatColor.WHITE + ": ";
                                 if (groups != null && groups.size() > 0) {
@@ -251,13 +256,13 @@ public class PermissionCommand {
                                     otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
                                 rows.add(otherGroups);
 
-                                permissionManager.getPlayerPermissions(playerName, new ResultRunnable() {
+                                permissionManager.getPlayerOwnPermissions(playerName, new ResultRunnable<List<Permission>>() {
 
                                     @Override
                                     public void run() {
-                                        ArrayList<PowerfulPermission> playerPerms = (ArrayList<PowerfulPermission>) result;
+                                        List<Permission> playerPerms = result;
                                         if (playerPerms != null && playerPerms.size() > 0)
-                                            for (PowerfulPermission e : playerPerms) {
+                                            for (Permission e : playerPerms) {
                                                 rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
                                                         + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
                                                         + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
@@ -469,9 +474,9 @@ public class PermissionCommand {
                 Group group = permissionManager.getGroup(groupName);
                 if (group != null) {
                     rows.add("Listing permissions for group " + groupName + ":");
-                    ArrayList<PowerfulPermission> permissions = group.getOwnPermissions();
+                    List<Permission> permissions = group.getOwnPermissions();
                     if (permissions.size() > 0) {
-                        for (PowerfulPermission e : permissions)
+                        for (Permission e : permissions)
                             rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
                                     + (e.getServer() == null || e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
                                     + (e.getServer() == null || e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
@@ -512,7 +517,7 @@ public class PermissionCommand {
             sendSender(invoker, sender, "Groups and players have been reloaded globally.");
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("haspermission")) {
             String permission = args[1];
-            IPermissionsPlayer p = permissionManager.getPermissionsPlayer(sender);
+            PermissionPlayer p = permissionManager.getPermissionsPlayer(sender);
             if (p != null) {
                 Boolean has = p.hasPermission(permission);
                 if (has != null) {

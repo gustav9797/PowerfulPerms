@@ -16,22 +16,22 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
-import com.github.cheesesoftware.PowerfulPerms.PermissionsPlayer;
+import com.github.cheesesoftware.PowerfulPerms.PowerfulPermissionPlayer;
 import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
-import com.github.cheesesoftware.PowerfulPerms.common.Group;
-import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
-public class PermissionManager extends PermissionManagerBase implements Listener {
+public class PowerfulPermissionManager extends PermissionManagerBase implements Listener {
 
     private PermissibleBaseInjector injector;
 
-    public PermissionManager(Database database, PowerfulPerms plugin, String serverName) {
+    public PowerfulPermissionManager(Database database, PowerfulPerms plugin, String serverName) {
         super(database, plugin, serverName);
 
         this.injector = new PermissibleBaseInjector();
@@ -139,7 +139,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerChat(AsyncPlayerChatEvent e) {
-        IPermissionsPlayer gp = this.getPermissionsPlayer(e.getPlayer());
+        PermissionPlayer gp = this.getPermissionsPlayer(e.getPlayer());
         e.setFormat(ChatColor.translateAlternateColorCodes('&', gp.getPrefix() + "%1$s" + gp.getSuffix() + "%2$s"));
     }
 
@@ -148,7 +148,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
         Player p = event.getPlayer();
         debug("Player " + p.getName() + " changed world from " + event.getFrom().getName() + " to " + p.getWorld().getName());
         if (players.containsKey(p.getUniqueId())) {
-            PermissionsPlayer permissionsPlayer = (PermissionsPlayer) players.get(p.getUniqueId());
+            PowerfulPermissionPlayer permissionsPlayer = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
             permissionsPlayer.updatePermissions();
         }
     }
@@ -174,14 +174,14 @@ public class PermissionManager extends PermissionManagerBase implements Listener
     /**
      * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
      */
-    public IPermissionsPlayer getPermissionsPlayer(Player p) {
+    public PermissionPlayer getPermissionsPlayer(Player p) {
         return players.get(p.getUniqueId());
     }
 
     /**
      * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
      */
-    public IPermissionsPlayer getPermissionsPlayer(String playerName) {
+    public PermissionPlayer getPermissionsPlayer(String playerName) {
         UUID uuid = plugin.getPlayerUUID(playerName);
         if (uuid != null)
             return players.get(uuid);
@@ -194,12 +194,12 @@ public class PermissionManager extends PermissionManagerBase implements Listener
 
     private void continueLoadPlayer(Player p) {
         debug("continueLoadPlayer begin");
-        PermissionsPlayerBase base = super.loadCachedPlayer(p.getUniqueId());
+        PermissionPlayerBase base = super.loadCachedPlayer(p.getUniqueId());
         if (base != null) {
             if (players.containsKey(p.getUniqueId()))
                 players.remove(p.getUniqueId());
 
-            PermissionsPlayer permissionsPlayer = new PermissionsPlayer(p, base, plugin);
+            PowerfulPermissionPlayer permissionsPlayer = new PowerfulPermissionPlayer(p, base, plugin);
             try {
                 injector.inject(p, new CustomPermissibleBase(permissionsPlayer));
             } catch (NoSuchFieldException e) {
@@ -218,7 +218,7 @@ public class PermissionManager extends PermissionManagerBase implements Listener
      * Returns the primary group of an online player.
      */
     public Group getPlayerPrimaryGroup(Player p) {
-        PermissionsPlayer gp = (PermissionsPlayer) players.get(p.getUniqueId());
+        PowerfulPermissionPlayer gp = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
         if (gp != null)
             return gp.getPrimaryGroup();
         return null;

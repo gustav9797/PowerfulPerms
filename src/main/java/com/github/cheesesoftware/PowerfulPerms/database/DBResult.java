@@ -2,6 +2,8 @@ package com.github.cheesesoftware.PowerfulPerms.database;
 
 import java.util.ArrayList;
 
+import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
+
 public class DBResult {
 
     protected ArrayList<DBDocument> rows;

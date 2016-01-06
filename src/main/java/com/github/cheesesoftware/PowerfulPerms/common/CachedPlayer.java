@@ -1,38 +1,40 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
-import java.util.ArrayList;
+import java.util.List;
+
+import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 
 public class CachedPlayer {
 
     private String groups;
     private String prefix;
     private String suffix;
-    private ArrayList<PowerfulPermission> perms;
+    private List<Permission> perms;
 
-    public CachedPlayer(String groups, String prefix, String suffix, ArrayList<PowerfulPermission> perms) {
-	this.groups = groups;
-	this.prefix = prefix;
-	this.suffix = suffix;
-	this.perms = perms;
+    public CachedPlayer(String groups, String prefix, String suffix, List<Permission> perms) {
+        this.groups = groups;
+        this.prefix = prefix;
+        this.suffix = suffix;
+        this.perms = perms;
     }
-    
+
     public CachedPlayer() {
-	
+
     }
 
     public String getGroups() {
-	return groups;
+        return groups;
     }
-    
+
     public String getPrefix() {
-	return prefix;
+        return prefix;
     }
-    
+
     public String getSuffix() {
-	return suffix;
+        return suffix;
     }
-    
-    public ArrayList<PowerfulPermission> getPermissions() {
-	return perms;
+
+    public List<Permission> getPermissions() {
+        return perms;
     }
 }
