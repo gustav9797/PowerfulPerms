@@ -1,13 +1,12 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.Bukkit;
 
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
-import com.github.cheesesoftware.PowerfulPerms.common.PowerfulGroup;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
@@ -25,9 +24,9 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public String[] getGroups() {
-        Collection<Group> groups = permissionManager.getGroups();
+        Map<Integer, Group> groups = permissionManager.getGroups();
         List<String> groupNames = new ArrayList<String>();
-        for (Group group : groups)
+        for (Group group : groups.values())
             groupNames.add(group.getName());
         return groupNames.toArray(new String[groupNames.size()]);
     }
