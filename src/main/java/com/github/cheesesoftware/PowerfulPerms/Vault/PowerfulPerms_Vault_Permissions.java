@@ -6,9 +6,9 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 
-import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
 import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.IPermissionManager;
 import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 
@@ -16,9 +16,9 @@ import net.milkbowl.vault.permission.Permission;
 
 public class PowerfulPerms_Vault_Permissions extends Permission {
 
-    private PermissionManager permissionManager;
+    private IPermissionManager permissionManager;
 
-    public PowerfulPerms_Vault_Permissions(PermissionManager permissionManager) {
+    public PowerfulPerms_Vault_Permissions(IPermissionManager permissionManager) {
         this.permissionManager = permissionManager;
     }
 

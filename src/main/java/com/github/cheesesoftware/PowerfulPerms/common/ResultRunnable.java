@@ -1,8 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
-public abstract class ResultRunnable implements Runnable {
+public abstract class ResultRunnable<T> implements Runnable {
     
-    protected Object result = null;
+    protected T result = null;
     protected boolean sameThread = false;
     
     public ResultRunnable() {
@@ -13,7 +13,7 @@ public abstract class ResultRunnable implements Runnable {
         this.sameThread = sameThread;
     }
 
-    public void setResult(Object result) {
+    public void setResult(T result) {
         this.result = result;
     }
     

@@ -95,19 +95,6 @@ public class Group {
         return temp;
     }
 
-    /*
-     * public ArrayList<PowerfulPermission> getInheritedPermissions() { ArrayList<PowerfulPermission> temp = new ArrayList<PowerfulPermission>(permissions); for (Group parent : this.parents) {
-     * temp.addAll(parent.getPermissions()); } return temp; }
-     */
-
-    /*
-     * public String getRawPermissions() { String raw = getRawOwnPermissions(); for (Group g : parents) raw += g.getRawPermissions(); return raw; }
-     * 
-     * public String getRawOwnPermissions() { String raw = ""; for (Map.Entry<String, SimplePermission> e : permissions.entrySet()) { raw += e.getKey(); if(!e.getValue().getWorld().isEmpty() &&
-     * !e.getValue().getWorld().equalsIgnoreCase("ALL")) raw += ":" + e.getValue().getWorld(); if(!e.getValue().getWorld().isEmpty() && !e.getValue().getWorld().equalsIgnoreCase("ALL")) raw += ":" +
-     * e.getValue().getWorld(); raw += ";"; } return raw; }
-     */
-
     public String getRawOwnParents() {
         String raw = "";
         for (Group g : parents)

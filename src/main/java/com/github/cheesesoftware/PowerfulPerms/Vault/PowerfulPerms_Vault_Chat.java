@@ -1,7 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
-import com.github.cheesesoftware.PowerfulPerms.PermissionManager;
 import com.github.cheesesoftware.PowerfulPerms.common.Group;
+import com.github.cheesesoftware.PowerfulPerms.common.IPermissionManager;
 import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.ResponseRunnable;
@@ -11,9 +11,9 @@ import net.milkbowl.vault.permission.Permission;
 
 public class PowerfulPerms_Vault_Chat extends Chat {
 
-    private PermissionManager permissionManager;
+    private IPermissionManager permissionManager;
 
-    public PowerfulPerms_Vault_Chat(Permission perms, PermissionManager permissionManager) {
+    public PowerfulPerms_Vault_Chat(Permission perms, IPermissionManager permissionManager) {
         super(perms);
         this.permissionManager = permissionManager;
     }

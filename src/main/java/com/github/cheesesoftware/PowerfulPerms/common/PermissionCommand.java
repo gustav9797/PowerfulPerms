@@ -12,9 +12,9 @@ import com.github.cheesesoftware.PowerfulPerms.database.DBDocument;
 
 public class PermissionCommand {
 
-    private PermissionManagerBase permissionManager;
+    private IPermissionManager permissionManager;
 
-    public PermissionCommand(PermissionManagerBase permissionManager) {
+    public PermissionCommand(IPermissionManager permissionManager) {
         this.permissionManager = permissionManager;
     }
 
@@ -116,11 +116,11 @@ public class PermissionCommand {
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
                         permissionManager.setPlayerPrefix(playerName, "", response);
                     } else
-                        permissionManager.getPlayerOwnPrefix(playerName, new ResultRunnable() {
+                        permissionManager.getPlayerOwnPrefix(playerName, new ResultRunnable<String>() {
 
                             @Override
                             public void run() {
-                                sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (result != null ? (String) result : "") + "\"");
+                                sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
                             }
                         });
 
@@ -152,11 +152,11 @@ public class PermissionCommand {
                     } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
                         permissionManager.setPlayerSuffix(playerName, "", response);
                     } else
-                        permissionManager.getPlayerOwnSuffix(playerName, new ResultRunnable() {
+                        permissionManager.getPlayerOwnSuffix(playerName, new ResultRunnable<String>() {
 
                             @Override
                             public void run() {
-                                sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": \"" + (result != null ? (String) result : "") + "\"");
+                                sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
                             }
                         });
                 } else {
@@ -178,16 +178,14 @@ public class PermissionCommand {
                 final Queue<String> rows = new java.util.ArrayDeque<String>();
                 rows.add(ChatColor.BLUE + "Listing permissions for player " + playerName + ".");
 
-                permissionManager.getPlayerData(playerName, new ResultRunnable() {
+                permissionManager.getPlayerData(playerName, new ResultRunnable<DBDocument>() {
 
                     @Override
                     public void run() {
                         String tempUUID = "empty";
-                        DBDocument row = null;
-                        if (result != null) {
-                            row = (DBDocument) result;
+                        DBDocument row = result;
+                        if (result != null)
                             tempUUID = row.getString("uuid");
-                        }
                         rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
 
                         IPermissionsPlayer p = permissionManager.getPermissionsPlayer(playerName);
@@ -199,11 +197,11 @@ public class PermissionCommand {
                                 rows.add(ChatColor.RED + "Player has no current primary group." + ChatColor.WHITE);
                         }
 
-                        permissionManager.getPlayerGroups(playerName, new ResultRunnable() {
+                        permissionManager.getPlayerGroups(playerName, new ResultRunnable<HashMap<String, List<CachedGroup>>>() {
 
                             @Override
                             public void run() {
-                                HashMap<String, List<CachedGroup>> groups = (HashMap<String, List<CachedGroup>>) result;
+                                HashMap<String, List<CachedGroup>> groups = result;
                                 boolean has = false;
                                 String primaryGroups = ChatColor.GREEN + "Primary Groups" + ChatColor.WHITE + ": ";
                                 if (groups != null && groups.size() > 0) {
@@ -251,11 +249,11 @@ public class PermissionCommand {
                                     otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
                                 rows.add(otherGroups);
 
-                                permissionManager.getPlayerPermissions(playerName, new ResultRunnable() {
+                                permissionManager.getPlayerOwnPermissions(playerName, new ResultRunnable<List<PowerfulPermission>>() {
 
                                     @Override
                                     public void run() {
-                                        ArrayList<PowerfulPermission> playerPerms = (ArrayList<PowerfulPermission>) result;
+                                        List<PowerfulPermission> playerPerms = result;
                                         if (playerPerms != null && playerPerms.size() > 0)
                                             for (PowerfulPermission e : playerPerms) {
                                                 rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"

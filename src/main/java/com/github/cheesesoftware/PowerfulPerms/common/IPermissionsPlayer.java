@@ -1,6 +1,5 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -20,7 +19,7 @@ public interface IPermissionsPlayer {
     
     public List<Group> getGroups(String server);
     
-    public ArrayList<PowerfulPermission> getPermissions();
+    public List<PowerfulPermission> getPermissions();
     
     public List<String> getPermissionsInEffect();
 

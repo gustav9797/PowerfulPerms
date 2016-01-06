@@ -13,14 +13,14 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
     protected List<Group> currentGroups = new ArrayList<Group>();
     protected Group currentPrimaryGroup = null;
 
-    protected ArrayList<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
+    protected List<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
     protected List<String> realPermissions = new ArrayList<String>();
     protected List<String> temporaryPermissions = new ArrayList<String>();
     protected String prefix = "";
     protected String suffix = "";
     protected IPlugin plugin;
 
-    public PermissionsPlayerBase(HashMap<String, List<CachedGroup>> groups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
+    public PermissionsPlayerBase(HashMap<String, List<CachedGroup>> groups, List<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
         this.groups = groups;
         this.permissions = permissions;
         this.prefix = prefix;
@@ -166,7 +166,7 @@ public class PermissionsPlayerBase implements IPermissionsPlayer {
      * Returns all permissions for this player.
      */
     @Override
-    public ArrayList<PowerfulPermission> getPermissions() {
+    public List<PowerfulPermission> getPermissions() {
         return this.permissions;
     }
 
