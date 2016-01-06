@@ -6,14 +6,14 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
-import com.github.cheesesoftware.PowerfulPerms.common.IPermissionManager;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionCommand;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 
 public class PermissionCommandExecutor implements ICommand, CommandExecutor {
     
-    private IPermissionManager permissionManager;
+    private PermissionManager permissionManager;
 
-    protected PermissionCommandExecutor(IPermissionManager permissionManager) {
+    protected PermissionCommandExecutor(PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
     }
 

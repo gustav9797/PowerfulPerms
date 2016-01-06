@@ -2,14 +2,16 @@ package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.List;
 
+import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
+
 public class CachedPlayer {
 
     private String groups;
     private String prefix;
     private String suffix;
-    private List<PowerfulPermission> perms;
+    private List<Permission> perms;
 
-    public CachedPlayer(String groups, String prefix, String suffix, List<PowerfulPermission> perms) {
+    public CachedPlayer(String groups, String prefix, String suffix, List<Permission> perms) {
         this.groups = groups;
         this.prefix = prefix;
         this.suffix = suffix;
@@ -32,7 +34,7 @@ public class CachedPlayer {
         return suffix;
     }
 
-    public List<PowerfulPermission> getPermissions() {
+    public List<Permission> getPermissions() {
         return perms;
     }
 }

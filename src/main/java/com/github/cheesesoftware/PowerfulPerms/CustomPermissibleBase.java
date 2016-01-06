@@ -19,12 +19,12 @@ import org.bukkit.plugin.Plugin;
 
 public class CustomPermissibleBase extends PermissibleBase {
 
-    private PermissionsPlayer permissionsPlayer;
+    private PowerfulPermissionPlayer permissionsPlayer;
     private List<PermissionAttachment> ppAttachments = new LinkedList<PermissionAttachment>();
     private Permissible parent = this;
     private List<String> temporaryPermissions = new ArrayList<String>();
 
-    public CustomPermissibleBase(PermissionsPlayer permissionsPlayer) {
+    public CustomPermissibleBase(PowerfulPermissionPlayer permissionsPlayer) {
         super(permissionsPlayer.getPlayer());
         this.permissionsPlayer = permissionsPlayer;
 

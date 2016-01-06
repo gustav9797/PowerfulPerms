@@ -7,18 +7,19 @@ import java.util.List;
 import org.bukkit.Bukkit;
 
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
-import com.github.cheesesoftware.PowerfulPerms.common.Group;
-import com.github.cheesesoftware.PowerfulPerms.common.IPermissionManager;
-import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
+import com.github.cheesesoftware.PowerfulPerms.common.PowerfulGroup;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 
 import net.milkbowl.vault.permission.Permission;
 
 public class PowerfulPerms_Vault_Permissions extends Permission {
 
-    private IPermissionManager permissionManager;
+    private PermissionManager permissionManager;
 
-    public PowerfulPerms_Vault_Permissions(IPermissionManager permissionManager) {
+    public PowerfulPerms_Vault_Permissions(PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
     }
 
@@ -38,7 +39,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public String[] getPlayerGroups(String world, String player) {
-        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null) {
             List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
             List<String> groupNames = new ArrayList<String>();
@@ -51,7 +52,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public String getPrimaryGroup(String world, String player) {
-        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null) {
             Group primary = p.getPrimaryGroup();
             if (primary != null)
@@ -107,7 +108,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerInGroup(String world, String player, String groupName) {
-        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null) {
             List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
             for (Group group : groups) {
@@ -132,7 +133,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerHas(String world, String player, String permission) {
-        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null) {
             Boolean has = p.hasPermission(permission);
             if (has != null)

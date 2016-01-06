@@ -1,6 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
-public class PowerfulPermission {
+import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
+
+public class PowerfulPermission implements Permission {
     private String permission;
     private String world = "";
     private String server = "";
@@ -18,14 +20,17 @@ public class PowerfulPermission {
             this.server = server;
     }
 
+    @Override
     public String getPermissionString() {
         return this.permission;
     }
 
+    @Override
     public String getWorld() {
         return this.world;
     }
 
+    @Override
     public String getServer() {
         return this.server;
     }

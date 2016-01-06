@@ -10,17 +10,18 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.github.cheesesoftware.PowerfulPerms.Vault.VaultHook;
-import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
 import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
 import com.github.cheesesoftware.PowerfulPerms.database.SQL;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
-public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
+public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPermsPlugin {
 
     private SQL sql;
-    private PermissionManager permissionManager;
+    private PowerfulPermissionManager permissionManager;
 
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
@@ -54,7 +55,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
         if (tablePrefix != null && !tablePrefix.isEmpty())
             db.setTablePrefix(tablePrefix);
         String serverName = getConfig().getString("servername");
-        permissionManager = new PermissionManager(db, this, serverName);
+        permissionManager = new PowerfulPermissionManager(db, this, serverName);
         Bukkit.getPluginManager().registerEvents(permissionManager, this);
 
         if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {
@@ -79,6 +80,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, IPlugin {
         return (PowerfulPerms) Bukkit.getPluginManager().getPlugin("PowerfulPerms");
     }
 
+    @Override
     public PermissionManager getPermissionManager() {
         return this.permissionManager;
     }

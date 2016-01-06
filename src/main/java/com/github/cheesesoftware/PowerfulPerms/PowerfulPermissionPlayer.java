@@ -8,24 +8,23 @@ import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.permissions.Permission;
 
-import com.github.cheesesoftware.PowerfulPerms.common.CachedGroup;
-import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionsPlayerBase;
-import com.github.cheesesoftware.PowerfulPerms.common.PowerfulPermission;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
+import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
-public class PermissionsPlayer extends PermissionsPlayerBase {
+public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     private Player player;
 
-    public PermissionsPlayer(Player p, HashMap<String, List<CachedGroup>> serverGroups, ArrayList<PowerfulPermission> permissions, String prefix, String suffix, IPlugin plugin) {
+    public PowerfulPermissionPlayer(Player p, HashMap<String, List<CachedGroup>> serverGroups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin) {
         super(serverGroups, permissions, prefix, suffix, plugin);
         this.player = p;
         this.updatePermissions();
     }
 
-    public PermissionsPlayer(Player p, PermissionsPlayerBase base, IPlugin plugin) {
+    public PowerfulPermissionPlayer(Player p, PermissionPlayerBase base, PowerfulPermsPlugin plugin) {
         super(base.getCachedGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix(), plugin);
         this.player = p;
         this.updatePermissions();
@@ -35,7 +34,7 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
      * Update this PermissionsPlayerBase with data from another one.
      */
     @Override
-    public void update(PermissionsPlayerBase base) {
+    public void update(PermissionPlayerBase base) {
         super.update(base);
         this.updatePermissions();
     }
@@ -73,7 +72,7 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
                     permString = permString.substring(1);
             } else
                 realPerms.add(permString);
-            Permission perm = Bukkit.getPluginManager().getPermission(permString);
+            org.bukkit.permissions.Permission perm = Bukkit.getPluginManager().getPermission(permString);
             if (perm != null)
                 realPerms.addAll(calculateChildPermissions(perm.getChildren(), invert));
         }
@@ -87,7 +86,7 @@ public class PermissionsPlayer extends PermissionsPlayerBase {
             List<String> perms = new ArrayList<String>();
 
             for (String name : keys) {
-                Permission perm = Bukkit.getServer().getPluginManager().getPermission(name);
+                org.bukkit.permissions.Permission perm = Bukkit.getServer().getPluginManager().getPermission(name);
                 boolean value = children.get(name) ^ invert;
                 String lname = name.toLowerCase();
 

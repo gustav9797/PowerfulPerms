@@ -11,12 +11,13 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
-import com.github.cheesesoftware.PowerfulPerms.common.IPlugin;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
 import com.github.cheesesoftware.PowerfulPerms.database.SQL;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.google.common.io.ByteStreams;
 
 import net.md_5.bungee.api.ChatColor;
@@ -31,10 +32,10 @@ import net.md_5.bungee.config.YamlConfiguration;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-public class PowerfulPerms extends Plugin implements Listener, IPlugin {
+public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlugin {
 
     private SQL sql;
-    private PermissionManager permissionManager;
+    private PowerfulPermissionManager permissionManager;
     private Configuration config;
 
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
@@ -76,7 +77,7 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
         if (tablePrefix != null && !tablePrefix.isEmpty())
             db.setTablePrefix(tablePrefix);
         String serverName = "bungeeproxy" + (new Random()).nextInt(5000) + (new Date()).getTime();
-        permissionManager = new PermissionManager(db, this, serverName);
+        permissionManager = new PowerfulPermissionManager(db, this, serverName);
         this.getProxy().getPluginManager().registerListener(this, this);
         this.getProxy().getPluginManager().registerListener(this, permissionManager);
 
@@ -112,7 +113,7 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
     public void onPermissionCheck(PermissionCheckEvent e) {
         if (e != null && e.getSender() != null && e.getSender() instanceof ProxiedPlayer) {
             ProxiedPlayer player = (ProxiedPlayer) e.getSender();
-            IPermissionsPlayer gp = permissionManager.getPermissionsPlayer(player.getUniqueId());
+            PermissionPlayer gp = permissionManager.getPermissionsPlayer(player.getUniqueId());
             if (gp != null) {
                 Boolean hasPermission = gp.hasPermission(e.getPermission());
                 if (hasPermission == null)
@@ -127,6 +128,7 @@ public class PowerfulPerms extends Plugin implements Listener, IPlugin {
         return (PowerfulPerms) ProxyServer.getInstance().getPluginManager().getPlugin("PowerfulPerms");
     }
     
+    @Override
     public PermissionManager getPermissionManager() {
         return this.permissionManager;
     }

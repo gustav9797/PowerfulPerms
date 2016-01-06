@@ -1,19 +1,19 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
-import com.github.cheesesoftware.PowerfulPerms.common.Group;
-import com.github.cheesesoftware.PowerfulPerms.common.IPermissionManager;
-import com.github.cheesesoftware.PowerfulPerms.common.IPermissionsPlayer;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
-import com.github.cheesesoftware.PowerfulPerms.common.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
 
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
 
 public class PowerfulPerms_Vault_Chat extends Chat {
 
-    private IPermissionManager permissionManager;
+    private PermissionManager permissionManager;
 
-    public PowerfulPerms_Vault_Chat(Permission perms, IPermissionManager permissionManager) {
+    public PowerfulPerms_Vault_Chat(Permission perms, PermissionManager permissionManager) {
         super(perms);
         this.permissionManager = permissionManager;
     }
@@ -30,7 +30,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public String getPlayerPrefix(String world, String player) {
-        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null)
             return p.getPrefix();
         return null;
@@ -49,7 +49,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public String getPlayerSuffix(String world, String player) {
-        IPermissionsPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null)
             return p.getSuffix();
         return null;

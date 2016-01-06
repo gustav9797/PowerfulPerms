@@ -14,17 +14,25 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
-import com.github.cheesesoftware.PowerfulPerms.database.DBDocument;
 import com.github.cheesesoftware.PowerfulPerms.database.DBResult;
 import com.github.cheesesoftware.PowerfulPerms.database.DBRunnable;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
+import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
+import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 
-public abstract class PermissionManagerBase implements IPermissionManager {
-    protected HashMap<UUID, IPermissionsPlayer> players = new HashMap<UUID, IPermissionsPlayer>();
+public abstract class PermissionManagerBase implements PermissionManager {
+    protected HashMap<UUID, PermissionPlayer> players = new HashMap<UUID, PermissionPlayer>();
     protected ConcurrentHashMap<UUID, CachedPlayer> cachedPlayers = new ConcurrentHashMap<UUID, CachedPlayer>();
     protected HashMap<Integer, Group> groups = new HashMap<Integer, Group>();
 
@@ -32,7 +40,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     protected JedisPubSub subscriber;
 
     private final Database db;
-    protected IPlugin plugin;
+    protected PowerfulPermsPlugin plugin;
 
     public static boolean redis;
     public static String redis_ip;
@@ -44,12 +52,12 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
     public static String redisMessage = "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.";
 
-    public PermissionManagerBase(Database database, IPlugin plugin, String serverName) {
+    public PermissionManagerBase(Database database, PowerfulPermsPlugin plugin, String serverName) {
         this.db = database;
         this.plugin = plugin;
         PermissionManagerBase.serverName = serverName;
 
-        final IPlugin tempPlugin = plugin;
+        final PowerfulPermsPlugin tempPlugin = plugin;
 
         // Create table Groups, add group Guest
         db.tableExists(Database.tblGroups, new DBRunnable(true) {
@@ -217,7 +225,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
      * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
      */
     @Override
-    public IPermissionsPlayer getPermissionsPlayer(UUID uuid) {
+    public PermissionPlayer getPermissionsPlayer(UUID uuid) {
         return players.get(uuid);
     }
 
@@ -225,7 +233,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
      * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
      */
     @Override
-    public IPermissionsPlayer getPermissionsPlayer(String name) {
+    public PermissionPlayer getPermissionsPlayer(String name) {
         UUID uuid = plugin.getPlayerUUID(name);
         return players.get(uuid);
     }
@@ -337,16 +345,16 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         final String prefix_loaded = (row != null ? row.getString("prefix") : "");
         final String suffix_loaded = (row != null ? row.getString("suffix") : "");
 
-        loadPlayerPermissions(uuid, new ResultRunnable<List<PowerfulPermission>>(login) {
+        loadPlayerPermissions(uuid, new ResultRunnable<List<Permission>>(login) {
 
             @Override
             public void run() {
                 debug("loadPlayerFinished runnable begin");
-                List<PowerfulPermission> perms;
+                List<Permission> perms;
                 if (result != null) {
                     perms = result;
                 } else
-                    perms = new ArrayList<PowerfulPermission>();
+                    perms = new ArrayList<Permission>();
 
                 if (login) {
                     debug("Inserted into cachedPlayers allowing playerjoin to finish");
@@ -355,8 +363,8 @@ public abstract class PermissionManagerBase implements IPermissionManager {
                 } else {
                     // Player should be reloaded if "login" is false. Reload already loaded player.
                     if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
-                        IPermissionsPlayer toUpdate = players.get(uuid);
-                        PermissionsPlayerBase base = new PermissionsPlayerBase(getPlayerGroups(groups_loaded), perms, prefix_loaded, suffix_loaded, plugin);
+                        PermissionPlayerBase toUpdate = (PermissionPlayerBase) players.get(uuid);
+                        PermissionPlayerBase base = new PermissionPlayerBase(getPlayerGroups(groups_loaded), perms, prefix_loaded, suffix_loaded, plugin);
                         toUpdate.update(base);
 
                         if (cachedPlayers.get(uuid) != null)
@@ -369,7 +377,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
     }
 
-    protected PermissionsPlayerBase loadCachedPlayer(UUID uuid) {
+    protected PermissionPlayerBase loadCachedPlayer(UUID uuid) {
         debug("continueLoadPlayer " + uuid);
         CachedPlayer cachedPlayer = cachedPlayers.get(uuid);
         if (cachedPlayer == null) {
@@ -381,14 +389,12 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             players.remove(uuid);
         }
 
-        PermissionsPlayerBase base = new PermissionsPlayerBase(this.getPlayerGroups(cachedPlayer.getGroups()), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(),
-                plugin);
+        PermissionPlayerBase base = new PermissionPlayerBase(this.getPlayerGroups(cachedPlayer.getGroups()), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin);
 
         cachedPlayers.remove(uuid);
         return base;
     }
 
-    @Override
     public void onDisable() {
         if (subscriber != null)
             subscriber.unsubscribe();
@@ -439,7 +445,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
 
                             @Override
                             public void run() {
-                                Group group = new Group(groupId, name, loadGroupPermissions(result), prefix, suffix);
+                                PowerfulGroup group = new PowerfulGroup(groupId, name, loadGroupPermissions(result), prefix, suffix);
                                 groups.put(groupId, group);
                             }
                         });
@@ -635,7 +641,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         // If player is online, get data directly from player
         UUID uuid = plugin.getPlayerUUID(playerName);
         if (uuid != null) {
-            IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
+            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
             if (gp != null) {
                 resultRunnable.setResult(gp.getCachedGroups());
                 db.scheduler.runSync(resultRunnable);
@@ -672,8 +678,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         });
     }
 
-    @Override
-    public Group getPlayerPrimaryGroup(HashMap<String, List<CachedGroup>> groups) {
+    protected Group getPlayerPrimaryGroup(HashMap<String, List<CachedGroup>> groups) {
         if (groups != null) {
             List<CachedGroup> g = groups.get("");
             if (g != null) {
@@ -689,7 +694,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         // If player is online, get data directly from player
         UUID uuid = plugin.getPlayerUUID(playerName);
         if (uuid != null) {
-            IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
+            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
             if (gp != null) {
                 resultRunnable.setResult(gp.getPrimaryGroup());
                 db.scheduler.runSync(resultRunnable);
@@ -717,11 +722,11 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     /**
      * Gets a map containing all the permissions a player has. If player is not online data will be loaded from DB.
      */
-    public void getPlayerOwnPermissions(final String playerName, final ResultRunnable<List<PowerfulPermission>> resultRunnable) {
+    public void getPlayerOwnPermissions(final String playerName, final ResultRunnable<List<Permission>> resultRunnable) {
         // If player is online, get data directly from player
         UUID uuid = plugin.getPlayerUUID(playerName);
         if (uuid != null) {
-            IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
+            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
             if (gp != null) {
                 resultRunnable.setResult(gp.getPermissions());
                 db.scheduler.runSync(resultRunnable);
@@ -729,31 +734,31 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             }
         }
 
-        loadPlayerPermissions(playerName, new ResultRunnable<List<PowerfulPermission>>() {
+        loadPlayerPermissions(playerName, new ResultRunnable<List<Permission>>() {
 
             @Override
             public void run() {
-                final List<PowerfulPermission> perms;
+                final List<Permission> perms;
                 if (result != null)
                     perms = result;
                 else
-                    perms = new ArrayList<PowerfulPermission>();
+                    perms = new ArrayList<Permission>();
                 resultRunnable.setResult(perms);
                 db.scheduler.runSync(resultRunnable);
             }
         });
     }
 
-    protected void loadPlayerPermissions(UUID uuid, final ResultRunnable<List<PowerfulPermission>> resultRunnable) {
+    protected void loadPlayerPermissions(UUID uuid, final ResultRunnable<List<Permission>> resultRunnable) {
         db.getPlayerPermissions(uuid, new DBRunnable(resultRunnable.sameThread()) {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
-                    ArrayList<PowerfulPermission> perms = new ArrayList<PowerfulPermission>();
+                    ArrayList<Permission> perms = new ArrayList<Permission>();
                     while (result.hasNext()) {
                         DBDocument row = result.next();
-                        PowerfulPermission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"));
+                        Permission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"));
                         perms.add(tempPerm);
                         resultRunnable.setResult(perms);
                     }
@@ -763,16 +768,16 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         });
     }
 
-    protected void loadPlayerPermissions(String name, final ResultRunnable<List<PowerfulPermission>> resultRunnable) {
+    protected void loadPlayerPermissions(String name, final ResultRunnable<List<Permission>> resultRunnable) {
         db.getPlayerPermissions(name, new DBRunnable() {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
-                    ArrayList<PowerfulPermission> perms = new ArrayList<PowerfulPermission>();
+                    ArrayList<Permission> perms = new ArrayList<Permission>();
                     while (result.hasNext()) {
                         DBDocument row = result.next();
-                        PowerfulPermission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"));
+                        Permission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"));
                         perms.add(tempPerm);
                         resultRunnable.setResult(perms);
                     }
@@ -790,7 +795,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         // If player is online, get data directly from player
         UUID uuid = plugin.getPlayerUUID(playerName);
         if (uuid != null) {
-            IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
+            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
             if (gp != null) {
                 resultRunnable.setResult(gp.getPrefix());
                 db.scheduler.runSync(resultRunnable);
@@ -819,7 +824,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         // If player is online, get data directly from player
         UUID uuid = plugin.getPlayerUUID(playerName);
         if (uuid != null) {
-            IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
+            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
             if (gp != null) {
                 resultRunnable.setResult(gp.getSuffix());
                 db.scheduler.runSync(resultRunnable);
@@ -848,7 +853,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         // If player is online, get data directly from player
         UUID uuid = plugin.getPlayerUUID(playerName);
         if (uuid != null) {
-            IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
+            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
             if (gp != null) {
                 resultRunnable.setResult(gp.getOwnPrefix());
                 db.scheduler.runSync(resultRunnable);
@@ -877,7 +882,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
         // If player is online, get data directly from player
         UUID uuid = plugin.getPlayerUUID(playerName);
         if (uuid != null) {
-            IPermissionsPlayer gp = (IPermissionsPlayer) players.get(uuid);
+            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
             if (gp != null) {
                 resultRunnable.setResult(gp.getOwnSuffix());
                 db.scheduler.runSync(resultRunnable);
@@ -1360,11 +1365,11 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public void addGroupPermission(String groupName, String permission, String world, String server, final ResponseRunnable response) {
         Group group = getGroup(groupName);
         if (group != null) {
-            ArrayList<PowerfulPermission> groupPermissions = group.getOwnPermissions();
+            List<Permission> groupPermissions = group.getOwnPermissions();
 
             PowerfulPermission sp = new PowerfulPermission(permission, world, server);
 
-            for (PowerfulPermission temp : groupPermissions) {
+            for (Permission temp : groupPermissions) {
                 if (temp.getPermissionString().equals(permission) && temp.getServer().equals(server) && temp.getWorld().equals(world)) {
                     response.setResponse(false, "Group already has the specified permission.");
                     db.scheduler.runSync(response);
@@ -1426,7 +1431,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
     public void removeGroupPermissions(String groupName, final ResponseRunnable response) {
         Group group = getGroup(groupName);
         if (group != null) {
-            ArrayList<PowerfulPermission> groupPermissions = group.getOwnPermissions();
+            List<Permission> groupPermissions = group.getOwnPermissions();
 
             if (groupPermissions.size() <= 0) {
                 response.setResponse(false, "Group does not have any permissions.");
@@ -1552,7 +1557,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             currentPrefix.remove(server);
         else
             currentPrefix.put(server, prefix);
-        final String output = Group.encodePrefixSuffix(currentPrefix);
+        final String output = PowerfulGroup.encodePrefixSuffix(currentPrefix);
 
         db.setGroupPrefix(groupName, output, new DBRunnable() {
 
@@ -1591,7 +1596,7 @@ public abstract class PermissionManagerBase implements IPermissionManager {
             currentSuffix.remove(server);
         else
             currentSuffix.put(server, suffix);
-        final String output = Group.encodePrefixSuffix(currentSuffix);
+        final String output = PowerfulGroup.encodePrefixSuffix(currentSuffix);
 
         db.setGroupSuffix(groupName, output, new DBRunnable() {
 
