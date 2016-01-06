@@ -146,13 +146,11 @@ public class PermissionManager extends PermissionManagerBase implements Listener
      */
     private void continueLoadPlayer(ProxiedPlayer player) {
         PermissionsPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
-        if (base != null) {
-            if (player != null) {
-                PermissionsPlayer permissionsPlayer = new PermissionsPlayer(player, base, plugin);
-                players.put(player.getUniqueId(), permissionsPlayer);
-            } else
-                debug("continueLoadPlayer: ProxiedPlayer is null");
-        }
+        if (base != null && player != null) {
+            PermissionsPlayer permissionsPlayer = new PermissionsPlayer(player, base, plugin);
+            players.put(player.getUniqueId(), permissionsPlayer);
+        } else
+            debug("continueLoadPlayer: ProxiedPlayer or PermissionPlayerBase is null");
     }
 
     /**
