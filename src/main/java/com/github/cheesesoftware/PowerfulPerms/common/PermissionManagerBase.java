@@ -1095,11 +1095,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     Iterator<CachedGroupRaw> it = groupList.iterator();
 
                     // Remove existing primary groups
+                    boolean removed = false;
                     while (it.hasNext()) {
                         CachedGroupRaw cachedGroup = it.next();
                         if (!cachedGroup.isPrimary())
                             newGroupList.add(cachedGroup);
                     }
+                    if (newGroupList.size() < groupList.size())
+                        removed = true;
+                    final boolean finalRemoved = removed;
 
                     if (groupName != null && !groupName.isEmpty()) {
                         Group group = getGroup(groupName);
@@ -1130,7 +1134,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         @Override
                         public void run() {
                             if (result.booleanValue()) {
-                                response.setResponse(true, "Player primary group set.");
+                                if (groupName != null && !groupName.isEmpty())
+                                    response.setResponse(true, "Player primary group set.");
+                                else {
+                                    if (finalRemoved)
+                                        response.setResponse(true, "Player primary group removed.");
+                                    else
+                                        response.setResponse(false, "Player does not have a primary group for the specified server.");
+                                }
+
                                 reloadPlayer(playerName);
                                 notifyReloadPlayer(playerName);
                             } else
