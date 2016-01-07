@@ -109,6 +109,16 @@
                   <include>com.github.cheesesoftware:PowerfulPermsAPI</include>
                 </includes>
               </artifactSet>
+              <relocations>
+                <relocation>
+                  <pattern>redis.clients</pattern>
+                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.redis.clients</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache</pattern>
+                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.apache</shadedPattern>
+                </relocation>
+              </relocations>
             </configuration>
           </execution>
         </executions>
