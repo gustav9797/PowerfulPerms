@@ -27,6 +27,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public static String consolePrefix = "[PowerfulPerms] ";
     public static boolean debug = false;
 
+    @Override
     public void onEnable() {
         this.saveDefaultConfig();
         getServer().getPluginManager().registerEvents(this, this);
@@ -72,8 +73,10 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         }
     }
 
+    @Override
     public void onDisable() {
-        permissionManager.onDisable();
+        if (permissionManager != null)
+            permissionManager.onDisable();
     }
 
     public static PowerfulPerms getPlugin() {
@@ -83,10 +86,6 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     @Override
     public PermissionManager getPermissionManager() {
         return this.permissionManager;
-    }
-
-    public SQL getSQL() {
-        return this.sql;
     }
 
     @Override

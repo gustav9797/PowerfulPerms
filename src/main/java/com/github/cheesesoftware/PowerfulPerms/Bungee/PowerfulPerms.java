@@ -89,7 +89,8 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
 
     @Override
     public void onDisable() {
-        permissionManager.onDisable();
+        if (permissionManager != null)
+            permissionManager.onDisable();
     }
 
     private void saveDefaultConfig() {
@@ -127,14 +128,10 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     public static PowerfulPerms getPlugin() {
         return (PowerfulPerms) ProxyServer.getInstance().getPluginManager().getPlugin("PowerfulPerms");
     }
-    
+
     @Override
     public PermissionManager getPermissionManager() {
         return this.permissionManager;
-    }
-
-    public SQL getSQL() {
-        return this.sql;
     }
 
     @Override

@@ -154,12 +154,6 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     }
 
     @Override
-    public void onDisable() {
-        super.onDisable();
-        players.clear();
-    }
-
-    @Override
     public void reloadPlayers() {
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (players.containsKey(p.getUniqueId())) {

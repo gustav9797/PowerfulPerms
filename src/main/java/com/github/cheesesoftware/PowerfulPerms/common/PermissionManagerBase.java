@@ -399,7 +399,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
             subscriber.unsubscribe();
         if (pool != null)
             pool.destroy();
-        groups.clear();
+        if (groups != null)
+            groups.clear();
+        if (players != null)
+            players.clear();
+        if (cachedPlayers != null)
+            cachedPlayers.clear();
     }
 
     @Override
