@@ -371,15 +371,18 @@ public class PermissionCommand {
                         permissionManager.setGroupPrefix(groupName, "", (args.length >= 5 ? args[4] : ""), response);
                     } else {
                         HashMap<String, String> prefix = permissionManager.getGroupServerPrefix(groupName);
-                        String output = "";
-                        Iterator<Entry<String, String>> it = prefix.entrySet().iterator();
-                        while (it.hasNext()) {
-                            Entry<String, String> entry = it.next();
-                            output += ChatColor.WHITE + "\"" + entry.getValue() + "\":" + (entry.getKey().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : entry.getKey());
-                            if (it.hasNext())
-                                output += ", ";
-                        }
-                        sendSender(invoker, sender, "Prefixes for group " + groupName + ": " + output);
+                        if (prefix != null) {
+                            String output = "";
+                            Iterator<Entry<String, String>> it = prefix.entrySet().iterator();
+                            while (it.hasNext()) {
+                                Entry<String, String> entry = it.next();
+                                output += ChatColor.WHITE + "\"" + entry.getValue() + "\":" + (entry.getKey().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : entry.getKey());
+                                if (it.hasNext())
+                                    output += ", ";
+                            }
+                            sendSender(invoker, sender, "Prefixes for group " + groupName + ": " + output);
+                        } else
+                            sendSender(invoker, sender, "Group does not exist.");
                     }
                 } else if (args[2].equalsIgnoreCase("suffix")) {
                     String server = "";
@@ -424,15 +427,18 @@ public class PermissionCommand {
                         permissionManager.setGroupSuffix(groupName, "", (args.length >= 5 ? args[4] : ""), response);
                     } else {
                         HashMap<String, String> suffix = permissionManager.getGroupServerSuffix(groupName);
-                        String output = "";
-                        Iterator<Entry<String, String>> it = suffix.entrySet().iterator();
-                        while (it.hasNext()) {
-                            Entry<String, String> entry = it.next();
-                            output += ChatColor.WHITE + "\"" + entry.getValue() + "\":" + (entry.getKey().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : entry.getKey());
-                            if (it.hasNext())
-                                output += ", ";
-                        }
-                        sendSender(invoker, sender, "Suffixes for group " + groupName + ": " + output);
+                        if (suffix != null) {
+                            String output = "";
+                            Iterator<Entry<String, String>> it = suffix.entrySet().iterator();
+                            while (it.hasNext()) {
+                                Entry<String, String> entry = it.next();
+                                output += ChatColor.WHITE + "\"" + entry.getValue() + "\":" + (entry.getKey().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : entry.getKey());
+                                if (it.hasNext())
+                                    output += ", ";
+                            }
+                            sendSender(invoker, sender, "Suffixes for group " + groupName + ": " + output);
+                        } else
+                            sendSender(invoker, sender, "Group does not exist.");
                     }
                 } else if (args[2].equalsIgnoreCase("parents")) {
                     if (args.length >= 5 && args[3].equalsIgnoreCase("add")) {
