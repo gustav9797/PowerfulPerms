@@ -55,13 +55,16 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     public void updatePermissions() {
         if (this.player.getServer() != null)
             this.updatePermissions(this.player.getServer().getInfo());
+        else
+            this.updatePermissions(null);
     }
 
     /**
      * Internal function to update the PermissionAttachment.
      */
     public void updatePermissions(ServerInfo serverInfo) {
-        this.updateGroups(serverInfo.getName());
-        this.realPermissions = super.calculatePermissions(serverInfo.getName(), null);
+        String serverName = (serverInfo != null ? serverInfo.getName() : null);
+        this.updateGroups(serverName);
+        this.realPermissions = super.calculatePermissions(serverName, null);
     }
 }

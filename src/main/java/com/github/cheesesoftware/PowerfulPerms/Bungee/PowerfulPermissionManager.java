@@ -123,6 +123,15 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             continueLoadPlayer(e.getPlayer());
         } else
             debug("onPlayerJoin player isn't cached");
+        debug("PostLoginEvent finish");
+    }
+
+    @EventHandler
+    public void onPostLoginTest(final PostLoginEvent e) {
+        boolean has = e.getPlayer().hasPermission("testpermission");
+        boolean has2 = e.getPlayer().hasPermission("testotherpermission");
+        debug("testpermission: " + has);
+        debug("testotherpermission: " + has2);
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -148,9 +157,11 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         PermissionPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
         if (base != null && player != null) {
             PowerfulPermissionPlayer permissionsPlayer = new PowerfulPermissionPlayer(player, base, plugin);
+            permissionsPlayer.updatePermissions();
             players.put(player.getUniqueId(), permissionsPlayer);
         } else
             debug("continueLoadPlayer: ProxiedPlayer or PermissionPlayerBase is null");
+        debug("continueLoadPlayer finish");
     }
 
     /**

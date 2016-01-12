@@ -42,7 +42,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     public void updateGroups(String server) {
-        if (server.equalsIgnoreCase("all"))
+        if (server == null || server.equalsIgnoreCase("all"))
             server = "";
 
         this.currentGroups = getGroups(server);
