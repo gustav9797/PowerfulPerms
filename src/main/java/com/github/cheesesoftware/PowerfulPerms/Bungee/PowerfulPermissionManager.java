@@ -126,14 +126,6 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         debug("PostLoginEvent finish");
     }
 
-    @EventHandler
-    public void onPostLoginTest(final PostLoginEvent e) {
-        boolean has = e.getPlayer().hasPermission("testpermission");
-        boolean has2 = e.getPlayer().hasPermission("testotherpermission");
-        debug("testpermission: " + has);
-        debug("testotherpermission: " + has2);
-    }
-
     @EventHandler(priority = EventPriority.LOW)
     public void onServerConnected(final ServerConnectedEvent e) {
         debug("serverconnected event " + e.getServer().getInfo().getName());
