@@ -62,19 +62,19 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean groupAdd(String world, String group, String permission) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way. Please contact the developer of PowerfulPerms(gustav9797)");
+        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(groupAdd). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
     }
 
     @Override
     public boolean groupHas(String world, String group, String permission) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way. Please contact the developer of PowerfulPerms(gustav9797)");
+        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(groupHas). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
     }
 
     @Override
     public boolean groupRemove(String world, String group, String permission) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way. Please contact the developer of PowerfulPerms(gustav9797)");
+        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(groupRemove). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
     }
 
@@ -95,13 +95,13 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerAdd(String world, String player, String permission) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way. Please contact the developer of PowerfulPerms(gustav9797)");
+        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerAdd). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
     }
 
     @Override
     public boolean playerAddGroup(String world, String player, String group) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way. Please contact the developer of PowerfulPerms(gustav9797)");
+        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerAddGroup). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
     }
 
@@ -120,13 +120,13 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerRemove(String world, String player, String permission) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way. Please contact the developer of PowerfulPerms(gustav9797)");
+        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerRemove). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
     }
 
     @Override
     public boolean playerRemoveGroup(String world, String player, String group) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way. Please contact the developer of PowerfulPerms(gustav9797)");
+        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerRemoveGroup). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
     }
 

@@ -306,7 +306,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                             loadPlayerFinished(row, login, uuid);
                                         }
                                     });
-                                } else {
+                                } else if (row == null) {
                                     // Player does not exist in database. Create a new player.
                                     db.getPlayers("[default]", new DBRunnable(login) {
 
@@ -327,6 +327,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                 plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. Please create the default user.");
                                         }
                                     });
+                                } else {
+                                    // It did not find player with UUID.
+                                    // It found player with name.
+                                    // Player already had an UUID set.
+                                    // This player is an imposter. Do not run loadPlayerFinished.
                                 }
                             }
                         });
