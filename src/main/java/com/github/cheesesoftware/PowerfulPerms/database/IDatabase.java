@@ -25,6 +25,8 @@ public interface IDatabase {
     public void getPlayers(String name, DBRunnable done);
 
     public void setPlayerName(UUID uuid, String name, DBRunnable done);
+    
+    public void setPlayerName(String from, String to, DBRunnable done);
 
     public void setPlayerUUID(String name, UUID uuid, DBRunnable done);
 

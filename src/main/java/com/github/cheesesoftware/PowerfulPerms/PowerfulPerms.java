@@ -26,6 +26,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
     public static boolean debug = false;
+    public static boolean onlineMode = false;
 
     @Override
     public void onEnable() {
@@ -39,6 +40,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         PermissionManagerBase.redis_password = getConfig().getString("redis_password");
 
         debug = getConfig().getBoolean("debug");
+        onlineMode = getConfig().getBoolean("onlinemode", true);
 
         try {
             if (sql.getConnection() == null || sql.getConnection().isClosed()) {
@@ -101,6 +103,11 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     @Override
     public boolean isDebug() {
         return debug;
+    }
+
+    @Override
+    public boolean isOnlineMode() {
+        return onlineMode;
     }
 
     @Override

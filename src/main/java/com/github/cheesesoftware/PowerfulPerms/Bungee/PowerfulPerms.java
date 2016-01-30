@@ -42,6 +42,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     public static String consolePrefix = "[PowerfulPerms] ";
     public static boolean bungee_command = false;
     public static boolean debug = false;
+    public static boolean onlineMode = false;
 
     @Override
     public void onEnable() {
@@ -62,6 +63,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
 
         bungee_command = config.getBoolean("bungee_command");
         debug = config.getBoolean("debug");
+        onlineMode = config.getBoolean("onlinemode", true);
 
         try {
             if (sql.getConnection() == null || sql.getConnection().isClosed()) {
@@ -147,6 +149,11 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     @Override
     public boolean isDebug() {
         return debug;
+    }
+    
+    @Override
+    public boolean isOnlineMode() {
+        return onlineMode;
     }
 
     @Override

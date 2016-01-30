@@ -25,3 +25,6 @@ bungee_command: false
 # Server name used for per-server Bukkit sided permissions to work. Use the same as in BungeeCord config.
 # This is not used Bungee-side.
 servername: ""
+
+# Set "onlinemode: false" if you run your server in offline mode. Defaults to true.
+onlinemode: true

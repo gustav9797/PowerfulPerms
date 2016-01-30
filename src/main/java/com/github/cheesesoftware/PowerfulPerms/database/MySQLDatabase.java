@@ -279,6 +279,31 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public void setPlayerName(final String from, final String to, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `name`=? WHERE `name`=?;");
+                    s.setString(1, to);
+                    s.setString(2, from);
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
     public void setPlayerUUID(final String name, final UUID uuid, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
