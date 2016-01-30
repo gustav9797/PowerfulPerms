@@ -1,5 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -12,6 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import com.github.cheesesoftware.PowerfulPerms.Vault.VaultHook;
 import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.Versioner;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
 import com.github.cheesesoftware.PowerfulPerms.database.SQL;
@@ -27,11 +30,16 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public static String consolePrefix = "[PowerfulPerms] ";
     public static boolean debug = false;
     public static boolean onlineMode = false;
+    public static int oldVersion = 0;
 
     @Override
     public void onEnable() {
         this.saveDefaultConfig();
         getServer().getPluginManager().registerEvents(this, this);
+
+        int currentVersion = Versioner.getVersionNumber(this.getDescription().getVersion());
+        oldVersion = getConfig().getInt("oldversion", 0);
+
         this.sql = new SQL(getConfig().getString("host"), getConfig().getString("database"), getConfig().getInt("port"), getConfig().getString("username"), getConfig().getString("password"));
 
         PermissionManagerBase.redis = getConfig().getBoolean("redis", true);
@@ -72,6 +80,15 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         if (Bukkit.getOnlinePlayers().size() > 0) { // Admin used /reload command
             debug("Reload used. Reloaded all online players. " + Bukkit.getOnlinePlayers().size() + " players.");
             permissionManager.reloadPlayers();
+        }
+
+        if (oldVersion != currentVersion) {
+            getConfig().set("oldversion", currentVersion);
+            try {
+                getConfig().save(new File(getDataFolder(), "config.yml"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -130,5 +147,10 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public void debug(String message) {
         if (debug)
             getLogger().info("[DEBUG] " + message);
+    }
+
+    @Override
+    public int getOldVersion() {
+        return oldVersion;
     }
 }

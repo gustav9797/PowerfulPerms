@@ -28,3 +28,6 @@ servername: ""
 
 # Set "onlinemode: false" if you run your server in offline mode. Defaults to true.
 onlinemode: true
+
+# Do not change this. Used for applying patches based on version.
+oldversion: ${version}

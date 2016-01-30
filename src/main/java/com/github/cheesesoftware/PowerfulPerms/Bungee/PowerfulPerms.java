@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.Versioner;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
 import com.github.cheesesoftware.PowerfulPerms.database.SQL;
@@ -43,6 +44,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     public static boolean bungee_command = false;
     public static boolean debug = false;
     public static boolean onlineMode = false;
+    public static int oldVersion = 0;
 
     @Override
     public void onEnable() {
@@ -53,6 +55,9 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         } catch (IOException e3) {
             e3.printStackTrace();
         }
+
+        int currentVersion = Versioner.getVersionNumber(this.getDescription().getVersion());
+        oldVersion = config.getInt("oldversion", 0);
 
         this.sql = new SQL(config.getString("host"), config.getString("database"), config.getInt("port"), config.getString("username"), config.getString("password"));
 
@@ -86,6 +91,15 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         if (bungee_command) {
             getLogger().info("Using Bungee sided command.");
             getProxy().getPluginManager().registerCommand(this, new PermissionCommandExecutor(permissionManager));
+        }
+
+        if (oldVersion != currentVersion) {
+            config.set("oldversion", currentVersion);
+            try {
+                ConfigurationProvider.getProvider(YamlConfiguration.class).save(config, new File(getDataFolder(), "config.yml"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -150,7 +164,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     public boolean isDebug() {
         return debug;
     }
-    
+
     @Override
     public boolean isOnlineMode() {
         return onlineMode;
@@ -176,5 +190,10 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     public void debug(String message) {
         if (debug)
             getLogger().info("[DEBUG] " + message);
+    }
+
+    @Override
+    public int getOldVersion() {
+        return oldVersion;
     }
 }
