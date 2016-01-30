@@ -238,7 +238,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
-        loadPlayer(uuid, name, login);
+        loadPlayer(uuid, name, login, null);
     }
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login, final ResultRunnable<Boolean> kick) {

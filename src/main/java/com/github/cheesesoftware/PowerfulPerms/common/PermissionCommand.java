@@ -221,6 +221,8 @@ public class PermissionCommand {
                             @Override
                             public void run() {
                                 Map<String, List<CachedGroup>> groups = result;
+
+                                // List primary groups
                                 boolean has = false;
                                 String primaryGroups = ChatColor.GREEN + "Primary Groups" + ChatColor.WHITE + ": ";
                                 if (groups != null && groups.size() > 0) {
@@ -246,6 +248,33 @@ public class PermissionCommand {
                                     primaryGroups = primaryGroups.substring(0, primaryGroups.length() - 2);
                                 rows.add(primaryGroups);
 
+                                // List secondary groups
+                                has = false;
+                                String secondaryGroups = ChatColor.GREEN + "Secondary Groups" + ChatColor.WHITE + ": ";
+                                if (groups != null && groups.size() > 0) {
+                                    Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
+                                    while (it.hasNext()) {
+                                        Entry<String, List<CachedGroup>> current = it.next();
+                                        Iterator<CachedGroup> itt = current.getValue().iterator();
+                                        while (itt.hasNext()) {
+                                            CachedGroup cachedGroup = itt.next();
+                                            Group group = cachedGroup.getGroup();
+                                            if (group != null && cachedGroup.isSecondary()) {
+                                                secondaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
+                                                        + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
+                                                secondaryGroups += ", ";
+                                                has = true;
+                                            }
+                                        }
+                                    }
+                                }
+                                if (!has)
+                                    secondaryGroups += "Player has no secondary groups.";
+                                if (secondaryGroups.endsWith(", "))
+                                    secondaryGroups = secondaryGroups.substring(0, secondaryGroups.length() - 2);
+                                rows.add(secondaryGroups);
+
+                                // List groups
                                 String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
                                 if (groups != null && groups.size() > 0) {
                                     Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
@@ -255,7 +284,7 @@ public class PermissionCommand {
                                         while (itt.hasNext()) {
                                             CachedGroup cachedGroup = itt.next();
                                             Group group = cachedGroup.getGroup();
-                                            if (group != null && !cachedGroup.isPrimary()) {
+                                            if (group != null && !cachedGroup.isPrimary() && !cachedGroup.isSecondary()) {
                                                 otherGroups += (cachedGroup.isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
                                                         + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
                                                 otherGroups += ", ";

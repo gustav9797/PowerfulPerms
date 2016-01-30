@@ -380,14 +380,19 @@ public class PermissionPlayerBase implements PermissionPlayer {
         ArrayList<Permission> unprocessedPerms = new ArrayList<Permission>();
 
         Group primary = this.getPrimaryGroup();
+        Group secondary = this.getSecondaryGroup();
 
-        // Add permissions derived from groups. Not from groups same as primary.
+        // Add permissions derived from groups. Not from groups same as primary and secondary.
         plugin.debug("current groups count " + currentGroups.size());
         for (Group group : currentGroups) {
-            if (group != null && primary != null && group.getId() != primary.getId()) {
+            if (group != null && (primary == null || primary != null && group.getId() != primary.getId()) && (secondary == null || secondary != null && group.getId() != secondary.getId())) {
                 unprocessedPerms.addAll(group.getPermissions());
             }
         }
+
+        // Add permissions from secondary group and parents.
+        if (secondary != null)
+            unprocessedPerms.addAll(secondary.getPermissions());
 
         // Add permissions from primary group and parents.
         if (primary != null)
