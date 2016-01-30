@@ -21,7 +21,8 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
     protected List<Permission> permissions = new ArrayList<Permission>();
     protected List<String> realPermissions = new ArrayList<String>();
-    protected List<String> temporaryPermissions = new ArrayList<String>();
+    protected List<String> temporaryPrePermissions = new ArrayList<String>();
+    protected List<String> temporaryPostPermissions = new ArrayList<String>();
     protected String prefix = "";
     protected String suffix = "";
     protected PowerfulPermsPlugin plugin;
@@ -53,8 +54,12 @@ public class PermissionPlayerBase implements PermissionPlayer {
         this.groups = groups;
     }
 
-    public void setTemporaryPermissions(List<String> permissions) {
-        this.temporaryPermissions = permissions;
+    public void setTemporaryPrePermissions(List<String> permissions) {
+        this.temporaryPrePermissions = permissions;
+    }
+
+    public void setTemporaryPostPermissions(List<String> permissions) {
+        this.temporaryPostPermissions = permissions;
     }
 
     /**
@@ -199,8 +204,8 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
         List<String> lperm = toList(permission, ".");
 
-        if (temporaryPermissions != null) {
-            for (String p : temporaryPermissions) {
+        if (temporaryPrePermissions != null) {
+            for (String p : temporaryPrePermissions) {
                 Boolean check = internalPermissionCheck(permission, p, lperm);
                 if (check != null)
                     has = check;
@@ -211,6 +216,14 @@ public class PermissionPlayerBase implements PermissionPlayer {
             Boolean check = internalPermissionCheck(permission, p, lperm);
             if (check != null)
                 has = check;
+        }
+
+        if (temporaryPostPermissions != null) {
+            for (String p : temporaryPostPermissions) {
+                Boolean check = internalPermissionCheck(permission, p, lperm);
+                if (check != null)
+                    has = check;
+            }
         }
 
         return has;

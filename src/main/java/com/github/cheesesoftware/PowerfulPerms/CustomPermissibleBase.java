@@ -22,7 +22,8 @@ public class CustomPermissibleBase extends PermissibleBase {
     private PowerfulPermissionPlayer permissionsPlayer;
     private List<PermissionAttachment> ppAttachments = new LinkedList<PermissionAttachment>();
     private Permissible parent = this;
-    private List<String> temporaryPermissions = new ArrayList<String>();
+    private List<String> temporaryPrePermissions = new ArrayList<String>();
+    private List<String> temporaryPostPermissions = new ArrayList<String>();
 
     public CustomPermissibleBase(PowerfulPermissionPlayer permissionsPlayer) {
         super(permissionsPlayer.getPlayer());
@@ -158,26 +159,28 @@ public class CustomPermissibleBase extends PermissibleBase {
             return;
         }
 
-        temporaryPermissions.clear();
+        temporaryPrePermissions.clear();
+        temporaryPostPermissions.clear();
 
         Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp());
         Bukkit.getServer().getPluginManager().subscribeToDefaultPerms(isOp(), parent);
 
         for (Permission perm : defaults) {
             String name = perm.getName().toLowerCase();
-            temporaryPermissions.add(name);
+            temporaryPrePermissions.add(name);
             Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
-            calculateChildPermissions(perm.getChildren(), false);
+            calculatePreChildPermissions(perm.getChildren(), false);
         }
 
         for (PermissionAttachment attachment : ppAttachments) {
-            calculateChildPermissions(attachment.getPermissions(), false);
+            calculatePostChildPermissions(attachment.getPermissions(), false);
         }
 
-        permissionsPlayer.setTemporaryPermissions(temporaryPermissions);
+        permissionsPlayer.setTemporaryPrePermissions(temporaryPrePermissions);
+        permissionsPlayer.setTemporaryPostPermissions(temporaryPostPermissions);
     }
 
-    private void calculateChildPermissions(Map<String, Boolean> children, boolean invert) {
+    private void calculatePreChildPermissions(Map<String, Boolean> children, boolean invert) {
         Set<String> keys = children.keySet();
         if (keys.size() > 0) {
             for (String name : keys) {
@@ -186,14 +189,36 @@ public class CustomPermissibleBase extends PermissibleBase {
                 String lname = name.toLowerCase();
 
                 if (value == true)
-                    temporaryPermissions.add(lname);
+                    temporaryPrePermissions.add(lname);
                 else if (value == false)
-                    temporaryPermissions.add("-" + lname);
+                    temporaryPrePermissions.add("-" + lname);
 
                 Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
 
                 if (perm != null) {
-                    calculateChildPermissions(perm.getChildren(), !value);
+                    calculatePreChildPermissions(perm.getChildren(), !value);
+                }
+            }
+        }
+    }
+    
+    private void calculatePostChildPermissions(Map<String, Boolean> children, boolean invert) {
+        Set<String> keys = children.keySet();
+        if (keys.size() > 0) {
+            for (String name : keys) {
+                Permission perm = Bukkit.getServer().getPluginManager().getPermission(name);
+                boolean value = children.get(name) ^ invert;
+                String lname = name.toLowerCase();
+
+                if (value == true)
+                    temporaryPostPermissions.add(lname);
+                else if (value == false)
+                    temporaryPostPermissions.add("-" + lname);
+
+                Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
+
+                if (perm != null) {
+                    calculatePostChildPermissions(perm.getChildren(), !value);
                 }
             }
         }
