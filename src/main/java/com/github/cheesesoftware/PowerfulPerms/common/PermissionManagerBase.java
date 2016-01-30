@@ -736,6 +736,21 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return null;
     }
 
+    protected Group getPlayerSecondaryGroup(Map<String, List<CachedGroup>> groups) {
+        if (groups != null) {
+            List<CachedGroup> g = groups.get("");
+            if (g != null) {
+                Iterator<CachedGroup> it = g.iterator();
+                while (it.hasNext()) {
+                    CachedGroup group = it.next();
+                    if (group.isSecondary())
+                        return group.getGroup();
+                }
+            }
+        }
+        return null;
+    }
+
     @Override
     public void getPlayerPrimaryGroup(String playerName, final ResultRunnable<Group> resultRunnable) {
         // If player is online, get data directly from player
@@ -757,6 +772,36 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     Map<String, List<CachedGroup>> groups = result;
                     Group primaryGroup = getPlayerPrimaryGroup(groups);
                     resultRunnable.setResult(primaryGroup);
+                    db.scheduler.runSync(resultRunnable);
+                    return;
+                }
+                resultRunnable.setResult(null);
+                db.scheduler.runSync(resultRunnable);
+            }
+        });
+    }
+
+    @Override
+    public void getPlayerSecondaryGroup(String playerName, final ResultRunnable<Group> resultRunnable) {
+        // If player is online, get data directly from player
+        UUID uuid = plugin.getPlayerUUID(playerName);
+        if (uuid != null) {
+            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+            if (gp != null) {
+                resultRunnable.setResult(gp.getSecondaryGroup());
+                db.scheduler.runSync(resultRunnable);
+                return;
+            }
+        }
+
+        getPlayerGroups(playerName, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+
+            @Override
+            public void run() {
+                if (result != null) {
+                    Map<String, List<CachedGroup>> groups = result;
+                    Group secondaryGroup = getPlayerSecondaryGroup(groups);
+                    resultRunnable.setResult(secondaryGroup);
                     db.scheduler.runSync(resultRunnable);
                     return;
                 }
