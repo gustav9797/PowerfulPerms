@@ -25,7 +25,7 @@ public interface IDatabase {
     public void getPlayers(String name, DBRunnable done);
 
     public void setPlayerName(UUID uuid, String name, DBRunnable done);
-    
+
     public void setPlayerName(String from, String to, DBRunnable done);
 
     public void setPlayerUUID(String name, UUID uuid, DBRunnable done);
@@ -43,9 +43,11 @@ public interface IDatabase {
     public void insertPermission(UUID uuid, String name, String group, String permission, String world, String server, DBRunnable done);
 
     public void updatePlayerPermissions(UUID uuid, String name, DBRunnable done);
-    
+
+    public void updatePlayerPermissions(String from, String to, DBRunnable done);
+
     public void deletePlayerPermission(String name, String permission, String world, String server, DBRunnable done);
-    
+
     public void deletePlayerPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
 
     public void deletePlayerPermissions(String name, DBRunnable done);

@@ -289,15 +289,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             public void run() {
 
                                 // Make sure player has no UUID in database.
-                                UUID tempUUID = null;
+                                String tempUUID = null;
                                 final DBDocument row = result.next();
                                 if (row != null) {
-                                    try {
-                                        String retrievedUUID = row.getString("uuid");
-                                        if (retrievedUUID != null && !retrievedUUID.isEmpty())
-                                            tempUUID = UUID.fromString(retrievedUUID);
-                                    } catch (IllegalArgumentException e) {
-                                    }
+                                    String retrievedUUID = row.getString("uuid");
+                                    if (retrievedUUID != null && !retrievedUUID.isEmpty())
+                                        tempUUID = retrievedUUID;
                                 }
 
                                 if (row != null && tempUUID == null) {
@@ -328,6 +325,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                     debug("Set all players with name \"" + name + "\" to [temp]");
                                                 }
 
+                                            });
+
+                                            // set permissions names to temp name
+                                            db.updatePlayerPermissions(name, "[temp]", new DBRunnable(login) {
+
+                                                @Override
+                                                public void run() {
+                                                    debug("Set all permissions with name \"" + name + "\" to [temp]");
+                                                }
                                             });
                                         }
 
@@ -1422,7 +1428,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
             groupPermissions.add(sp);
 
-            db.insertPermission(null, "", groupName, permission, world, server, new DBRunnable() {
+            db.insertPermission((UUID) null, "", groupName, permission, world, server, new DBRunnable() {
 
                 @Override
                 public void run() {

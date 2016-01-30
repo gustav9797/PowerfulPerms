@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -26,6 +28,9 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     private SQL sql;
     private PowerfulPermissionManager permissionManager;
 
+    private File customConfigFile = null;
+    private FileConfiguration customConfig = null;
+
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
     public static boolean debug = false;
@@ -34,11 +39,12 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
     @Override
     public void onEnable() {
-        this.saveDefaultConfig();
+        saveDefaultConfig();
+        saveDefaultCustomConfig();
         getServer().getPluginManager().registerEvents(this, this);
 
         int currentVersion = Versioner.getVersionNumber(this.getDescription().getVersion());
-        oldVersion = getConfig().getInt("oldversion", 0);
+        oldVersion = getCustomConfig().getInt("oldversion", 0);
 
         this.sql = new SQL(getConfig().getString("host"), getConfig().getString("database"), getConfig().getInt("port"), getConfig().getString("username"), getConfig().getString("password"));
 
@@ -83,12 +89,8 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         }
 
         if (oldVersion != currentVersion) {
-            getConfig().set("oldversion", currentVersion);
-            try {
-                getConfig().save(new File(getDataFolder(), "config.yml"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            getCustomConfig().set("oldversion", currentVersion);
+            saveCustomConfig();
         }
     }
 
@@ -96,6 +98,40 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public void onDisable() {
         if (permissionManager != null)
             permissionManager.onDisable();
+    }
+
+    public void reloadCustomConfig() {
+        if (customConfigFile == null) {
+            customConfigFile = new File(getDataFolder(), "data.yml");
+        }
+        customConfig = YamlConfiguration.loadConfiguration(customConfigFile);
+    }
+
+    public FileConfiguration getCustomConfig() {
+        if (customConfig == null) {
+            reloadCustomConfig();
+        }
+        return customConfig;
+    }
+
+    public void saveCustomConfig() {
+        if (customConfig == null || customConfigFile == null) {
+            return;
+        }
+        try {
+            getCustomConfig().save(customConfigFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveDefaultCustomConfig() {
+        if (customConfigFile == null) {
+            customConfigFile = new File(getDataFolder(), "data.yml");
+        }
+        if (!customConfigFile.exists()) {
+            saveResource("data.yml", false);
+        }
     }
 
     public static PowerfulPerms getPlugin() {

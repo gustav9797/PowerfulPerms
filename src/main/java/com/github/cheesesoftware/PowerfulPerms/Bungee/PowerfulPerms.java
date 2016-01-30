@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Random;
@@ -39,6 +40,9 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     private PowerfulPermissionManager permissionManager;
     private Configuration config;
 
+    private File customConfigFile = null;
+    private Configuration customConfig = null;
+
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
     public static boolean bungee_command = false;
@@ -49,6 +53,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     @Override
     public void onEnable() {
         this.saveDefaultConfig();
+        saveDefaultCustomConfig();
         try {
             config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File(getDataFolder(), "config.yml"));
 
@@ -57,7 +62,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         }
 
         int currentVersion = Versioner.getVersionNumber(this.getDescription().getVersion());
-        oldVersion = config.getInt("oldversion", 0);
+        oldVersion = getCustomConfig().getInt("oldversion", 0);
 
         this.sql = new SQL(config.getString("host"), config.getString("database"), config.getInt("port"), config.getString("username"), config.getString("password"));
 
@@ -94,12 +99,8 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         }
 
         if (oldVersion != currentVersion) {
-            config.set("oldversion", currentVersion);
-            try {
-                ConfigurationProvider.getProvider(YamlConfiguration.class).save(config, new File(getDataFolder(), "config.yml"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            getCustomConfig().set("oldversion", currentVersion);
+            saveCustomConfig();
         }
     }
 
@@ -107,6 +108,49 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     public void onDisable() {
         if (permissionManager != null)
             permissionManager.onDisable();
+    }
+
+    public void reloadCustomConfig() {
+        if (customConfigFile == null) {
+            customConfigFile = new File(getDataFolder(), "data.yml");
+        }
+        try {
+            customConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(customConfigFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Configuration getCustomConfig() {
+        if (customConfig == null) {
+            reloadCustomConfig();
+        }
+        return customConfig;
+    }
+
+    public void saveCustomConfig() {
+        if (customConfig == null || customConfigFile == null) {
+            return;
+        }
+        try {
+            ConfigurationProvider.getProvider(YamlConfiguration.class).save(getCustomConfig(), customConfigFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveDefaultCustomConfig() {
+        if (customConfigFile == null) {
+            customConfigFile = new File(getDataFolder(), "data.yml");
+        }
+        if (!customConfigFile.exists()) {
+            try (InputStream in = getResourceAsStream("data.yml")) {
+                Files.copy(in, customConfigFile.toPath());
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void saveDefaultConfig() {
@@ -120,6 +164,8 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
                 InputStream is = getResourceAsStream("config.yml");
                 OutputStream os = new FileOutputStream(configFile);
                 ByteStreams.copy(is, os);
+                is.close();
+                os.close();
             } catch (IOException e) {
                 throw new RuntimeException("Unable to create configuration file", e);
             }

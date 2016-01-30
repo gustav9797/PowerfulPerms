@@ -501,32 +501,46 @@ public class MySQLDatabase extends Database {
 
             @Override
             public void run() {
-                getPlayerPermissions(uuid, new DBRunnable(true) {
+                boolean success = true;
 
-                    @Override
-                    public void run() {
-                        while (result.hasNext()) {
-                            final DBDocument row = result.next();
-                            if (!row.getString("playername").equals(name)) {
-                                // Player name mismatch, update
-                                deletePlayerPermission(uuid, row.getString("permission"), row.getString("world"), row.getString("server"), new DBRunnable(true) {
-                                    @Override
-                                    public void run() {
-                                        insertPermission(uuid, name, "", row.getString("permission"), row.getString("world"), row.getString("server"), new DBRunnable(true) {
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPermissions + " SET `playername`=? WHERE `playeruuid`=?;");
+                    s.setString(1, name);
+                    s.setString(2, uuid.toString());
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
 
-                                            @Override
-                                            public void run() {
-                                                // One permission has been updated
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        }
-                        done.setResult(new DBResult(true));
-                        scheduler.runSync(done, done.sameThread());
-                    }
-                });
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
+    public void updatePlayerPermissions(final String from, final String to, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPermissions + " SET `playername`=? WHERE `playername`=?;");
+                    s.setString(1, to);
+                    s.setString(2, from);
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
             }
         }, done.sameThread());
     }
