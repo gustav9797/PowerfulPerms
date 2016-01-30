@@ -23,6 +23,7 @@ import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
@@ -97,17 +98,23 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         cachedPlayers.remove(e.getPlayer().getUniqueId());
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onAsyncPlayerPreLogin(final AsyncPlayerPreLoginEvent e) {
         debug("AsyncPlayerPreLoginEvent " + e.getName());
 
         if (e.getLoginResult() == AsyncPlayerPreLoginEvent.Result.ALLOWED) {
-            loadPlayer(e.getUniqueId(), e.getName(), true);
+            loadPlayer(e.getUniqueId(), e.getName(), true, new ResultRunnable<Boolean>() {
+
+                @Override
+                public void run() {
+                    e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, "Please use the correct uppercase/lowercase (caps) in your username.");
+                }
+            });
         }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerLogin(PlayerLoginEvent e) {
+    public void onPlayerLogin(final PlayerLoginEvent e) {
         debug("PlayerLoginEvent " + e.getPlayer().getName());
 
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
@@ -116,8 +123,16 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         } else {
             // Player is not cached, Load directly on Bukkit main thread.
             debug("onPlayerJoin player isn't cached, loading directly");
-            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
-            this.continueLoadPlayer(e.getPlayer());
+            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true, new ResultRunnable<Boolean>() {
+
+                @Override
+                public void run() {
+                    e.disallow(PlayerLoginEvent.Result.KICK_OTHER, "Please use the correct uppercase/lowercase (caps) in your username.");
+                }
+            });
+
+            if (e.getResult() == PlayerLoginEvent.Result.ALLOWED)
+                this.continueLoadPlayer(e.getPlayer());
         }
     }
 

@@ -238,6 +238,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
+        loadPlayer(uuid, name, login);
+    }
+
+    protected void loadPlayer(final UUID uuid, final String name, final boolean login, final ResultRunnable<Boolean> kick) {
         debug("loadPlayer begin");
 
         db.getPlayer(uuid, new DBRunnable(login) {
@@ -350,6 +354,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         });
                                     } else {
                                         // Player is imposter because offline mode is used. Do not load the player.
+                                        if (kick != null) {
+                                            kick.setResult(true);
+                                            db.scheduler.runSync(kick, true);
+                                        }
                                     }
                                 }
                             }
