@@ -51,6 +51,18 @@ public class PermissionCommand {
                         server = args[3];
 
                     permissionManager.setPlayerPrimaryGroup(playerName, "", server, response);
+                } else if ((args[2].equalsIgnoreCase("addsecondary") || args[2].equalsIgnoreCase("setsecondary") || args[2].equalsIgnoreCase("setsecondarygroup")) && args.length >= 4) {
+                    String group = args[3];
+                    String server = "";
+                    if (args.length >= 5)
+                        server = args[4];
+                    permissionManager.setPlayerSecondaryGroup(playerName, group, server, response);
+                } else if (args[2].equalsIgnoreCase("removesecondary") || args[2].equalsIgnoreCase("removesecondarygroup")) {
+                    String server = "";
+                    if (args.length >= 4)
+                        server = args[3];
+
+                    permissionManager.setPlayerSecondaryGroup(playerName, "", server, response);
                 } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
                     String group = args[3];
                     String server = "";
@@ -567,8 +579,8 @@ public class PermissionCommand {
         String helpPrefix = "§b ";
         command.sendSender(sender, ChatColor.RED + "~ " + ChatColor.BLUE + "PowerfulPerms" + ChatColor.BOLD + ChatColor.RED + " Reference ~");
         command.sendSender(sender, helpPrefix + "/pp user <username>");
-        command.sendSender(sender, helpPrefix + "/pp user <username> setprimary <group> (server)");
-        command.sendSender(sender, helpPrefix + "/pp user <username> removeprimary (server)");
+        command.sendSender(sender, helpPrefix + "/pp user <username> setprimary/setsecondary <group> (server)");
+        command.sendSender(sender, helpPrefix + "/pp user <username> removeprimary/removesecondary (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> addgroup/removegroup <group> (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp user <username> clearperms");

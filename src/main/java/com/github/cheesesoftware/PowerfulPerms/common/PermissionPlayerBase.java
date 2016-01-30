@@ -18,6 +18,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
     protected List<Group> currentGroups = new ArrayList<Group>();
     protected Group currentPrimaryGroup = null;
+    protected Group currentSecondaryGroup = null;
 
     protected List<Permission> permissions = new ArrayList<Permission>();
     protected List<String> realPermissions = new ArrayList<String>();
@@ -48,6 +49,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
         this.currentGroups = getGroups(server);
         this.currentPrimaryGroup = this.getPrimaryGroup(server);
+        this.currentSecondaryGroup = this.getSecondaryGroup(server);
     }
 
     public void setGroups(HashMap<String, List<CachedGroup>> groups) {
@@ -107,6 +109,39 @@ public class PermissionPlayerBase implements PermissionPlayer {
     @Override
     public Group getPrimaryGroup() {
         return this.currentPrimaryGroup;
+    }
+
+    /**
+     * Returns all secondary groups a player has, indexed by server name.
+     */
+    @Override
+    public HashMap<String, Group> getSecondaryGroups() {
+        HashMap<String, Group> tempSecondaryGroups = new HashMap<String, Group>();
+        for (Entry<String, List<CachedGroup>> entry : groups.entrySet()) {
+            for (CachedGroup cachedGroup : entry.getValue()) {
+                if (cachedGroup.isSecondary())
+                    tempSecondaryGroups.put(entry.getKey(), cachedGroup.getGroup());
+            }
+        }
+        return tempSecondaryGroups;
+    }
+
+    /**
+     * Returns the secondary group for a specific server.
+     */
+    @Override
+    public Group getSecondaryGroup(String server) {
+        HashMap<String, Group> secondaryGroups = this.getSecondaryGroups();
+        Group secondary = secondaryGroups.get(server);
+        return secondary;
+    }
+
+    /**
+     * Returns the primary group for the current server.
+     */
+    @Override
+    public Group getSecondaryGroup() {
+        return this.currentSecondaryGroup;
     }
 
     /**
