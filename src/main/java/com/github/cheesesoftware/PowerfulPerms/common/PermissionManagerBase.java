@@ -307,6 +307,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                             loadPlayerFinished(row, login, uuid);
                                         }
                                     });
+                                    return;
                                 } else {
                                     // It did not find player with UUID.
                                     // It found player with name.
@@ -315,57 +316,56 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     // OR
                                     // Old player in database who has namechanged long time ago. New player changed to that players name.
 
-                                    if (plugin.isOnlineMode()) {
-                                        if (row != null) {
-                                            // Set all existing players with that name to a temp name. It will be changed when they login again.
-                                            db.setPlayerName(name, "[temp]", new DBRunnable(true) {
-
-                                                @Override
-                                                public void run() {
-                                                    debug("Set all players with name \"" + name + "\" to [temp]");
-                                                }
-
-                                            });
-
-                                            // set permissions names to temp name
-                                            db.updatePlayerPermissions(name, "[temp]", new DBRunnable(login) {
-
-                                                @Override
-                                                public void run() {
-                                                    debug("Set all permissions with name \"" + name + "\" to [temp]");
-                                                }
-                                            });
-                                        }
-
-                                        // Now create the new player. It is very important that players do not have the same name because MySQL is not caps sensitive.
-                                        // if row == null player does not exist in database. Create new player.
-                                        db.getPlayers("[default]", new DBRunnable(login) {
+                                    if (plugin.isOnlineMode() && row != null) {
+                                        // Set all existing players with that name to a temp name. It will be changed when they login again.
+                                        db.setPlayerName(name, "[temp]", new DBRunnable(true) {
 
                                             @Override
                                             public void run() {
-                                                final DBDocument row = result.next();
-                                                if (row != null) {
+                                                debug("Set all players with name \"" + name + "\" to [temp]");
+                                            }
 
-                                                    db.insertPlayer(uuid, name, row.getString("groups"), row.getString("prefix"), row.getString("suffix"), new DBRunnable(login) {
+                                        });
 
-                                                        @Override
-                                                        public void run() {
-                                                            debug("NEW PLAYER CREATED");
-                                                            loadPlayerFinished(row, login, uuid);
-                                                        }
-                                                    });
-                                                } else
-                                                    plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. Please create the default user.");
+                                        // set permissions names to temp name
+                                        db.updatePlayerPermissions(name, "[temp]", new DBRunnable(login) {
+
+                                            @Override
+                                            public void run() {
+                                                debug("Set all permissions with name \"" + name + "\" to [temp]");
                                             }
                                         });
-                                    } else {
+                                    } else if (row != null) {
                                         // Player is imposter because offline mode is used. Do not load the player.
                                         if (kick != null) {
                                             kick.setResult(true);
                                             db.scheduler.runSync(kick, true);
+                                            return;
                                         }
                                     }
                                 }
+
+                                // Now create the new player. It is very important that players do not have the same name because MySQL is not caps sensitive.
+                                // if row == null player does not exist in database. Create new player.
+                                db.getPlayers("[default]", new DBRunnable(login) {
+
+                                    @Override
+                                    public void run() {
+                                        final DBDocument row = result.next();
+                                        if (row != null) {
+
+                                            db.insertPlayer(uuid, name, row.getString("groups"), row.getString("prefix"), row.getString("suffix"), new DBRunnable(login) {
+
+                                                @Override
+                                                public void run() {
+                                                    debug("NEW PLAYER CREATED");
+                                                    loadPlayerFinished(row, login, uuid);
+                                                }
+                                            });
+                                        } else
+                                            plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. Please create the default user.");
+                                    }
+                                });
                             }
                         });
                     } else
