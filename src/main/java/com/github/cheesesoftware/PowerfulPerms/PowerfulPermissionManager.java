@@ -116,6 +116,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerLogin(final PlayerLoginEvent e) {
         debug("PlayerLoginEvent " + e.getPlayer().getName());
+        debug("Player world " + e.getPlayer().getWorld().getName());
 
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.
@@ -150,6 +151,11 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(final PlayerJoinEvent e) {
         debug("PlayerJoinEvent " + e.getPlayer().getName());
+        Player p = e.getPlayer();
+        if (players.containsKey(p.getUniqueId())) {
+            PowerfulPermissionPlayer permissionsPlayer = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
+            permissionsPlayer.updatePermissions();
+        }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -159,9 +165,9 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onWorldChange(PlayerChangedWorldEvent event) {
-        Player p = event.getPlayer();
-        debug("Player " + p.getName() + " changed world from " + event.getFrom().getName() + " to " + p.getWorld().getName());
+    public void onWorldChange(PlayerChangedWorldEvent e) {
+        Player p = e.getPlayer();
+        debug("Player " + p.getName() + " changed world from " + e.getFrom().getName() + " to " + p.getWorld().getName());
         if (players.containsKey(p.getUniqueId())) {
             PowerfulPermissionPlayer permissionsPlayer = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
             permissionsPlayer.updatePermissions();

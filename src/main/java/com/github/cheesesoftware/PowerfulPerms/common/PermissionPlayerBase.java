@@ -315,6 +315,12 @@ public class PermissionPlayerBase implements PermissionPlayer {
             if (groupPrefix != null)
                 return groupPrefix;
         }
+        group = getSecondaryGroup();
+        if (group != null) {
+            String groupPrefix = group.getPrefix(server);
+            if (groupPrefix != null)
+                return groupPrefix;
+        }
         return "";
     }
 
@@ -325,9 +331,15 @@ public class PermissionPlayerBase implements PermissionPlayer {
      */
     @Override
     public String getSuffix(String server) {
-        Group group = getPrimaryGroup();
         if (!suffix.isEmpty())
             return suffix;
+        Group group = getPrimaryGroup();
+        if (group != null) {
+            String groupSuffix = group.getSuffix(server);
+            if (groupSuffix != null)
+                return groupSuffix;
+        }
+        group = getSecondaryGroup();
         if (group != null) {
             String groupSuffix = group.getSuffix(server);
             if (groupSuffix != null)
