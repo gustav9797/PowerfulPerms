@@ -4,6 +4,7 @@ import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
 
 import net.milkbowl.vault.chat.Chat;
@@ -11,11 +12,13 @@ import net.milkbowl.vault.permission.Permission;
 
 public class PowerfulPerms_Vault_Chat extends Chat {
 
+    private PowerfulPermsPlugin plugin;
     private PermissionManager permissionManager;
 
-    public PowerfulPerms_Vault_Chat(Permission perms, PermissionManager permissionManager) {
+    public PowerfulPerms_Vault_Chat(Permission perms, PowerfulPermsPlugin plugin) {
         super(perms);
-        this.permissionManager = permissionManager;
+        this.plugin = plugin;
+        this.permissionManager = plugin.getPermissionManager();
     }
 
     @Override
@@ -38,7 +41,8 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public void setPlayerPrefix(String world, String player, String prefix) {
-        permissionManager.setPlayerPrefix(player, prefix, new ResponseRunnable() {
+        //TODO: Fix
+        permissionManager.setPlayerPrefix(plugin.getPlayerUUID(player), prefix, new ResponseRunnable() {
 
             @Override
             public void run() {
@@ -57,7 +61,8 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public void setPlayerSuffix(String world, String player, String suffix) {
-        permissionManager.setPlayerSuffix(player, suffix, new ResponseRunnable() {
+      //TODO: Fix
+        permissionManager.setPlayerSuffix(plugin.getPlayerUUID(player), suffix, new ResponseRunnable() {
 
             @Override
             public void run() {

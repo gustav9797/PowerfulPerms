@@ -225,10 +225,26 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     }
 
     @Override
+    public boolean isPlayerOnline(String name) {
+        ProxiedPlayer player = this.getProxy().getPlayer(name);
+        if (player != null)
+            return true;
+        return false;
+    }
+
+    @Override
     public UUID getPlayerUUID(String name) {
         ProxiedPlayer player = this.getProxy().getPlayer(name);
         if (player != null)
             return player.getUniqueId();
+        return null;
+    }
+
+    @Override
+    public String getPlayerName(UUID uuid) {
+        ProxiedPlayer player = this.getProxy().getPlayer(uuid);
+        if (player != null)
+            return player.getName();
         return null;
     }
 

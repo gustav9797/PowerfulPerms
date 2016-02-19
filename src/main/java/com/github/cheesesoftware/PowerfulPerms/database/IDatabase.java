@@ -22,13 +22,13 @@ public interface IDatabase {
 
     public void getPlayer(UUID uuid, DBRunnable done);
 
-    public void getPlayers(String name, DBRunnable done);
+    //public void getPlayers(String name, DBRunnable done);
 
     public void setPlayerName(UUID uuid, String name, DBRunnable done);
 
-    public void setPlayerName(String from, String to, DBRunnable done);
+    //public void setPlayerName(String from, String to, DBRunnable done);
 
-    public void setPlayerUUID(String name, UUID uuid, DBRunnable done);
+    //public void setPlayerUUID(String name, UUID uuid, DBRunnable done);
 
     public void getGroups(DBRunnable done);
 
@@ -36,31 +36,33 @@ public interface IDatabase {
 
     public void getPlayerPermissions(UUID uuid, DBRunnable done);
 
-    public void getPlayerPermissions(String name, DBRunnable done);
+    //public void getPlayerPermissions(String name, DBRunnable done);
 
-    public void playerHasPermission(String name, String permission, String world, String server, DBRunnable done);
+    //public void playerHasPermission(String name, String permission, String world, String server, DBRunnable done);
+    
+    public void playerHasPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
 
     public void insertPermission(UUID uuid, String name, String group, String permission, String world, String server, DBRunnable done);
 
     public void updatePlayerPermissions(UUID uuid, String name, DBRunnable done);
 
-    public void updatePlayerPermissions(String from, String to, DBRunnable done);
+    //public void updatePlayerPermissions(String from, String to, DBRunnable done);
 
-    public void deletePlayerPermission(String name, String permission, String world, String server, DBRunnable done);
+    //public void deletePlayerPermission(String name, String permission, String world, String server, DBRunnable done);
 
     public void deletePlayerPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
 
-    public void deletePlayerPermissions(String name, DBRunnable done);
+    public void deletePlayerPermissions(UUID uuid, DBRunnable done);
 
     public void deleteGroupPermission(String group, String permission, String world, String server, DBRunnable done);
 
     public void deleteGroupPermissions(String group, DBRunnable done);
 
-    public void setPlayerPrefix(String name, String prefix, DBRunnable done);
+    public void setPlayerPrefix(UUID uuid, String prefix, DBRunnable done);
 
-    public void setPlayerSuffix(String name, String suffix, DBRunnable done);
+    public void setPlayerSuffix(UUID uuid, String suffix, DBRunnable done);
 
-    public void setPlayerGroups(String name, String groups, DBRunnable done);
+    public void setPlayerGroups(UUID uuid, String groups, DBRunnable done);
 
     public void deleteGroup(String group, DBRunnable done);
 

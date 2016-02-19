@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
+import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
 public abstract class SchedulerBase implements IScheduler {

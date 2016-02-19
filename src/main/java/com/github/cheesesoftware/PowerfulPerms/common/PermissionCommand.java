@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.UUID;
 
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
@@ -25,8 +26,8 @@ public class PermissionCommand {
         this.permissionManager = permissionManager;
     }
 
-    public boolean onCommand(final ICommand invoker, final String sender, String[] args) {
-        ResponseRunnable response = new ResponseRunnable() {
+    public boolean onCommand(final ICommand invoker, final String sender, final String[] args) {
+        final ResponseRunnable response = new ResponseRunnable() {
             @Override
             public void run() {
                 sendSender(invoker, sender, response);
@@ -35,299 +36,312 @@ public class PermissionCommand {
 
         if (args.length >= 1 && args[0].equalsIgnoreCase("user") && args.length >= 2) {
             final String playerName = args[1];
-            int page = -1;
-            if (args.length >= 3) {
-                if (args[2].equalsIgnoreCase("clearperms")) {
-                    permissionManager.removePlayerPermissions(playerName, response);
-                } else if ((args[2].equalsIgnoreCase("addprimary") || args[2].equalsIgnoreCase("setprimary") || args[2].equalsIgnoreCase("setprimarygroup")) && args.length >= 4) {
-                    String group = args[3];
-                    String server = "";
-                    if (args.length >= 5)
-                        server = args[4];
-                    permissionManager.setPlayerPrimaryGroup(playerName, group, server, response);
-                } else if (args[2].equalsIgnoreCase("removeprimary") || args[2].equalsIgnoreCase("removeprimarygroup")) {
-                    String server = "";
-                    if (args.length >= 4)
-                        server = args[3];
+            permissionManager.getConvertUUID(playerName, new ResultRunnable<UUID>() {
 
-                    permissionManager.setPlayerPrimaryGroup(playerName, "", server, response);
-                } else if ((args[2].equalsIgnoreCase("addsecondary") || args[2].equalsIgnoreCase("setsecondary") || args[2].equalsIgnoreCase("setsecondarygroup")) && args.length >= 4) {
-                    String group = args[3];
-                    String server = "";
-                    if (args.length >= 5)
-                        server = args[4];
-                    permissionManager.setPlayerSecondaryGroup(playerName, group, server, response);
-                } else if (args[2].equalsIgnoreCase("removesecondary") || args[2].equalsIgnoreCase("removesecondarygroup")) {
-                    String server = "";
-                    if (args.length >= 4)
-                        server = args[3];
+                @Override
+                public void run() {
+                    final UUID uuid = result;
+                    if (uuid == null) {
+                        response.setResponse(false, "Could not find player UUID.");
+                        permissionManager.getScheduler().runSync(response);
 
-                    permissionManager.setPlayerSecondaryGroup(playerName, "", server, response);
-                } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
-                    String group = args[3];
-                    String server = "";
-                    if (args.length >= 5)
-                        server = args[4];
-                    boolean negated = group.startsWith("-");
-                    if (negated)
-                        group = group.substring(1);
-                    permissionManager.addPlayerGroup(playerName, group, server, negated, response);
-                } else if (args[2].equalsIgnoreCase("removegroup") && args.length >= 4) {
-                    String group = args[3];
-                    String server = "";
-                    if (args.length >= 5)
-                        server = args[4];
-                    boolean negated = group.startsWith("-");
-                    if (negated)
-                        group = group.substring(1);
-                    permissionManager.removePlayerGroup(playerName, group, server, negated, response);
-                } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
-                    String permission = args[3];
-                    String world = "";
-                    String server = "";
-                    if (args.length >= 5)
-                        server = args[4];
-                    if (args.length >= 6)
-                        world = args[5];
-                    if (server.equalsIgnoreCase("all"))
-                        server = "";
-                    if (world.equalsIgnoreCase("all"))
-                        world = "";
-                    permissionManager.addPlayerPermission(playerName, permission, world, server, response);
-                } else if (args.length >= 4 && args[2].equalsIgnoreCase("remove")) {
-                    String permission = args[3];
-                    String world = "";
-                    String server = "";
-                    if (args.length >= 5)
-                        server = args[4];
-                    if (args.length >= 6)
-                        world = args[5];
-                    if (server.equalsIgnoreCase("all"))
-                        server = "";
-                    if (world.equalsIgnoreCase("all"))
-                        world = "";
-                    permissionManager.removePlayerPermission(playerName, permission, world, server, response);
-                } else if (args[2].equalsIgnoreCase("prefix")) {
-                    if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
-                        String prefix = "";
-                        if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
-                            // Input is between quote marks.
-                            String result = "";
-                            result += args[4].substring(1) + " ";
+                        int page = -1;
+                        if (args.length >= 3) {
+                            if (args[2].equalsIgnoreCase("clearperms")) {
+                                permissionManager.removePlayerPermissions(uuid, response);
+                            } else if ((args[2].equalsIgnoreCase("addprimary") || args[2].equalsIgnoreCase("setprimary") || args[2].equalsIgnoreCase("setprimarygroup")) && args.length >= 4) {
+                                String group = args[3];
+                                String server = "";
+                                if (args.length >= 5)
+                                    server = args[4];
+                                permissionManager.setPlayerPrimaryGroup(uuid, group, server, response);
+                            } else if (args[2].equalsIgnoreCase("removeprimary") || args[2].equalsIgnoreCase("removeprimarygroup")) {
+                                String server = "";
+                                if (args.length >= 4)
+                                    server = args[3];
 
-                            if (args.length >= 6) {
-                                for (int i = 5; i < args.length; i++) {
-                                    result += args[i] + " ";
-                                }
-                            }
+                                permissionManager.setPlayerPrimaryGroup(uuid, "", server, response);
+                            } else if ((args[2].equalsIgnoreCase("addsecondary") || args[2].equalsIgnoreCase("setsecondary") || args[2].equalsIgnoreCase("setsecondarygroup")) && args.length >= 4) {
+                                String group = args[3];
+                                String server = "";
+                                if (args.length >= 5)
+                                    server = args[4];
+                                permissionManager.setPlayerSecondaryGroup(uuid, group, server, response);
+                            } else if (args[2].equalsIgnoreCase("removesecondary") || args[2].equalsIgnoreCase("removesecondarygroup")) {
+                                String server = "";
+                                if (args.length >= 4)
+                                    server = args[3];
 
-                            if (result.toCharArray()[result.length() - 1] == ' ')
-                                result = result.substring(0, result.length() - 1);
-                            if (result.toCharArray()[result.length() - 1] == '"')
-                                result = result.substring(0, result.length() - 1);
+                                permissionManager.setPlayerSecondaryGroup(uuid, "", server, response);
+                            } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
+                                String group = args[3];
+                                String server = "";
+                                if (args.length >= 5)
+                                    server = args[4];
+                                boolean negated = group.startsWith("-");
+                                if (negated)
+                                    group = group.substring(1);
+                                permissionManager.addPlayerGroup(uuid, group, server, negated, response);
+                            } else if (args[2].equalsIgnoreCase("removegroup") && args.length >= 4) {
+                                String group = args[3];
+                                String server = "";
+                                if (args.length >= 5)
+                                    server = args[4];
+                                boolean negated = group.startsWith("-");
+                                if (negated)
+                                    group = group.substring(1);
+                                permissionManager.removePlayerGroup(uuid, group, server, negated, response);
+                            } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
+                                String permission = args[3];
+                                String world = "";
+                                String server = "";
+                                if (args.length >= 5)
+                                    server = args[4];
+                                if (args.length >= 6)
+                                    world = args[5];
+                                if (server.equalsIgnoreCase("all"))
+                                    server = "";
+                                if (world.equalsIgnoreCase("all"))
+                                    world = "";
+                                permissionManager.addPlayerPermission(uuid, playerName, permission, world, server, response);
+                            } else if (args.length >= 4 && args[2].equalsIgnoreCase("remove")) {
+                                String permission = args[3];
+                                String world = "";
+                                String server = "";
+                                if (args.length >= 5)
+                                    server = args[4];
+                                if (args.length >= 6)
+                                    world = args[5];
+                                if (server.equalsIgnoreCase("all"))
+                                    server = "";
+                                if (world.equalsIgnoreCase("all"))
+                                    world = "";
+                                permissionManager.removePlayerPermission(uuid, permission, world, server, response);
+                            } else if (args[2].equalsIgnoreCase("prefix")) {
+                                if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
+                                    String prefix = "";
+                                    if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
+                                        // Input is between quote marks.
+                                        String result = "";
+                                        result += args[4].substring(1) + " ";
 
-                            prefix = result;
-                        } else
-                            prefix = args[4];
-
-                        permissionManager.setPlayerPrefix(playerName, prefix, response);
-
-                    } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        permissionManager.setPlayerPrefix(playerName, "", response);
-                    } else
-                        permissionManager.getPlayerOwnPrefix(playerName, new ResultRunnable<String>() {
-
-                            @Override
-                            public void run() {
-                                sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
-                            }
-                        });
-
-                } else if (args[2].equalsIgnoreCase("suffix")) {
-                    if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
-                        String suffix = "";
-                        if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
-                            // Input is between quote marks.
-                            String result = "";
-                            result += args[4].substring(1) + " ";
-
-                            if (args.length >= 6) {
-                                for (int i = 5; i < args.length; i++) {
-                                    result += args[i] + " ";
-                                }
-                            }
-
-                            if (result.toCharArray()[result.length() - 1] == ' ')
-                                result = result.substring(0, result.length() - 1);
-                            if (result.toCharArray()[result.length() - 1] == '"')
-                                result = result.substring(0, result.length() - 1);
-
-                            suffix = result;
-                        } else
-                            suffix = args[4];
-
-                        permissionManager.setPlayerSuffix(playerName, suffix, response);
-
-                    } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        permissionManager.setPlayerSuffix(playerName, "", response);
-                    } else
-                        permissionManager.getPlayerOwnSuffix(playerName, new ResultRunnable<String>() {
-
-                            @Override
-                            public void run() {
-                                sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
-                            }
-                        });
-                } else {
-                    try {
-                        page = Integer.parseInt(args[2]);
-                    } catch (NumberFormatException e) {
-                        showCommandInfo(invoker, sender);
-                    }
-                }
-            }
-            if (page != -1 || args.length == 2) {
-                if (page == -1)
-                    page = 1;
-                page--;
-                if (page < 0)
-                    sendSender(invoker, sender, "Invalid page. Page negative.");
-                final int pageCopy = page;
-                // List player permissions
-                final Queue<String> rows = new java.util.ArrayDeque<String>();
-                rows.add(ChatColor.BLUE + "Listing permissions for player " + playerName + ".");
-
-                permissionManager.getPlayerData(playerName, new ResultRunnable<DBDocument>() {
-
-                    @Override
-                    public void run() {
-                        String tempUUID = "empty";
-                        DBDocument row = result;
-                        if (result != null)
-                            tempUUID = row.getString("uuid");
-                        rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
-
-                        PermissionPlayer p = permissionManager.getPermissionsPlayer(playerName);
-                        if (p != null) {
-                            Group pri = p.getPrimaryGroup();
-                            if (pri != null)
-                                rows.add(ChatColor.GREEN + "Current Primary Group" + ChatColor.WHITE + ": " + pri.getName());
-                            else
-                                rows.add(ChatColor.RED + "Player has no current primary group." + ChatColor.WHITE);
-                        }
-
-                        permissionManager.getPlayerGroups(playerName, new ResultRunnable<Map<String, List<CachedGroup>>>() {
-
-                            @Override
-                            public void run() {
-                                Map<String, List<CachedGroup>> groups = result;
-
-                                // List primary groups
-                                boolean has = false;
-                                String primaryGroups = ChatColor.GREEN + "Primary Groups" + ChatColor.WHITE + ": ";
-                                if (groups != null && groups.size() > 0) {
-                                    Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
-                                    while (it.hasNext()) {
-                                        Entry<String, List<CachedGroup>> current = it.next();
-                                        Iterator<CachedGroup> itt = current.getValue().iterator();
-                                        while (itt.hasNext()) {
-                                            CachedGroup cachedGroup = itt.next();
-                                            Group group = cachedGroup.getGroup();
-                                            if (group != null && cachedGroup.isPrimary()) {
-                                                primaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
-                                                        + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
-                                                primaryGroups += ", ";
-                                                has = true;
+                                        if (args.length >= 6) {
+                                            for (int i = 5; i < args.length; i++) {
+                                                result += args[i] + " ";
                                             }
                                         }
-                                    }
-                                }
-                                if (!has)
-                                    primaryGroups += "Player has no primary groups.";
-                                if (primaryGroups.endsWith(", "))
-                                    primaryGroups = primaryGroups.substring(0, primaryGroups.length() - 2);
-                                rows.add(primaryGroups);
 
-                                // List secondary groups
-                                has = false;
-                                String secondaryGroups = ChatColor.GREEN + "Secondary Groups" + ChatColor.WHITE + ": ";
-                                if (groups != null && groups.size() > 0) {
-                                    Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
-                                    while (it.hasNext()) {
-                                        Entry<String, List<CachedGroup>> current = it.next();
-                                        Iterator<CachedGroup> itt = current.getValue().iterator();
-                                        while (itt.hasNext()) {
-                                            CachedGroup cachedGroup = itt.next();
-                                            Group group = cachedGroup.getGroup();
-                                            if (group != null && cachedGroup.isSecondary()) {
-                                                secondaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
-                                                        + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
-                                                secondaryGroups += ", ";
-                                                has = true;
-                                            }
-                                        }
-                                    }
-                                }
-                                if (!has)
-                                    secondaryGroups += "Player has no secondary groups.";
-                                if (secondaryGroups.endsWith(", "))
-                                    secondaryGroups = secondaryGroups.substring(0, secondaryGroups.length() - 2);
-                                rows.add(secondaryGroups);
+                                        if (result.toCharArray()[result.length() - 1] == ' ')
+                                            result = result.substring(0, result.length() - 1);
+                                        if (result.toCharArray()[result.length() - 1] == '"')
+                                            result = result.substring(0, result.length() - 1);
 
-                                // List groups
-                                String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
-                                if (groups != null && groups.size() > 0) {
-                                    Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
-                                    while (it.hasNext()) {
-                                        Entry<String, List<CachedGroup>> current = it.next();
-                                        Iterator<CachedGroup> itt = current.getValue().iterator();
-                                        while (itt.hasNext()) {
-                                            CachedGroup cachedGroup = itt.next();
-                                            Group group = cachedGroup.getGroup();
-                                            if (group != null && !cachedGroup.isPrimary() && !cachedGroup.isSecondary()) {
-                                                otherGroups += (cachedGroup.isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
-                                                        + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
-                                                otherGroups += ", ";
-                                            }
-                                        }
-                                    }
+                                        prefix = result;
+                                    } else
+                                        prefix = args[4];
+
+                                    permissionManager.setPlayerPrefix(uuid, prefix, response);
+
+                                } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
+                                    permissionManager.setPlayerPrefix(uuid, "", response);
                                 } else
-                                    otherGroups += "Player has no groups.";
-                                if (otherGroups.endsWith(", "))
-                                    otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
-                                rows.add(otherGroups);
+                                    permissionManager.getPlayerOwnPrefix(uuid, new ResultRunnable<String>() {
 
-                                permissionManager.getPlayerOwnPermissions(playerName, new ResultRunnable<List<Permission>>() {
+                                        @Override
+                                        public void run() {
+                                            sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
+                                        }
+                                    });
 
-                                    @Override
-                                    public void run() {
-                                        List<Permission> playerPerms = result;
-                                        if (playerPerms != null && playerPerms.size() > 0)
-                                            for (Permission e : playerPerms) {
-                                                rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
-                                                        + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
-                                                        + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
+                            } else if (args[2].equalsIgnoreCase("suffix")) {
+                                if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
+                                    String suffix = "";
+                                    if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
+                                        // Input is between quote marks.
+                                        String result = "";
+                                        result += args[4].substring(1) + " ";
+
+                                        if (args.length >= 6) {
+                                            for (int i = 5; i < args.length; i++) {
+                                                result += args[i] + " ";
                                             }
-                                        else
-                                            rows.add("Player has no permissions.");
+                                        }
 
-                                        List<List<String>> list = createList(rows, 19);
-                                        sendSender(invoker, sender, ChatColor.BLUE + "Page " + (pageCopy + 1) + " of " + list.size());
+                                        if (result.toCharArray()[result.length() - 1] == ' ')
+                                            result = result.substring(0, result.length() - 1);
+                                        if (result.toCharArray()[result.length() - 1] == '"')
+                                            result = result.substring(0, result.length() - 1);
 
-                                        if (pageCopy < list.size()) {
-                                            for (String s : list.get(pageCopy))
-                                                sendSender(invoker, sender, s);
-                                        } else
-                                            sendSender(invoker, sender, "Invalid page. Page too high. ");
-                                    }
-                                });
+                                        suffix = result;
+                                    } else
+                                        suffix = args[4];
 
+                                    permissionManager.setPlayerSuffix(uuid, suffix, response);
+
+                                } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
+                                    permissionManager.setPlayerSuffix(uuid, "", response);
+                                } else
+                                    permissionManager.getPlayerOwnSuffix(uuid, new ResultRunnable<String>() {
+
+                                        @Override
+                                        public void run() {
+                                            sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
+                                        }
+                                    });
+                            } else {
+                                try {
+                                    page = Integer.parseInt(args[2]);
+                                } catch (NumberFormatException e) {
+                                    showCommandInfo(invoker, sender);
+                                }
                             }
-                        });
+                        }
+                        if (page != -1 || args.length == 2) {
+                            if (page == -1)
+                                page = 1;
+                            page--;
+                            if (page < 0)
+                                sendSender(invoker, sender, "Invalid page. Page negative.");
+                            final int pageCopy = page;
+                            // List player permissions
+                            final Queue<String> rows = new java.util.ArrayDeque<String>();
+                            rows.add(ChatColor.BLUE + "Listing permissions for player " + playerName + ".");
 
+                            permissionManager.getPlayerData(uuid, new ResultRunnable<DBDocument>() {
+
+                                @Override
+                                public void run() {
+                                    String tempUUID = "empty";
+                                    DBDocument row = result;
+                                    if (result != null)
+                                        tempUUID = row.getString("uuid");
+                                    rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
+
+                                    PermissionPlayer p = permissionManager.getPermissionsPlayer(playerName);
+                                    if (p != null) {
+                                        Group pri = p.getPrimaryGroup();
+                                        if (pri != null)
+                                            rows.add(ChatColor.GREEN + "Current Primary Group" + ChatColor.WHITE + ": " + pri.getName());
+                                        else
+                                            rows.add(ChatColor.RED + "Player has no current primary group." + ChatColor.WHITE);
+                                    }
+
+                                    permissionManager.getPlayerGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+
+                                        @Override
+                                        public void run() {
+                                            Map<String, List<CachedGroup>> groups = result;
+
+                                            // List primary groups
+                                            boolean has = false;
+                                            String primaryGroups = ChatColor.GREEN + "Primary Groups" + ChatColor.WHITE + ": ";
+                                            if (groups != null && groups.size() > 0) {
+                                                Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
+                                                while (it.hasNext()) {
+                                                    Entry<String, List<CachedGroup>> current = it.next();
+                                                    Iterator<CachedGroup> itt = current.getValue().iterator();
+                                                    while (itt.hasNext()) {
+                                                        CachedGroup cachedGroup = itt.next();
+                                                        Group group = cachedGroup.getGroup();
+                                                        if (group != null && cachedGroup.isPrimary()) {
+                                                            primaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
+                                                                    + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
+                                                            primaryGroups += ", ";
+                                                            has = true;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            if (!has)
+                                                primaryGroups += "Player has no primary groups.";
+                                            if (primaryGroups.endsWith(", "))
+                                                primaryGroups = primaryGroups.substring(0, primaryGroups.length() - 2);
+                                            rows.add(primaryGroups);
+
+                                            // List secondary groups
+                                            has = false;
+                                            String secondaryGroups = ChatColor.GREEN + "Secondary Groups" + ChatColor.WHITE + ": ";
+                                            if (groups != null && groups.size() > 0) {
+                                                Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
+                                                while (it.hasNext()) {
+                                                    Entry<String, List<CachedGroup>> current = it.next();
+                                                    Iterator<CachedGroup> itt = current.getValue().iterator();
+                                                    while (itt.hasNext()) {
+                                                        CachedGroup cachedGroup = itt.next();
+                                                        Group group = cachedGroup.getGroup();
+                                                        if (group != null && cachedGroup.isSecondary()) {
+                                                            secondaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
+                                                                    + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
+                                                            secondaryGroups += ", ";
+                                                            has = true;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            if (!has)
+                                                secondaryGroups += "Player has no secondary groups.";
+                                            if (secondaryGroups.endsWith(", "))
+                                                secondaryGroups = secondaryGroups.substring(0, secondaryGroups.length() - 2);
+                                            rows.add(secondaryGroups);
+
+                                            // List groups
+                                            String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
+                                            if (groups != null && groups.size() > 0) {
+                                                Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
+                                                while (it.hasNext()) {
+                                                    Entry<String, List<CachedGroup>> current = it.next();
+                                                    Iterator<CachedGroup> itt = current.getValue().iterator();
+                                                    while (itt.hasNext()) {
+                                                        CachedGroup cachedGroup = itt.next();
+                                                        Group group = cachedGroup.getGroup();
+                                                        if (group != null && !cachedGroup.isPrimary() && !cachedGroup.isSecondary()) {
+                                                            otherGroups += (cachedGroup.isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
+                                                                    + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
+                                                            otherGroups += ", ";
+                                                        }
+                                                    }
+                                                }
+                                            } else
+                                                otherGroups += "Player has no groups.";
+                                            if (otherGroups.endsWith(", "))
+                                                otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
+                                            rows.add(otherGroups);
+
+                                            permissionManager.getPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>() {
+
+                                                @Override
+                                                public void run() {
+                                                    List<Permission> playerPerms = result;
+                                                    if (playerPerms != null && playerPerms.size() > 0)
+                                                        for (Permission e : playerPerms) {
+                                                            rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
+                                                                    + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
+                                                                    + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
+                                                        }
+                                                    else
+                                                        rows.add("Player has no permissions.");
+
+                                                    List<List<String>> list = createList(rows, 19);
+                                                    sendSender(invoker, sender, ChatColor.BLUE + "Page " + (pageCopy + 1) + " of " + list.size());
+
+                                                    if (pageCopy < list.size()) {
+                                                        for (String s : list.get(pageCopy))
+                                                            sendSender(invoker, sender, s);
+                                                    } else
+                                                        sendSender(invoker, sender, "Invalid page. Page too high. ");
+                                                }
+                                            });
+
+                                        }
+                                    });
+
+                                }
+                            });
+                        }
                     }
-                });
-            }
+
+                }
+            });
 
             // /////////////////////////////////////////////////////////////////////////////////////////////////
             // /////////////////////////GROUP COMMAND BEGIN/////////////////////////////////////////

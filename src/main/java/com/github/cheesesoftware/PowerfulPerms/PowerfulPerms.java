@@ -14,12 +14,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.github.cheesesoftware.PowerfulPerms.Vault.VaultHook;
-import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.Versioner;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
 import com.github.cheesesoftware.PowerfulPerms.database.SQL;
+import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
@@ -78,7 +78,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {
             Bukkit.getLogger().info(consolePrefix + "Found Vault. Enabling Vault integration.");
             VaultHook vaultHook = new VaultHook();
-            vaultHook.hook(permissionManager);
+            vaultHook.hook(this);
         }
 
         this.getCommand("powerfulperms").setExecutor(new PermissionCommandExecutor(permissionManager));
@@ -165,9 +165,17 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
     @Override
     public boolean isPlayerOnline(UUID uuid) {
-        Player toReload = Bukkit.getPlayer(uuid);
-        if (toReload != null)
-            return toReload.isOnline();
+        Player player = Bukkit.getPlayer(uuid);
+        if (player != null)
+            return player.isOnline();
+        return false;
+    }
+
+    @Override
+    public boolean isPlayerOnline(String name) {
+        Player player = Bukkit.getPlayer(name);
+        if (player != null)
+            return player.isOnline();
         return false;
     }
 
@@ -176,6 +184,14 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         Player player = Bukkit.getPlayer(name);
         if (player != null)
             return player.getUniqueId();
+        return null;
+    }
+
+    @Override
+    public String getPlayerName(UUID uuid) {
+        Player player = Bukkit.getPlayer(uuid);
+        if (player != null)
+            return player.getName();
         return null;
     }
 

@@ -205,5 +205,10 @@
 			<artifactId>MVdWUpdater</artifactId>
 			<version>1.0.2-SNAPSHOT</version>
 		</dependency>
+		<dependency>
+			<groupId>AccountsClient</groupId>
+			<artifactId>AccountsClient</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 </project>

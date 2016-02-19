@@ -1,6 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.database;
 
-import com.github.cheesesoftware.PowerfulPerms.common.IScheduler;
+import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 
 public abstract class Database implements IDatabase {
     public static String tblPlayers = "players";

@@ -19,6 +19,7 @@ import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
@@ -40,6 +41,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     private final Database db;
     protected PowerfulPermsPlugin plugin;
+    protected UUIDConverter uuidConverter;
 
     public static boolean redis;
     public static String redis_ip;
@@ -54,6 +56,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public PermissionManagerBase(Database database, PowerfulPermsPlugin plugin, String serverName) {
         this.db = database;
         this.plugin = plugin;
+        uuidConverter = new UUIDConverter(db.scheduler);
+
         PermissionManagerBase.serverName = serverName;
 
         final PowerfulPermsPlugin tempPlugin = plugin;
@@ -130,6 +134,38 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
+    public void getConvertUUID(final String playerName, final ResultRunnable<UUID> resultRunnable) {
+        // If player is online, get UUID directly
+        if (plugin.isPlayerOnline(playerName)) {
+            resultRunnable.setResult(plugin.getPlayerUUID(playerName));
+            db.scheduler.runSync(resultRunnable);
+            return;
+        }
+
+        // Convert player name to UUID using Mojang API
+        db.scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                uuidConverter.Convert(playerName, new ResultRunnable<UUID>() {
+
+                    @Override
+                    public void run() {
+                        resultRunnable.setResult(this.result);
+                        db.scheduler.runSync(resultRunnable);
+                    }
+                });
+            }
+        }, false);
+
+    }
+
+    @Override
+    public IScheduler getScheduler() {
+        return db.scheduler;
+    }
+
+    @Override
     public void notifyReloadGroups() {
         if (redis) {
             plugin.runTaskAsynchronously(new Runnable() {
@@ -175,7 +211,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void notifyReloadPlayer(final String playerName) {
+    public void notifyReloadPlayer(final UUID uuid) {
         if (redis) {
             plugin.runTaskAsynchronously(new Runnable() {
                 @SuppressWarnings("deprecation")
@@ -183,7 +219,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     try {
                         Jedis jedis = pool.getResource();
                         try {
-                            jedis.publish("PowerfulPerms", playerName + " " + serverName);
+                            jedis.publish("PowerfulPerms", uuid + " " + serverName);
                         } catch (Exception e) {
                             pool.returnBrokenResource(jedis);
                         }
@@ -208,16 +244,23 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void reloadPlayer(String name) {
-        UUID uuid = plugin.getPlayerUUID(name);
-        if (uuid != null) {
-            this.loadPlayer(uuid, name, false);
+    public void reloadPlayer(UUID uuid) {
+        if (plugin.isPlayerOnline(uuid)) {
+            String name = plugin.getPlayerName(uuid);
+            if (name != null) {
+                this.loadPlayer(uuid, name, false);
+            }
         }
     }
 
     @Override
-    public void reloadPlayer(UUID uuid) {
-        this.loadPlayer(uuid, null, false);
+    public void reloadPlayer(String name) {
+        if (plugin.isPlayerOnline(name)) {
+            UUID uuid = plugin.getPlayerUUID(name);
+            if (uuid != null) {
+                this.loadPlayer(uuid, name, false);
+            }
+        }
     }
 
     /**
@@ -281,96 +324,44 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 loadPlayerFinished(row, login, uuid);
                         } else
                             loadPlayerFinished(row, login, uuid);
-                    } else if (name != null) {
-                        // The player might exist in database but has no UUID yet.
-                        db.getPlayers(name, new DBRunnable(login) {
-
-                            @Override
-                            public void run() {
-
-                                // Make sure player has no UUID in database.
-                                String tempUUID = null;
-                                final DBDocument row = result.next();
-                                if (row != null) {
-                                    String retrievedUUID = row.getString("uuid");
-                                    if (retrievedUUID != null && !retrievedUUID.isEmpty())
-                                        tempUUID = retrievedUUID;
-                                }
-
-                                if (row != null && tempUUID == null) {
-                                    // Player exists in database but has no UUID. Lets enter it.
-                                    db.setPlayerUUID(name, uuid, new DBRunnable(login) {
-
-                                        @Override
-                                        public void run() {
-                                            debug("ENTERED UUID.");
-                                            loadPlayerFinished(row, login, uuid);
-                                        }
-                                    });
-                                    return;
-                                } else {
-                                    // It did not find player with UUID.
-                                    // It found player with name.
-                                    // Player already had an UUID set.
-                                    // This player is an imposter.
-                                    // OR
-                                    // Old player in database who has namechanged long time ago. New player changed to that players name.
-
-                                    if (plugin.isOnlineMode() && row != null) {
-                                        // Set all existing players with that name to a temp name. It will be changed when they login again.
-                                        db.setPlayerName(name, "[temp]", new DBRunnable(true) {
-
-                                            @Override
-                                            public void run() {
-                                                debug("Set all players with name \"" + name + "\" to [temp]");
-                                            }
-
-                                        });
-
-                                        // set permissions names to temp name
-                                        db.updatePlayerPermissions(name, "[temp]", new DBRunnable(login) {
-
-                                            @Override
-                                            public void run() {
-                                                debug("Set all permissions with name \"" + name + "\" to [temp]");
-                                            }
-                                        });
-                                    } else if (row != null) {
-                                        // Player is imposter because offline mode is used. Do not load the player.
-                                        if (kick != null) {
-                                            kick.setResult(true);
-                                            db.scheduler.runSync(kick, true);
-                                            return;
-                                        }
-                                    }
-                                }
-
-                                // Now create the new player. It is very important that players do not have the same name because MySQL is not caps sensitive.
-                                // if row == null player does not exist in database. Create new player.
-                                db.getPlayers("[default]", new DBRunnable(login) {
-
-                                    @Override
-                                    public void run() {
-                                        final DBDocument row = result.next();
-                                        if (row != null) {
-
-                                            db.insertPlayer(uuid, name, row.getString("groups"), row.getString("prefix"), row.getString("suffix"), new DBRunnable(login) {
-
-                                                @Override
-                                                public void run() {
-                                                    debug("NEW PLAYER CREATED");
-                                                    loadPlayerFinished(row, login, uuid);
-                                                }
-                                            });
-                                        } else
-                                            plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. Please create the default user.");
-                                    }
-                                });
-                            }
-                        });
+                        /*
+                         * } else if (name != null) { // Did not find player with uuid as key // The player might exist in database but has no UUID yet. db.getPlayers(name, new DBRunnable(login) {
+                         * 
+                         * @Override public void run() {
+                         * 
+                         * // Make sure player has no UUID in database. String tempUUID = null; final DBDocument row = result.next(); if (row != null) { String retrievedUUID = row.getString("uuid");
+                         * if (retrievedUUID != null && !retrievedUUID.isEmpty()) tempUUID = retrievedUUID; }
+                         * 
+                         * if (row != null && tempUUID == null) { // Player exists in database but has no UUID. Lets enter it. db.setPlayerUUID(name, uuid, new DBRunnable(login) {
+                         * 
+                         * @Override public void run() { debug("ENTERED UUID."); loadPlayerFinished(row, login, uuid); } }); return; } else { // It did not find player with UUID. // It found player
+                         * with name. // Player already had an UUID set. // This player is an imposter. // OR // Old player in database who has namechanged long time ago. New player changed to that
+                         * players name.
+                         * 
+                         * if (plugin.isOnlineMode() && row != null) { // Set all existing players with that name to a temp name. It will be changed when they login again. db.setPlayerName(name,
+                         * "[temp]", new DBRunnable(true) {
+                         * 
+                         * @Override public void run() { debug("Set all players with name \"" + name + "\" to [temp]"); }
+                         * 
+                         * });
+                         * 
+                         * // set permissions names to temp name db.updatePlayerPermissions(name, "[temp]", new DBRunnable(login) {
+                         * 
+                         * @Override public void run() { debug("Set all permissions with name \"" + name + "\" to [temp]"); } }); } else if (row != null) { // Player is imposter because offline mode
+                         * is used. Do not load the player. if (kick != null) { kick.setResult(true); db.scheduler.runSync(kick, true); return; } } }
+                         * 
+                         * // Now create the new player. It is very important that players do not have the same name because MySQL is not caps sensitive. // if row == null player does not exist in
+                         * database. Create new player. db.getPlayers("[default]", new DBRunnable(login) {
+                         * 
+                         * @Override public void run() { final DBDocument row = result.next(); if (row != null) {
+                         * 
+                         * db.insertPlayer(uuid, name, row.getString("groups"), row.getString("prefix"), row.getString("suffix"), new DBRunnable(login) {
+                         * 
+                         * @Override public void run() { debug("NEW PLAYER CREATED"); loadPlayerFinished(row, login, uuid); } }); } else plugin.getLogger().severe(consolePrefix +
+                         * "Can not get data from user [default]. Please create the default user."); } }); } });
+                         */
                     } else
-                        debug("Could not reload player, 'name' is null.");
-
+                        debug("Could not load player, player does not exist.");
                 }
             }
         });
@@ -684,19 +675,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void getPlayerGroups(String playerName, final ResultRunnable<Map<String, List<CachedGroup>>> resultRunnable) {
+    public void getPlayerGroups(UUID uuid, final ResultRunnable<Map<String, List<CachedGroup>>> resultRunnable) {
         // If player is online, get data directly from player
-        UUID uuid = plugin.getPlayerUUID(playerName);
-        if (uuid != null) {
-            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
-            if (gp != null) {
-                resultRunnable.setResult(gp.getCachedGroups());
-                db.scheduler.runSync(resultRunnable);
-                return;
-            }
+        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        if (gp != null) {
+            resultRunnable.setResult(gp.getCachedGroups());
+            db.scheduler.runSync(resultRunnable);
+            return;
         }
 
-        db.getPlayers(playerName, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -711,8 +699,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void getPlayerData(String playerName, final ResultRunnable<DBDocument> resultRunnable) {
-        db.getPlayers(playerName, new DBRunnable() {
+    public void getPlayerData(UUID uuid, final ResultRunnable<DBDocument> resultRunnable) {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -752,19 +740,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void getPlayerPrimaryGroup(String playerName, final ResultRunnable<Group> resultRunnable) {
+    public void getPlayerPrimaryGroup(UUID uuid, final ResultRunnable<Group> resultRunnable) {
         // If player is online, get data directly from player
-        UUID uuid = plugin.getPlayerUUID(playerName);
-        if (uuid != null) {
-            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
-            if (gp != null) {
-                resultRunnable.setResult(gp.getPrimaryGroup());
-                db.scheduler.runSync(resultRunnable);
-                return;
-            }
+        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        if (gp != null) {
+            resultRunnable.setResult(gp.getPrimaryGroup());
+            db.scheduler.runSync(resultRunnable);
+            return;
         }
 
-        getPlayerGroups(playerName, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+        getPlayerGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
 
             @Override
             public void run() {
@@ -782,19 +767,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void getPlayerSecondaryGroup(String playerName, final ResultRunnable<Group> resultRunnable) {
+    public void getPlayerSecondaryGroup(UUID uuid, final ResultRunnable<Group> resultRunnable) {
         // If player is online, get data directly from player
-        UUID uuid = plugin.getPlayerUUID(playerName);
-        if (uuid != null) {
-            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
-            if (gp != null) {
-                resultRunnable.setResult(gp.getSecondaryGroup());
-                db.scheduler.runSync(resultRunnable);
-                return;
-            }
+        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        if (gp != null) {
+            resultRunnable.setResult(gp.getSecondaryGroup());
+            db.scheduler.runSync(resultRunnable);
+            return;
         }
 
-        getPlayerGroups(playerName, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+        getPlayerGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
 
             @Override
             public void run() {
@@ -814,19 +796,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
     /**
      * Gets a map containing all the permissions a player has. If player is not online data will be loaded from DB.
      */
-    public void getPlayerOwnPermissions(final String playerName, final ResultRunnable<List<Permission>> resultRunnable) {
+    public void getPlayerOwnPermissions(final UUID uuid, final ResultRunnable<List<Permission>> resultRunnable) {
         // If player is online, get data directly from player
-        UUID uuid = plugin.getPlayerUUID(playerName);
-        if (uuid != null) {
-            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
-            if (gp != null) {
-                resultRunnable.setResult(gp.getPermissions());
-                db.scheduler.runSync(resultRunnable);
-                return;
-            }
+        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        if (gp != null) {
+            resultRunnable.setResult(gp.getPermissions());
+            db.scheduler.runSync(resultRunnable);
+            return;
         }
 
-        loadPlayerPermissions(playerName, new ResultRunnable<List<Permission>>() {
+        loadPlayerPermissions(uuid, new ResultRunnable<List<Permission>>() {
 
             @Override
             public void run() {
@@ -860,42 +839,20 @@ public abstract class PermissionManagerBase implements PermissionManager {
         });
     }
 
-    protected void loadPlayerPermissions(String name, final ResultRunnable<List<Permission>> resultRunnable) {
-        db.getPlayerPermissions(name, new DBRunnable() {
-
-            @Override
-            public void run() {
-                if (result.booleanValue()) {
-                    ArrayList<Permission> perms = new ArrayList<Permission>();
-                    while (result.hasNext()) {
-                        DBDocument row = result.next();
-                        Permission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"));
-                        perms.add(tempPerm);
-                        resultRunnable.setResult(perms);
-                    }
-                    db.scheduler.runSync(resultRunnable);
-                }
-            }
-        });
-    }
-
     /**
      * Gets the prefix of a player. If player isn't online it retrieves data from database.
      */
     @Override
-    public void getPlayerPrefix(String playerName, final ResultRunnable<String> resultRunnable) {
+    public void getPlayerPrefix(UUID uuid, final ResultRunnable<String> resultRunnable) {
         // If player is online, get data directly from player
-        UUID uuid = plugin.getPlayerUUID(playerName);
-        if (uuid != null) {
-            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
-            if (gp != null) {
-                resultRunnable.setResult(gp.getPrefix());
-                db.scheduler.runSync(resultRunnable);
-                return;
-            }
+        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        if (gp != null) {
+            resultRunnable.setResult(gp.getPrefix());
+            db.scheduler.runSync(resultRunnable);
+            return;
         }
 
-        db.getPlayers(playerName, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -912,19 +869,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
      * Gets the suffix of a player. If player isn't online it retrieves data from database.
      */
     @Override
-    public void getPlayerSuffix(String playerName, final ResultRunnable<String> resultRunnable) {
+    public void getPlayerSuffix(UUID uuid, final ResultRunnable<String> resultRunnable) {
         // If player is online, get data directly from player
-        UUID uuid = plugin.getPlayerUUID(playerName);
-        if (uuid != null) {
-            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
-            if (gp != null) {
-                resultRunnable.setResult(gp.getSuffix());
-                db.scheduler.runSync(resultRunnable);
-                return;
-            }
+        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        if (gp != null) {
+            resultRunnable.setResult(gp.getSuffix());
+            db.scheduler.runSync(resultRunnable);
+            return;
         }
 
-        db.getPlayers(playerName, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -941,19 +895,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
      * Gets the own prefix of a player. If player isn't online it retrieves data from database.
      */
     @Override
-    public void getPlayerOwnPrefix(String playerName, final ResultRunnable<String> resultRunnable) {
+    public void getPlayerOwnPrefix(UUID uuid, final ResultRunnable<String> resultRunnable) {
         // If player is online, get data directly from player
-        UUID uuid = plugin.getPlayerUUID(playerName);
-        if (uuid != null) {
-            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
-            if (gp != null) {
-                resultRunnable.setResult(gp.getOwnPrefix());
-                db.scheduler.runSync(resultRunnable);
-                return;
-            }
+        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        if (gp != null) {
+            resultRunnable.setResult(gp.getOwnPrefix());
+            db.scheduler.runSync(resultRunnable);
+            return;
         }
-
-        db.getPlayers(playerName, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -970,19 +920,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
      * Gets the own suffix of a player. If player isn't online it retrieves data from database.
      */
     @Override
-    public void getPlayerOwnSuffix(String playerName, final ResultRunnable<String> resultRunnable) {
+    public void getPlayerOwnSuffix(UUID uuid, final ResultRunnable<String> resultRunnable) {
         // If player is online, get data directly from player
-        UUID uuid = plugin.getPlayerUUID(playerName);
-        if (uuid != null) {
-            PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
-            if (gp != null) {
-                resultRunnable.setResult(gp.getOwnSuffix());
-                db.scheduler.runSync(resultRunnable);
-                return;
-            }
+        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        if (gp != null) {
+            resultRunnable.setResult(gp.getOwnSuffix());
+            db.scheduler.runSync(resultRunnable);
+            return;
         }
 
-        db.getPlayers(playerName, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1034,12 +981,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
     // -------------------------------------------------------------------//
 
     @Override
-    public void addPlayerPermission(String playerName, String permission, ResponseRunnable response) {
-        addPlayerPermission(playerName, permission, "", "", response);
+    public void addPlayerPermission(UUID uuid, final String playerName, String permission, ResponseRunnable response) {
+        addPlayerPermission(uuid, permission, playerName, "", "", response);
     }
 
     @Override
-    public void addPlayerPermission(final String playerName, final String permission, final String world, final String server, final ResponseRunnable response) {
+    public void addPlayerPermission(final UUID uuid, final String playerName, final String permission, final String world, final String server, final ResponseRunnable response) {
+
         if (playerName.equalsIgnoreCase("[default]")) {
             response.setResponse(false, "You can not add permissions to the default player. Add them to a group instead and add the group to the default player.");
             db.scheduler.runSync(response);
@@ -1047,7 +995,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         }
 
         // Check if the same permission already exists.
-        db.playerHasPermission(playerName, permission, world, server, new DBRunnable() {
+        db.playerHasPermission(uuid, permission, world, server, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1055,7 +1003,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     response.setResponse(false, "Player already has the specified permission.");
                     db.scheduler.runSync(response);
                 } else {
-                    db.getPlayers(playerName, new DBRunnable() {
+                    db.getPlayer(uuid, new DBRunnable() {
 
                         @Override
                         public void run() {
@@ -1068,8 +1016,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         public void run() {
                                             if (result.booleanValue()) {
                                                 response.setResponse(true, "Permission added to player.");
-                                                reloadPlayer(playerName);
-                                                notifyReloadPlayer(playerName);
+                                                reloadPlayer(uuid);
+                                                notifyReloadPlayer(uuid);
                                             } else
                                                 response.setResponse(false, "Could not add permission. Check console for any errors.");
                                             db.scheduler.runSync(response);
@@ -1091,21 +1039,21 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void removePlayerPermission(String playerName, String permission, ResponseRunnable response) {
-        removePlayerPermission(playerName, permission, "", "", response);
+    public void removePlayerPermission(UUID uuid, String permission, ResponseRunnable response) {
+        removePlayerPermission(uuid, permission, "", "", response);
     }
 
     @Override
-    public void removePlayerPermission(final String playerName, String permission, String world, String server, final ResponseRunnable response) {
-        db.deletePlayerPermission(playerName, permission, world, server, new DBRunnable() {
+    public void removePlayerPermission(final UUID uuid, String permission, String world, String server, final ResponseRunnable response) {
+        db.deletePlayerPermission(uuid, permission, world, server, new DBRunnable() {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     int amount = result.rowsChanged();
                     response.setResponse(true, "Removed " + amount + " permissions from the player.");
-                    reloadPlayer(playerName);
-                    notifyReloadPlayer(playerName);
+                    reloadPlayer(uuid);
+                    notifyReloadPlayer(uuid);
                 } else
                     response.setResponse(false, "Player does not have the specified permission.");
                 db.scheduler.runSync(response);
@@ -1114,17 +1062,17 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void removePlayerPermissions(final String playerName, final ResponseRunnable response) {
+    public void removePlayerPermissions(final UUID uuid, final ResponseRunnable response) {
 
-        db.deletePlayerPermissions(playerName, new DBRunnable() {
+        db.deletePlayerPermissions(uuid, new DBRunnable() {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     int amount = result.rowsChanged();
                     response.setResponse(true, "Removed " + amount + " permissions from the player.");
-                    reloadPlayer(playerName);
-                    notifyReloadPlayer(playerName);
+                    reloadPlayer(uuid);
+                    notifyReloadPlayer(uuid);
                 } else
                     response.setResponse(false, "Player does not have any permissions.");
                 db.scheduler.runSync(response);
@@ -1133,15 +1081,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void setPlayerPrefix(final String playerName, String prefix, final ResponseRunnable response) {
-        db.setPlayerPrefix(playerName, prefix, new DBRunnable() {
+    public void setPlayerPrefix(final UUID uuid, String prefix, final ResponseRunnable response) {
+        db.setPlayerPrefix(uuid, prefix, new DBRunnable() {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     response.setResponse(true, "Player prefix set.");
-                    reloadPlayer(playerName);
-                    notifyReloadPlayer(playerName);
+                    reloadPlayer(uuid);
+                    notifyReloadPlayer(uuid);
                 } else
                     response.setResponse(false, "Could not set player prefix. Check console for errors.");
                 db.scheduler.runSync(response);
@@ -1150,15 +1098,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void setPlayerSuffix(final String playerName, String suffix, final ResponseRunnable response) {
-        db.setPlayerSuffix(playerName, suffix, new DBRunnable() {
+    public void setPlayerSuffix(final UUID uuid, String suffix, final ResponseRunnable response) {
+        db.setPlayerSuffix(uuid, suffix, new DBRunnable() {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     response.setResponse(true, "Player suffix set.");
-                    reloadPlayer(playerName);
-                    notifyReloadPlayer(playerName);
+                    reloadPlayer(uuid);
+                    notifyReloadPlayer(uuid);
                 } else
                     response.setResponse(false, "Could not set player suffix. Check console for errors.");
                 db.scheduler.runSync(response);
@@ -1167,7 +1115,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void setPlayerPrimaryGroup(final String playerName, final String groupName, final String server, final ResponseRunnable response) {
+    public void setPlayerPrimaryGroup(final UUID uuid, final String groupName, final String server, final ResponseRunnable response) {
         if (groupName != null && !groupName.isEmpty()) {
             Group group = getGroup(groupName);
             if (group == null) {
@@ -1177,7 +1125,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             }
         }
 
-        db.getPlayers(playerName, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1227,7 +1175,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     playerGroups.put(server, newGroupList);
 
                     String playerGroupStringOutput = getPlayerGroupsRaw(playerGroups);
-                    db.setPlayerGroups(playerName, playerGroupStringOutput, new DBRunnable() {
+                    db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
 
                         @Override
                         public void run() {
@@ -1241,8 +1189,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         response.setResponse(false, "Player does not have a primary group for the specified server.");
                                 }
 
-                                reloadPlayer(playerName);
-                                notifyReloadPlayer(playerName);
+                                reloadPlayer(uuid);
+                                notifyReloadPlayer(uuid);
                             } else
                                 response.setResponse(false, "Could not set player primary group. Check console for errors.");
                             db.scheduler.runSync(response);
@@ -1257,7 +1205,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void setPlayerSecondaryGroup(final String playerName, final String groupName, final String server, final ResponseRunnable response) {
+    public void setPlayerSecondaryGroup(final UUID uuid, final String groupName, final String server, final ResponseRunnable response) {
         if (groupName != null && !groupName.isEmpty()) {
             Group group = getGroup(groupName);
             if (group == null) {
@@ -1267,7 +1215,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             }
         }
 
-        db.getPlayers(playerName, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1317,7 +1265,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     playerGroups.put(server, newGroupList);
 
                     String playerGroupStringOutput = getPlayerGroupsRaw(playerGroups);
-                    db.setPlayerGroups(playerName, playerGroupStringOutput, new DBRunnable() {
+                    db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
 
                         @Override
                         public void run() {
@@ -1331,8 +1279,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         response.setResponse(false, "Player does not have a secondary group for the specified server.");
                                 }
 
-                                reloadPlayer(playerName);
-                                notifyReloadPlayer(playerName);
+                                reloadPlayer(uuid);
+                                notifyReloadPlayer(uuid);
                             } else
                                 response.setResponse(false, "Could not set player secondary group. Check console for errors.");
                             db.scheduler.runSync(response);
@@ -1347,17 +1295,17 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void removePlayerGroup(String playerName, String groupName, ResponseRunnable response) {
-        removePlayerGroup(playerName, groupName, "", false, response);
+    public void removePlayerGroup(UUID uuid, String groupName, ResponseRunnable response) {
+        removePlayerGroup(uuid, groupName, "", false, response);
     }
 
     @Override
-    public void removePlayerGroup(String playerName, String groupName, boolean negated, ResponseRunnable response) {
-        removePlayerGroup(playerName, groupName, "", negated, response);
+    public void removePlayerGroup(UUID uuid, String groupName, boolean negated, ResponseRunnable response) {
+        removePlayerGroup(uuid, groupName, "", negated, response);
     }
 
     @Override
-    public void removePlayerGroup(final String playerName, String groupName, String server, final boolean negated, final ResponseRunnable response) {
+    public void removePlayerGroup(final UUID uuid, String groupName, String server, final boolean negated, final ResponseRunnable response) {
         if (server.equalsIgnoreCase("all"))
             server = "";
 
@@ -1373,7 +1321,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
-        db.getPlayers(playerName, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1404,14 +1352,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     }
 
                     String playerGroupStringOutput = getPlayerGroupsRaw(playerGroups);
-                    db.setPlayerGroups(playerName, playerGroupStringOutput, new DBRunnable() {
+                    db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
 
                         @Override
                         public void run() {
                             if (result.booleanValue()) {
                                 response.setResponse(true, "Player group removed.");
-                                reloadPlayer(playerName);
-                                notifyReloadPlayer(playerName);
+                                reloadPlayer(uuid);
+                                notifyReloadPlayer(uuid);
                             } else
                                 response.setResponse(false, "Could not remove player group. Check console for errors.");
                             db.scheduler.runSync(response);
@@ -1426,17 +1374,17 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void addPlayerGroup(String playerName, String groupName, ResponseRunnable response) {
-        addPlayerGroup(playerName, groupName, false, response);
+    public void addPlayerGroup(UUID uuid, String groupName, ResponseRunnable response) {
+        addPlayerGroup(uuid, groupName, false, response);
     }
 
     @Override
-    public void addPlayerGroup(String playerName, String groupName, final boolean negated, ResponseRunnable response) {
-        addPlayerGroup(playerName, groupName, "", negated, response);
+    public void addPlayerGroup(UUID uuid, String groupName, final boolean negated, ResponseRunnable response) {
+        addPlayerGroup(uuid, groupName, "", negated, response);
     }
 
     @Override
-    public void addPlayerGroup(final String playerName, String groupName, String server, final boolean negated, final ResponseRunnable response) {
+    public void addPlayerGroup(final UUID uuid, String groupName, String server, final boolean negated, final ResponseRunnable response) {
         if (server.equalsIgnoreCase("all"))
             server = "";
 
@@ -1449,7 +1397,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
-        db.getPlayers(playerName, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1476,14 +1424,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     playerGroups.put(serv, groupList);
 
                     String playerGroupStringOutput = getPlayerGroupsRaw(playerGroups);
-                    db.setPlayerGroups(playerName, playerGroupStringOutput, new DBRunnable() {
+                    db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
 
                         @Override
                         public void run() {
                             if (result.booleanValue()) {
                                 response.setResponse(true, "Player group added.");
-                                reloadPlayer(playerName);
-                                notifyReloadPlayer(playerName);
+                                reloadPlayer(uuid);
+                                notifyReloadPlayer(uuid);
                             } else
                                 response.setResponse(false, "Could not add player group. Check console for errors.");
                             db.scheduler.runSync(response);

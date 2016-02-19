@@ -11,15 +11,18 @@ import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
 import net.milkbowl.vault.permission.Permission;
 
 public class PowerfulPerms_Vault_Permissions extends Permission {
 
+    private PowerfulPermsPlugin plugin;
     private PermissionManager permissionManager;
 
-    public PowerfulPerms_Vault_Permissions(PermissionManager permissionManager) {
-        this.permissionManager = permissionManager;
+    public PowerfulPerms_Vault_Permissions(PowerfulPermsPlugin plugin) {
+        this.plugin = plugin;
+        this.permissionManager = plugin.getPermissionManager();
     }
 
     @Override
@@ -126,7 +129,8 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerRemoveGroup(String world, String player, String group) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerRemoveGroup). Please contact the developer of PowerfulPerms(gustav9797)");
+        Bukkit.getLogger().warning(
+                PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerRemoveGroup). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
     }
 
