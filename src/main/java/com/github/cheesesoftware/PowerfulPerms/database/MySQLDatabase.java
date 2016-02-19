@@ -451,31 +451,6 @@ public class MySQLDatabase extends Database {
         }, done.sameThread());
     }
 
-    /*
-     * @Override public void updatePlayerPermissions(final String from, final String to, final DBRunnable done) { scheduler.runAsync(new Runnable() {
-     * 
-     * @Override public void run() { boolean success = true;
-     * 
-     * try { PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPermissions + " SET `playername`=? WHERE `playername`=?;"); s.setString(1, to); s.setString(2, from);
-     * s.execute(); s.close(); } catch (SQLException e) { e.printStackTrace(); success = false; }
-     * 
-     * done.setResult(new DBResult(success)); scheduler.runSync(done, done.sameThread()); } }, done.sameThread()); }
-     */
-
-    /*
-     * @Override public void deletePlayerPermission(final String name, final String permission, final String world, final String server, final DBRunnable done) { scheduler.runAsync(new Runnable() {
-     * 
-     * @Override public void run() { boolean success = true; int amount = 0;
-     * 
-     * try { PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM `" + tblPermissions + "` WHERE `playername`=? AND `permission`=? AND `server`=? AND `world`=?");
-     * 
-     * s.setString(1, name); s.setString(2, permission); s.setString(3, server); s.setString(4, world);
-     * 
-     * amount = s.executeUpdate(); if (amount <= 0) success = false; s.close(); } catch (SQLException e) { e.printStackTrace(); success = false; }
-     * 
-     * done.setResult(new DBResult(success, amount)); scheduler.runSync(done, done.sameThread()); } }, done.sameThread()); }
-     */
-
     @Override
     public void deletePlayerPermission(final UUID uuid, final String permission, final String world, final String server, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
