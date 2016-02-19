@@ -103,13 +103,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         debug("AsyncPlayerPreLoginEvent " + e.getName());
 
         if (e.getLoginResult() == AsyncPlayerPreLoginEvent.Result.ALLOWED) {
-            loadPlayer(e.getUniqueId(), e.getName(), true, new ResultRunnable<Boolean>() {
-
-                @Override
-                public void run() {
-                    e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, "Please use the correct uppercase/lowercase (caps) in your username.");
-                }
-            });
+            loadPlayer(e.getUniqueId(), e.getName(), true);
         }
     }
 
@@ -119,18 +113,12 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         debug("Player world " + e.getPlayer().getWorld().getName());
 
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
-            // Player is cached. Continue load it.
+            // Player is cached. Continue load it.s
             continueLoadPlayer(e.getPlayer());
         } else {
             // Player is not cached, Load directly on Bukkit main thread.
             debug("onPlayerJoin player isn't cached, loading directly");
-            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true, new ResultRunnable<Boolean>() {
-
-                @Override
-                public void run() {
-                    e.disallow(PlayerLoginEvent.Result.KICK_OTHER, "Please use the correct uppercase/lowercase (caps) in your username.");
-                }
-            });
+            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
 
             if (e.getResult() == PlayerLoginEvent.Result.ALLOWED)
                 this.continueLoadPlayer(e.getPlayer());

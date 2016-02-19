@@ -105,14 +105,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
 
                 @Override
                 public void run() {
-                    loadPlayer(e.getConnection().getUniqueId(), e.getConnection().getName(), true, new ResultRunnable<Boolean>() {
-
-                        @Override
-                        public void run() {
-                            e.setCancelled(true);
-                            e.setCancelReason("Please use the correct uppercase/lowercase (caps) in your username.");                            
-                        }
-                    });
+                    loadPlayer(e.getConnection().getUniqueId(), e.getConnection().getName(), true);
                     debug("LoginEvent uuid " + e.getConnection().getUniqueId().toString());
                     e.completeIntent(plugin);
                 }

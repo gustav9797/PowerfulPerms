@@ -48,7 +48,9 @@ public class PermissionCommand {
 
                         int page = -1;
                         if (args.length >= 3) {
-                            if (args[2].equalsIgnoreCase("clearperms")) {
+                            if (args[2].equalsIgnoreCase("create")) {
+                                permissionManager.createPlayer(playerName, uuid, response);
+                            } else if (args[2].equalsIgnoreCase("clearperms")) {
                                 permissionManager.removePlayerPermissions(uuid, response);
                             } else if ((args[2].equalsIgnoreCase("addprimary") || args[2].equalsIgnoreCase("setprimary") || args[2].equalsIgnoreCase("setprimarygroup")) && args.length >= 4) {
                                 String group = args[3];

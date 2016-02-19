@@ -26,6 +26,7 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
+import com.google.common.base.Charsets;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -167,7 +168,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             }, false);
         } else {
             // Generate UUID from player name
-            UUID uuid = UUID.fromString(playerName);
+            UUID uuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(Charsets.UTF_8));
             resultRunnable.setResult(uuid);
             debug("Generated offline mode UUID " + uuid);
             db.scheduler.runSync(resultRunnable);
@@ -178,6 +179,20 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public IScheduler getScheduler() {
         return db.scheduler;
+    }
+
+    @Override
+    public void createPlayer(final String name, final UUID uuid, final ResponseRunnable response) {
+        db.scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                loadPlayer(uuid, name, true);
+                response.setResponse(true, "Player created.");
+                db.scheduler.runSync(response);
+            }
+        }, false);
+
     }
 
     @Override
@@ -296,10 +311,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
-        loadPlayer(uuid, name, login, null);
-    }
-
-    protected void loadPlayer(final UUID uuid, final String name, final boolean login, final ResultRunnable<Boolean> kick) {
         debug("loadPlayer begin");
 
         db.getPlayer(uuid, new DBRunnable(login) {
@@ -353,8 +364,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             }
                         });
                     }
-                    // else
-                    // debug("Could not load player, player does not exist.");
                 }
             }
         });
