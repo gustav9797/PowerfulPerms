@@ -451,32 +451,6 @@ public class MySQLDatabase extends Database {
         }, done.sameThread());
     }
 
-    // Run if name in permissions table doesn't match player name
-    @Override
-    public void updatePlayerPermissions(final UUID uuid, final String name, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPermissions + " SET `playername`=? WHERE `playeruuid`=?;");
-                    s.setString(1, name);
-                    s.setString(2, uuid.toString());
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
-    }
-
     /*
      * @Override public void updatePlayerPermissions(final String from, final String to, final DBRunnable done) { scheduler.runAsync(new Runnable() {
      * 
