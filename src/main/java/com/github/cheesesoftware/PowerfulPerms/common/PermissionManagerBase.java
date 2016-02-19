@@ -41,7 +41,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     private final Database db;
     protected PowerfulPermsPlugin plugin;
-    protected UUIDConverter uuidConverter;
 
     public static boolean redis;
     public static String redis_ip;
@@ -56,7 +55,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public PermissionManagerBase(Database database, PowerfulPermsPlugin plugin, String serverName) {
         this.db = database;
         this.plugin = plugin;
-        uuidConverter = new UUIDConverter(db.scheduler);
 
         PermissionManagerBase.serverName = serverName;
 
@@ -142,21 +140,38 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
-        // Convert player name to UUID using Mojang API
-        db.scheduler.runAsync(new Runnable() {
+        if (plugin.isOnlineMode()) {
+            // Convert player name to UUID using Mojang API
+            db.scheduler.runAsync(new Runnable() {
 
-            @Override
-            public void run() {
-                uuidConverter.Convert(playerName, new ResultRunnable<UUID>() {
+                @Override
+                public void run() {
+                    debug("Begin UUID retrieval...");
+                    ArrayList<String> list = new ArrayList<String>();
+                    list.add(playerName);
+                    UUIDFetcher fetcher = new UUIDFetcher(list);
+                    try {
+                        Map<String, UUID> result = fetcher.call();
+                        if (result != null && result.containsKey(playerName)) {
+                            UUID uuid = result.get(playerName);
+                            debug("Retrieved UUID " + uuid);
+                            resultRunnable.setResult(uuid);
+                        } else
+                            resultRunnable.setResult(null);
 
-                    @Override
-                    public void run() {
-                        resultRunnable.setResult(this.result);
-                        db.scheduler.runSync(resultRunnable);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                });
-            }
-        }, false);
+                    db.scheduler.runSync(resultRunnable);
+                }
+            }, false);
+        } else {
+            // Generate UUID from player name
+            UUID uuid = UUID.fromString(playerName);
+            resultRunnable.setResult(uuid);
+            debug("Generated offline mode UUID " + uuid);
+            db.scheduler.runSync(resultRunnable);
+        }
 
     }
 
@@ -324,44 +339,30 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 loadPlayerFinished(row, login, uuid);
                         } else
                             loadPlayerFinished(row, login, uuid);
-                        /*
-                         * } else if (name != null) { // Did not find player with uuid as key // The player might exist in database but has no UUID yet. db.getPlayers(name, new DBRunnable(login) {
-                         * 
-                         * @Override public void run() {
-                         * 
-                         * // Make sure player has no UUID in database. String tempUUID = null; final DBDocument row = result.next(); if (row != null) { String retrievedUUID = row.getString("uuid");
-                         * if (retrievedUUID != null && !retrievedUUID.isEmpty()) tempUUID = retrievedUUID; }
-                         * 
-                         * if (row != null && tempUUID == null) { // Player exists in database but has no UUID. Lets enter it. db.setPlayerUUID(name, uuid, new DBRunnable(login) {
-                         * 
-                         * @Override public void run() { debug("ENTERED UUID."); loadPlayerFinished(row, login, uuid); } }); return; } else { // It did not find player with UUID. // It found player
-                         * with name. // Player already had an UUID set. // This player is an imposter. // OR // Old player in database who has namechanged long time ago. New player changed to that
-                         * players name.
-                         * 
-                         * if (plugin.isOnlineMode() && row != null) { // Set all existing players with that name to a temp name. It will be changed when they login again. db.setPlayerName(name,
-                         * "[temp]", new DBRunnable(true) {
-                         * 
-                         * @Override public void run() { debug("Set all players with name \"" + name + "\" to [temp]"); }
-                         * 
-                         * });
-                         * 
-                         * // set permissions names to temp name db.updatePlayerPermissions(name, "[temp]", new DBRunnable(login) {
-                         * 
-                         * @Override public void run() { debug("Set all permissions with name \"" + name + "\" to [temp]"); } }); } else if (row != null) { // Player is imposter because offline mode
-                         * is used. Do not load the player. if (kick != null) { kick.setResult(true); db.scheduler.runSync(kick, true); return; } } }
-                         * 
-                         * // Now create the new player. It is very important that players do not have the same name because MySQL is not caps sensitive. // if row == null player does not exist in
-                         * database. Create new player. db.getPlayers("[default]", new DBRunnable(login) {
-                         * 
-                         * @Override public void run() { final DBDocument row = result.next(); if (row != null) {
-                         * 
-                         * db.insertPlayer(uuid, name, row.getString("groups"), row.getString("prefix"), row.getString("suffix"), new DBRunnable(login) {
-                         * 
-                         * @Override public void run() { debug("NEW PLAYER CREATED"); loadPlayerFinished(row, login, uuid); } }); } else plugin.getLogger().severe(consolePrefix +
-                         * "Can not get data from user [default]. Please create the default user."); } }); } });
-                         */
-                    } else
-                        debug("Could not load player, player does not exist.");
+                    } else {
+                        // Could not find player with UUID. Create new player.
+                        db.getPlayers("[default]", new DBRunnable(login) {
+
+                            @Override
+                            public void run() {
+                                final DBDocument row = result.next();
+                                if (row != null) {
+
+                                    db.insertPlayer(uuid, name, row.getString("groups"), row.getString("prefix"), row.getString("suffix"), new DBRunnable(login) {
+
+                                        @Override
+                                        public void run() {
+                                            debug("NEW PLAYER CREATED");
+                                            loadPlayerFinished(row, login, uuid);
+                                        }
+                                    });
+                                } else
+                                    plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. Please create the default user.");
+                            }
+                        });
+                    }
+                    // else
+                    // debug("Could not load player, player does not exist.");
                 }
             }
         });

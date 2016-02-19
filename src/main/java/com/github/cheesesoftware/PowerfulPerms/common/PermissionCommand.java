@@ -44,6 +44,7 @@ public class PermissionCommand {
                     if (uuid == null) {
                         response.setResponse(false, "Could not find player UUID.");
                         permissionManager.getScheduler().runSync(response);
+                    } else {
 
                         int page = -1;
                         if (args.length >= 3) {

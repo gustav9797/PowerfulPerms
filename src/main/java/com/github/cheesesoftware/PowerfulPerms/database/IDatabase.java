@@ -22,7 +22,7 @@ public interface IDatabase {
 
     public void getPlayer(UUID uuid, DBRunnable done);
 
-    //public void getPlayers(String name, DBRunnable done);
+    public void getPlayers(String name, DBRunnable done);
 
     public void setPlayerName(UUID uuid, String name, DBRunnable done);
 

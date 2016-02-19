@@ -227,16 +227,31 @@ public class MySQLDatabase extends Database {
         }, done.sameThread());
     }
 
-    /*
-     * @Override public void getPlayers(final String name, final DBRunnable done) { scheduler.runAsync(new Runnable() {
-     * 
-     * @Override public void run() { DBResult result;
-     * 
-     * try { PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?"); s.setString(1, name); s.execute(); ResultSet r = s.getResultSet(); result =
-     * fromResultSet(r); s.close(); } catch (SQLException e) { e.printStackTrace(); result = new DBResult(false); }
-     * 
-     * done.setResult(result); scheduler.runSync(done, done.sameThread()); } }, done.sameThread()); }
-     */
+    @Override
+    public void getPlayers(final String name, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                DBResult result;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
+                    s.setString(1, name);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    result = fromResultSet(r);
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    result = new DBResult(false);
+                }
+
+                done.setResult(result);
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
 
     @Override
     public void setPlayerName(final UUID uuid, final String name, final DBRunnable done) {
