@@ -64,6 +64,8 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
 
         int currentVersion = Versioner.getVersionNumber(this.getDescription().getVersion());
         oldVersion = getCustomConfig().getInt("oldversion", 0);
+        if (oldVersion <= 0)
+            oldVersion = currentVersion;
 
         this.sql = new SQL(config.getString("host"), config.getString("database"), config.getInt("port"), config.getString("username"), config.getString("password"));
 
@@ -105,7 +107,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
             getProxy().getPluginManager().registerCommand(this, new PermissionCommandExecutor(permissionManager));
         }
 
-        if (oldVersion != currentVersion) {
+        if (getCustomConfig().getInt("oldversion", -1) == -1 || oldVersion != currentVersion) {
             getCustomConfig().set("oldversion", currentVersion);
             saveCustomConfig();
         }

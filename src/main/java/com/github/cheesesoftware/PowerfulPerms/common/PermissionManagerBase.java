@@ -122,6 +122,18 @@ public abstract class PermissionManagerBase implements PermissionManager {
             }
         });
 
+        if (plugin.getOldVersion() < 233) {
+            // Set [default] UUID
+            final PowerfulPermsPlugin pl = plugin;
+            db.setPlayerUUID("[default]", java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)), new DBRunnable() {
+
+                @Override
+                public void run() {
+                    pl.getLogger().info("Applied database patch #1: Inserted UUID for player [default].");
+                }
+            });
+        }
+
         // Initialize Redis
         if (redis_password == null || redis_password.isEmpty())
             pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0);
@@ -135,6 +147,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void getConvertUUID(final String playerName, final ResultRunnable<UUID> resultRunnable) {
+        if (playerName.equalsIgnoreCase("[default]")) {
+            resultRunnable.setResult(java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)));
+            db.scheduler.runSync(resultRunnable);
+            return;
+        }
+
         // If player is online, get UUID directly
         if (plugin.isPlayerOnline(playerName)) {
             resultRunnable.setResult(plugin.getPlayerUUID(playerName));

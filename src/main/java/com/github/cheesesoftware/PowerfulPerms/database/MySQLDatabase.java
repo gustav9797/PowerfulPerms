@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
 import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
+import com.google.common.base.Charsets;
 
 public class MySQLDatabase extends Database {
 
@@ -106,7 +107,9 @@ public class MySQLDatabase extends Database {
                     s.close();
 
                     // Insert player [default]
-                    s = sql.getConnection().prepareStatement("INSERT INTO `" + tblPlayers + "` (`name`, `groups`, `prefix`, `suffix`) VALUES ('[default]', ':1:p;', '', '');");
+                    s = sql.getConnection().prepareStatement(
+                            "INSERT INTO `" + tblPlayers + "` (`uuid`, `name`, `groups`, `prefix`, `suffix`) VALUES ('"
+                                    + java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)).toString() + "', '[default]', ':1:p;', '', '');");
                     s.execute();
                     s.close();
                 } catch (SQLException e1) {
@@ -265,6 +268,31 @@ public class MySQLDatabase extends Database {
                     PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `name`=? WHERE `uuid`=?;");
                     s.setString(1, name);
                     s.setString(2, uuid.toString());
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
+    public void setPlayerUUID(final String name, final UUID uuid, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `uuid`=? WHERE `name`=?;");
+                    s.setString(1, uuid.toString());
+                    s.setString(2, name);
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
