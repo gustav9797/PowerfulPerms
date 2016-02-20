@@ -20,6 +20,7 @@ import com.github.cheesesoftware.PowerfulPerms.database.SQL;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
+import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
 import com.google.common.io.ByteStreams;
 
 import net.md_5.bungee.api.ChatColor;
@@ -47,7 +48,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     public static String consolePrefix = "[PowerfulPerms] ";
     public static boolean bungee_command = false;
     public static boolean debug = false;
-    public static boolean onlineMode = false;
+    public static ServerMode serverMode = ServerMode.ONLINE;
     public static int oldVersion = 0;
 
     @Override
@@ -73,7 +74,13 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
 
         bungee_command = config.getBoolean("bungee_command");
         debug = config.getBoolean("debug");
-        onlineMode = config.getBoolean("onlinemode", true);
+        if (config.getBoolean("onlinemode", false) == true)
+            serverMode = ServerMode.ONLINE;
+        else if (config.getBoolean("onlinemode", true) == false)
+            serverMode = ServerMode.OFFLINE;
+        else if (config.getString("onlinemode", "default").equalsIgnoreCase("mixed"))
+            serverMode = ServerMode.MIXED;
+        getLogger().info("PowerfulPerms is now running on server mode " + serverMode);
 
         try {
             if (sql.getConnection() == null || sql.getConnection().isClosed()) {
@@ -212,8 +219,8 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     }
 
     @Override
-    public boolean isOnlineMode() {
-        return onlineMode;
+    public ServerMode getServerMode() {
+        return serverMode;
     }
 
     @Override

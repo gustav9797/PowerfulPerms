@@ -26,6 +26,7 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
 import com.google.common.base.Charsets;
 
 import redis.clients.jedis.Jedis;
@@ -141,37 +142,87 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
-        if (plugin.isOnlineMode()) {
-            // Convert player name to UUID using Mojang API
-            db.scheduler.runAsync(new Runnable() {
+        if (plugin.getServerMode() == ServerMode.MIXED) {
+            // Generate offline UUID and check database if it exists. If so, return it.
+
+            // Generate UUID from player name
+            final UUID uuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(Charsets.UTF_8));
+            debug("Generated mixed mode offline UUID " + uuid);
+
+            db.getPlayer(uuid, new DBRunnable() {
 
                 @Override
                 public void run() {
-                    debug("Begin UUID retrieval...");
-                    ArrayList<String> list = new ArrayList<String>();
-                    list.add(playerName);
-                    UUIDFetcher fetcher = new UUIDFetcher(list);
-                    try {
-                        Map<String, UUID> result = fetcher.call();
-                        if (result != null && result.containsKey(playerName)) {
-                            UUID uuid = result.get(playerName);
-                            debug("Retrieved UUID " + uuid);
+                    if (result.hasNext()) {
+                        DBDocument row = result.next();
+                        if (row != null) {
                             resultRunnable.setResult(uuid);
-                        } else
-                            resultRunnable.setResult(null);
+                            db.scheduler.runSync(resultRunnable);
+                        } else {
+                            // Could not find offline UUID in player database. Get online UUID.
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                            // Convert player name to UUID using Mojang API
+                            db.scheduler.runAsync(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    debug("Begin UUID retrieval...");
+                                    ArrayList<String> list = new ArrayList<String>();
+                                    list.add(playerName);
+                                    UUIDFetcher fetcher = new UUIDFetcher(list);
+                                    try {
+                                        Map<String, UUID> result = fetcher.call();
+                                        if (result != null && result.containsKey(playerName)) {
+                                            UUID uuid = result.get(playerName);
+                                            debug("Retrieved UUID " + uuid);
+                                            resultRunnable.setResult(uuid);
+                                        } else
+                                            resultRunnable.setResult(null);
+
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    db.scheduler.runSync(resultRunnable);
+                                }
+                            }, false);
+                        }
                     }
                     db.scheduler.runSync(resultRunnable);
                 }
-            }, false);
+            });
         } else {
-            // Generate UUID from player name
-            UUID uuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(Charsets.UTF_8));
-            resultRunnable.setResult(uuid);
-            debug("Generated offline mode UUID " + uuid);
-            db.scheduler.runSync(resultRunnable);
+            if (plugin.getServerMode() == ServerMode.ONLINE) {
+                // Convert player name to UUID using Mojang API
+                db.scheduler.runAsync(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        debug("Begin UUID retrieval...");
+                        ArrayList<String> list = new ArrayList<String>();
+                        list.add(playerName);
+                        UUIDFetcher fetcher = new UUIDFetcher(list);
+                        try {
+                            Map<String, UUID> result = fetcher.call();
+                            if (result != null && result.containsKey(playerName)) {
+                                UUID uuid = result.get(playerName);
+                                debug("Retrieved UUID " + uuid);
+                                resultRunnable.setResult(uuid);
+                            } else
+                                resultRunnable.setResult(null);
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        db.scheduler.runSync(resultRunnable);
+                    }
+                }, false);
+            } else {
+                // Generate UUID from player name
+                UUID uuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(Charsets.UTF_8));
+                resultRunnable.setResult(uuid);
+                debug("Generated offline mode UUID " + uuid);
+                db.scheduler.runSync(resultRunnable);
+            }
         }
 
     }
