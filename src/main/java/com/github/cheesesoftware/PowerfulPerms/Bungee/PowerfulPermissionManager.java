@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import redis.clients.jedis.Jedis;
@@ -61,7 +62,8 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                                                 loadGroups();
                                                 tempPlugin.getLogger().info(consolePrefix + "Reloaded all players. ");
                                             } else {
-                                                ProxiedPlayer player = tempPlugin.getProxy().getPlayer(first);
+                                                UUID uuid = UUID.fromString(first);
+                                                ProxiedPlayer player = tempPlugin.getProxy().getPlayer(uuid);
                                                 if (player != null) {
                                                     loadPlayer(player);
                                                     tempPlugin.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");

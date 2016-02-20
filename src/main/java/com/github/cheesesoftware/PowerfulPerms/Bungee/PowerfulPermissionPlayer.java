@@ -20,7 +20,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     }
 
     public PowerfulPermissionPlayer(ProxiedPlayer p, PermissionPlayerBase base, PowerfulPermsPlugin plugin) {
-        super(base.getCachedGroups(), base.getPermissions(), base.getPrefix(), base.getSuffix(), plugin);
+        super(base.getCachedGroups(), base.getPermissions(), base.getOwnPrefix(), base.getOwnSuffix(), plugin);
         this.player = p;
     }
 
