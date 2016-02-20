@@ -10,7 +10,7 @@ import com.github.cheesesoftware.PowerfulPerms.common.PermissionCommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 
 public class PermissionCommandExecutor implements ICommand, CommandExecutor {
-    
+
     private PermissionManager permissionManager;
 
     protected PermissionCommandExecutor(PermissionManager permissionManager) {
@@ -22,16 +22,16 @@ public class PermissionCommandExecutor implements ICommand, CommandExecutor {
         PermissionCommand cmd = new PermissionCommand(permissionManager);
         return cmd.onCommand(this, sender.getName(), args);
     }
-    
+
     @Override
     public void sendSender(String sender, String reply) {
         CommandSender commandSender = null;
-        if(sender.equalsIgnoreCase("console"))
+        if (sender.equalsIgnoreCase("console"))
             commandSender = Bukkit.getConsoleSender();
         else
-            commandSender = Bukkit.getPlayer(sender);
-        
-        if(commandSender != null) {
+            commandSender = Bukkit.getPlayerExact(sender);
+
+        if (commandSender != null) {
             commandSender.sendMessage(reply);
         }
     }

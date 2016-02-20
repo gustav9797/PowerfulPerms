@@ -180,7 +180,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
     @Override
     public boolean isPlayerOnline(String name) {
-        Player player = Bukkit.getPlayer(name);
+        Player player = Bukkit.getPlayerExact(name);
         if (player != null)
             return player.isOnline();
         return false;
@@ -188,7 +188,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
     @Override
     public UUID getPlayerUUID(String name) {
-        Player player = Bukkit.getPlayer(name);
+        Player player = Bukkit.getPlayerExact(name);
         if (player != null)
             return player.getUniqueId();
         return null;

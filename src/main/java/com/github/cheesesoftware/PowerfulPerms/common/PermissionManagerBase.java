@@ -142,54 +142,77 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
+        // Check if DB contains online uuid. If so, return it.
+        // Check if DB contains offline uuid. If so, return it. If not, return online uuid.
         if (plugin.getServerMode() == ServerMode.MIXED) {
             // Generate offline UUID and check database if it exists. If so, return it.
 
-            // Generate UUID from player name
-            final UUID uuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(Charsets.UTF_8));
-            debug("Generated mixed mode offline UUID " + uuid);
-
-            db.getPlayer(uuid, new DBRunnable() {
+            db.scheduler.runAsync(new Runnable() {
 
                 @Override
                 public void run() {
-                    if (result.hasNext()) {
-                        DBDocument row = result.next();
-                        if (row != null) {
-                            resultRunnable.setResult(uuid);
-                            db.scheduler.runSync(resultRunnable);
-                        } else {
-                            // Could not find offline UUID in player database. Get online UUID.
+                    final UUID offlineuuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(Charsets.UTF_8));
+                    debug("Generated mixed mode offline UUID " + offlineuuid);
 
-                            // Convert player name to UUID using Mojang API
-                            db.scheduler.runAsync(new Runnable() {
+                    // Get online UUID.
 
+                    debug("Begin UUID retrieval...");
+                    ArrayList<String> list = new ArrayList<String>();
+                    list.add(playerName);
+                    UUIDFetcher fetcher = new UUIDFetcher(list);
+                    try {
+                        Map<String, UUID> result = fetcher.call();
+                        if (result != null && result.containsKey(playerName)) {
+                            final UUID onlineuuid = result.get(playerName);
+                            debug("Retrieved UUID " + onlineuuid);
+                            // Check if database contains online UUID.
+
+                            db.getPlayer(onlineuuid, new DBRunnable() {
                                 @Override
                                 public void run() {
-                                    debug("Begin UUID retrieval...");
-                                    ArrayList<String> list = new ArrayList<String>();
-                                    list.add(playerName);
-                                    UUIDFetcher fetcher = new UUIDFetcher(list);
-                                    try {
-                                        Map<String, UUID> result = fetcher.call();
-                                        if (result != null && result.containsKey(playerName)) {
-                                            UUID uuid = result.get(playerName);
-                                            debug("Retrieved UUID " + uuid);
-                                            resultRunnable.setResult(uuid);
-                                        } else
-                                            resultRunnable.setResult(null);
+                                    if (result.hasNext()) {
+                                        // Database contains online UUID. Return it.
+                                        debug("online UUID found in DB");
+                                        resultRunnable.setResult(onlineuuid);
+                                        db.scheduler.runSync(resultRunnable);
+                                    } else {
+                                        // Could not find online UUID in database.
+                                        // Check if offline UUID exists.
+                                        debug("online UUID not found in DB");
+                                        db.getPlayer(offlineuuid, new DBRunnable() {
 
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
+                                            @Override
+                                            public void run() {
+                                                if (result.hasNext()) {
+                                                    // Found offline UUID in database. Return it.
+                                                    debug("offline UUID found in DB, return offline");
+                                                    resultRunnable.setResult(offlineuuid);
+                                                } else {
+                                                    // Could not find neither of offline or online UUIDs in database.
+                                                    // Online UUID exists for player name so return it.
+                                                    debug("offline UUID not found in DB, return online");
+                                                    resultRunnable.setResult(onlineuuid);
+                                                }
+                                                db.scheduler.runSync(resultRunnable);
+                                            }
+                                        });
                                     }
-                                    db.scheduler.runSync(resultRunnable);
+
                                 }
-                            }, false);
+                            });
+                        } else {
+                            // Could not find online UUID for specified name
+                            debug("Did not find online UUID for player name " + playerName + ", return offline");
+                            resultRunnable.setResult(offlineuuid);
+                            db.scheduler.runSync(resultRunnable);
                         }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    db.scheduler.runSync(resultRunnable);
                 }
-            });
+
+            }, false);
+
         } else {
             if (plugin.getServerMode() == ServerMode.ONLINE) {
                 // Convert player name to UUID using Mojang API
