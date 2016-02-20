@@ -278,28 +278,6 @@ public class MySQLDatabase extends Database {
         }, done.sameThread());
     }
 
-    /*
-     * @Override public void setPlayerName(final String from, final String to, final DBRunnable done) { scheduler.runAsync(new Runnable() {
-     * 
-     * @Override public void run() { boolean success = true;
-     * 
-     * try { PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `name`=? WHERE `name`=?;"); s.setString(1, to); s.setString(2, from); s.execute(); s.close(); }
-     * catch (SQLException e) { e.printStackTrace(); success = false; }
-     * 
-     * done.setResult(new DBResult(success)); scheduler.runSync(done, done.sameThread()); } }, done.sameThread()); }
-     */
-
-    /*
-     * @Override public void setPlayerUUID(final String name, final UUID uuid, final DBRunnable done) { scheduler.runAsync(new Runnable() {
-     * 
-     * @Override public void run() { boolean success = true;
-     * 
-     * try { PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `uuid`=? WHERE `name`=?;"); s.setString(1, uuid.toString()); s.setString(2, name); s.execute();
-     * s.close(); } catch (SQLException e) { e.printStackTrace(); success = false; }
-     * 
-     * done.setResult(new DBResult(success)); scheduler.runSync(done, done.sameThread()); } }, done.sameThread()); }
-     */
-
     @Override
     public void getGroups(final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
@@ -377,17 +355,6 @@ public class MySQLDatabase extends Database {
         }, done.sameThread());
     }
 
-    /*
-     * @Override public void getPlayerPermissions(final String name, final DBRunnable done) { scheduler.runAsync(new Runnable() {
-     * 
-     * @Override public void run() { DBResult result;
-     * 
-     * try { PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPermissions + " WHERE `playername`=?"); s.setString(1, name); s.execute(); ResultSet r = s.getResultSet();
-     * result = fromResultSet(r); s.close(); } catch (SQLException e) { e.printStackTrace(); result = new DBResult(false); }
-     * 
-     * done.setResult(result); scheduler.runSync(done, done.sameThread()); } }, done.sameThread()); }
-     */
-
     @Override
     public void playerHasPermission(final UUID uuid, final String permission, final String world, final String server, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
@@ -438,6 +405,32 @@ public class MySQLDatabase extends Database {
                     s.setString(4, permission);
                     s.setString(5, world);
                     s.setString(6, server);
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    // Run if name in permissions table doesn't match player name
+    @Override
+    public void updatePlayerPermissions(final UUID uuid, final String name, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPermissions + " SET `playername`=? WHERE `playeruuid`=?;");
+                    s.setString(1, name);
+                    s.setString(2, uuid.toString());
                     s.execute();
                     s.close();
                 } catch (SQLException e) {

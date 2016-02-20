@@ -336,6 +336,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     @Override
                                     public void run() {
                                         debug("PLAYER NAME UPDATED. NAMECHANGE");
+                                        db.updatePlayerPermissions(uuid, name, new DBRunnable(login) {
+
+                                            @Override
+                                            public void run() {
+                                                debug("UPDATED PLAYER PERMISSIONS");
+                                                loadPlayerFinished(row, login, uuid);
+                                            }
+                                        });
                                     }
                                 });
                             } else

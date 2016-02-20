@@ -35,6 +35,8 @@ public interface IDatabase {
     public void playerHasPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
 
     public void insertPermission(UUID uuid, String name, String group, String permission, String world, String server, DBRunnable done);
+    
+    public void updatePlayerPermissions(UUID uuid, String name, DBRunnable done);
 
     public void deletePlayerPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
 
