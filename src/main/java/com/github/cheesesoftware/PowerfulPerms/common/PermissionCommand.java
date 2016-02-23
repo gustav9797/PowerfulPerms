@@ -52,30 +52,6 @@ public class PermissionCommand {
                                 permissionManager.createPlayer(playerName, uuid, response);
                             } else if (args[2].equalsIgnoreCase("clearperms")) {
                                 permissionManager.removePlayerPermissions(uuid, response);
-                            } else if ((args[2].equalsIgnoreCase("addprimary") || args[2].equalsIgnoreCase("setprimary") || args[2].equalsIgnoreCase("setprimarygroup")) && args.length >= 4) {
-                                String group = args[3];
-                                String server = "";
-                                if (args.length >= 5)
-                                    server = args[4];
-                                permissionManager.setPlayerPrimaryGroup(uuid, group, server, response);
-                            } else if (args[2].equalsIgnoreCase("removeprimary") || args[2].equalsIgnoreCase("removeprimarygroup")) {
-                                String server = "";
-                                if (args.length >= 4)
-                                    server = args[3];
-
-                                permissionManager.setPlayerPrimaryGroup(uuid, "", server, response);
-                            } else if ((args[2].equalsIgnoreCase("addsecondary") || args[2].equalsIgnoreCase("setsecondary") || args[2].equalsIgnoreCase("setsecondarygroup")) && args.length >= 4) {
-                                String group = args[3];
-                                String server = "";
-                                if (args.length >= 5)
-                                    server = args[4];
-                                permissionManager.setPlayerSecondaryGroup(uuid, group, server, response);
-                            } else if (args[2].equalsIgnoreCase("removesecondary") || args[2].equalsIgnoreCase("removesecondarygroup")) {
-                                String server = "";
-                                if (args.length >= 4)
-                                    server = args[3];
-
-                                permissionManager.setPlayerSecondaryGroup(uuid, "", server, response);
                             } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
                                 String group = args[3];
                                 String server = "";
@@ -220,72 +196,11 @@ public class PermissionCommand {
                                         tempUUID = row.getString("uuid");
                                     rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
 
-                                    PermissionPlayer p = permissionManager.getPermissionsPlayer(playerName);
-                                    if (p != null) {
-                                        Group pri = p.getPrimaryGroup();
-                                        if (pri != null)
-                                            rows.add(ChatColor.GREEN + "Current Primary Group" + ChatColor.WHITE + ": " + pri.getName());
-                                        else
-                                            rows.add(ChatColor.RED + "Player has no current primary group." + ChatColor.WHITE);
-                                    }
-
                                     permissionManager.getPlayerGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
 
                                         @Override
                                         public void run() {
                                             Map<String, List<CachedGroup>> groups = result;
-
-                                            // List primary groups
-                                            boolean has = false;
-                                            String primaryGroups = ChatColor.GREEN + "Primary Groups" + ChatColor.WHITE + ": ";
-                                            if (groups != null && groups.size() > 0) {
-                                                Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
-                                                while (it.hasNext()) {
-                                                    Entry<String, List<CachedGroup>> current = it.next();
-                                                    Iterator<CachedGroup> itt = current.getValue().iterator();
-                                                    while (itt.hasNext()) {
-                                                        CachedGroup cachedGroup = itt.next();
-                                                        Group group = cachedGroup.getGroup();
-                                                        if (group != null && cachedGroup.isPrimary()) {
-                                                            primaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
-                                                                    + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
-                                                            primaryGroups += ", ";
-                                                            has = true;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            if (!has)
-                                                primaryGroups += "Player has no primary groups.";
-                                            if (primaryGroups.endsWith(", "))
-                                                primaryGroups = primaryGroups.substring(0, primaryGroups.length() - 2);
-                                            rows.add(primaryGroups);
-
-                                            // List secondary groups
-                                            has = false;
-                                            String secondaryGroups = ChatColor.GREEN + "Secondary Groups" + ChatColor.WHITE + ": ";
-                                            if (groups != null && groups.size() > 0) {
-                                                Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
-                                                while (it.hasNext()) {
-                                                    Entry<String, List<CachedGroup>> current = it.next();
-                                                    Iterator<CachedGroup> itt = current.getValue().iterator();
-                                                    while (itt.hasNext()) {
-                                                        CachedGroup cachedGroup = itt.next();
-                                                        Group group = cachedGroup.getGroup();
-                                                        if (group != null && cachedGroup.isSecondary()) {
-                                                            secondaryGroups += ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
-                                                                    + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
-                                                            secondaryGroups += ", ";
-                                                            has = true;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            if (!has)
-                                                secondaryGroups += "Player has no secondary groups.";
-                                            if (secondaryGroups.endsWith(", "))
-                                                secondaryGroups = secondaryGroups.substring(0, secondaryGroups.length() - 2);
-                                            rows.add(secondaryGroups);
 
                                             // List groups
                                             String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
@@ -297,7 +212,7 @@ public class PermissionCommand {
                                                     while (itt.hasNext()) {
                                                         CachedGroup cachedGroup = itt.next();
                                                         Group group = cachedGroup.getGroup();
-                                                        if (group != null && !cachedGroup.isPrimary() && !cachedGroup.isSecondary()) {
+                                                        if (group != null) {
                                                             otherGroups += (cachedGroup.isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
                                                                     + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
                                                             otherGroups += ", ";

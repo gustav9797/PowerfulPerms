@@ -9,8 +9,6 @@ import redis.clients.jedis.JedisPubSub;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
-import com.github.cheesesoftware.PowerfulPermsAPI.Group;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
@@ -157,16 +155,6 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         } else
             debug("continueLoadPlayer: ProxiedPlayer or PermissionPlayerBase is null");
         debug("continueLoadPlayer finish");
-    }
-
-    /**
-     * Returns the primary group of an online player.
-     */
-    public Group getPlayerPrimaryGroup(ProxiedPlayer p) {
-        PowerfulPermissionPlayer gp = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
-        if (gp != null)
-            return gp.getPrimaryGroup();
-        return null;
     }
 
 }

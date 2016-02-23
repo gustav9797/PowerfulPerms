@@ -21,9 +21,7 @@ import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
-import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
@@ -216,16 +214,6 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             players.put(p.getUniqueId(), permissionsPlayer);
         }
         debug("continueLoadPlayer end");
-    }
-
-    /**
-     * Returns the primary group of an online player.
-     */
-    public Group getPlayerPrimaryGroup(Player p) {
-        PowerfulPermissionPlayer gp = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
-        if (gp != null)
-            return gp.getPrimaryGroup();
-        return null;
     }
 
 }

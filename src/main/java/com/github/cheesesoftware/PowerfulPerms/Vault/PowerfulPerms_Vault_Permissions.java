@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -17,11 +18,9 @@ import net.milkbowl.vault.permission.Permission;
 
 public class PowerfulPerms_Vault_Permissions extends Permission {
 
-    private PowerfulPermsPlugin plugin;
     private PermissionManager permissionManager;
 
     public PowerfulPerms_Vault_Permissions(PowerfulPermsPlugin plugin) {
-        this.plugin = plugin;
         this.permissionManager = plugin.getPermissionManager();
     }
 
@@ -56,9 +55,12 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     public String getPrimaryGroup(String world, String player) {
         PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
         if (p != null) {
-            Group primary = p.getPrimaryGroup();
-            if (primary != null)
-                return primary.getName();
+            List<Group> groups = p.getGroups();
+            if (groups != null) {
+                Iterator<Group> it = groups.iterator();
+                if (it.hasNext())
+                    return it.next().getName();
+            }
         }
         return null;
     }

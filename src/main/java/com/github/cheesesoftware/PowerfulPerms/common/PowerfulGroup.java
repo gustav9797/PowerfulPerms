@@ -13,20 +13,20 @@ public class PowerfulGroup implements Group {
     private String name;
     private List<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
     private List<Group> parents;
+    private String ladder;
+    private int rank;
 
-    // private String prefixRaw;
-    // private String suffixRaw;
     private HashMap<String, String> serverPrefix = new HashMap<String, String>();
     private HashMap<String, String> serverSuffix = new HashMap<String, String>();
 
-    public PowerfulGroup(int id, String name, List<PowerfulPermission> permissions, String prefixRaw, String suffixRaw) {
+    public PowerfulGroup(int id, String name, List<PowerfulPermission> permissions, String prefixRaw, String suffixRaw, String ladder, int rank) {
         this.id = id;
         this.name = name;
         this.permissions = permissions;
-        // this.prefixRaw = prefixRaw;
-        // this.suffixRaw = suffixRaw;
         this.serverPrefix = getPrefixSuffix(prefixRaw);
         this.serverSuffix = getPrefixSuffix(suffixRaw);
+        this.ladder = ladder;
+        this.rank = rank;
     }
 
     public static HashMap<String, String> getPrefixSuffix(String input) {
@@ -50,6 +50,13 @@ public class PowerfulGroup implements Group {
             output += entry.getKey() + "::::::::" + entry.getValue() + ";;;;;;;;";
         }
         return output;
+    }
+
+    public static String encodeParents(List<Group> parents) {
+        String raw = "";
+        for (Group g : parents)
+            raw += g.getId() + ";";
+        return raw;
     }
 
     @Override
@@ -84,12 +91,12 @@ public class PowerfulGroup implements Group {
     }
 
     @Override
-    public HashMap<String, String> getServerPrefix() {
+    public HashMap<String, String> getPrefixes() {
         return this.serverPrefix;
     }
 
     @Override
-    public HashMap<String, String> getServerSuffix() {
+    public HashMap<String, String> getSuffixes() {
         return this.serverSuffix;
     }
 
@@ -109,15 +116,18 @@ public class PowerfulGroup implements Group {
     }
 
     @Override
-    public String getRawOwnParents() {
-        String raw = "";
-        for (Group g : parents)
-            raw += g.getId() + ";";
-        return raw;
+    public String getLadder() {
+        return this.ladder;
+    }
+
+    @Override
+    public int getRank() {
+        return this.rank;
     }
 
     @Override
     public void setParents(List<Group> parents) {
         this.parents = parents;
     }
+
 }

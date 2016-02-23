@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.ListIterator;
+import java.util.TreeMap;
 
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
@@ -17,8 +18,6 @@ public class PermissionPlayerBase implements PermissionPlayer {
     protected HashMap<String, List<CachedGroup>> groups = new HashMap<String, List<CachedGroup>>(); // Contains -all- groups for this player.
 
     protected List<Group> currentGroups = new ArrayList<Group>();
-    protected Group currentPrimaryGroup = null;
-    protected Group currentSecondaryGroup = null;
 
     protected List<Permission> permissions = new ArrayList<Permission>();
     protected List<String> realPermissions = new ArrayList<String>();
@@ -48,8 +47,6 @@ public class PermissionPlayerBase implements PermissionPlayer {
             server = "";
 
         this.currentGroups = getGroups(server);
-        this.currentPrimaryGroup = this.getPrimaryGroup(server);
-        this.currentSecondaryGroup = this.getSecondaryGroup(server);
     }
 
     public void setGroups(HashMap<String, List<CachedGroup>> groups) {
@@ -65,86 +62,6 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns all primary groups a player has, indexed by server name.
-     */
-    @Override
-    public HashMap<String, Group> getPrimaryGroups() {
-        HashMap<String, Group> tempPrimaryGroups = new HashMap<String, Group>();
-        for (Entry<String, List<CachedGroup>> entry : groups.entrySet()) {
-            for (CachedGroup cachedGroup : entry.getValue()) {
-                if (cachedGroup.isPrimary())
-                    tempPrimaryGroups.put(entry.getKey(), cachedGroup.getGroup());
-            }
-        }
-        return tempPrimaryGroups;
-    }
-
-    /**
-     * Returns the primary group for a specific server.
-     */
-    @Override
-    public Group getPrimaryGroup(String server) {
-        HashMap<String, Group> primaryGroups = this.getPrimaryGroups();
-        Group primary = primaryGroups.get(server);
-        if (primary != null)
-            return primary;
-        Group second = primaryGroups.get("");
-        if (second != null)
-            return second;
-        // Has no primary groups, use old system
-        List<CachedGroup> temp = groups.get("");
-        if (temp != null) {
-            Iterator<CachedGroup> it = temp.iterator();
-            Group group = it.next().getGroup();
-            if (group != null)
-                plugin.debug("Database syntax for player is old. Setting " + group.getName() + " as current primary.");
-            return group;
-        }
-        return null;
-    }
-
-    /**
-     * Returns the primary group for the current server.
-     */
-    @Override
-    public Group getPrimaryGroup() {
-        return this.currentPrimaryGroup;
-    }
-
-    /**
-     * Returns all secondary groups a player has, indexed by server name.
-     */
-    @Override
-    public HashMap<String, Group> getSecondaryGroups() {
-        HashMap<String, Group> tempSecondaryGroups = new HashMap<String, Group>();
-        for (Entry<String, List<CachedGroup>> entry : groups.entrySet()) {
-            for (CachedGroup cachedGroup : entry.getValue()) {
-                if (cachedGroup.isSecondary())
-                    tempSecondaryGroups.put(entry.getKey(), cachedGroup.getGroup());
-            }
-        }
-        return tempSecondaryGroups;
-    }
-
-    /**
-     * Returns the secondary group for a specific server.
-     */
-    @Override
-    public Group getSecondaryGroup(String server) {
-        HashMap<String, Group> secondaryGroups = this.getSecondaryGroups();
-        Group secondary = secondaryGroups.get(server);
-        return secondary;
-    }
-
-    /**
-     * Returns the primary group for the current server.
-     */
-    @Override
-    public Group getSecondaryGroup() {
-        return this.currentSecondaryGroup;
-    }
-
-    /**
      * Returns all groups a player has, including primary groups, indexed by server name.
      */
     @Override
@@ -153,7 +70,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns a list of cached groups including primary groups which apply to a specific server.
+     * Returns a list of cached groups which apply to a specific server.
      */
     @Override
     public List<CachedGroup> getCachedGroups(String server) {
@@ -175,7 +92,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns a list of groups including primary groups which apply to a specific server.
+     * Returns a list of groups which apply to a specific server. Removes negated groups.
      */
     @Override
     public List<Group> getGroups(String server) {
@@ -206,7 +123,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns a list of groups including primary groups which apply to the current server.
+     * Returns a list of groups which apply to the current server.
      */
     @Override
     public List<Group> getGroups() {
@@ -301,77 +218,93 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns the player's prefix. If player has no prefix set, return the prefix of the primary group.
-     * 
-     * @return The prefix.
+     * Returns the player's prefix on a specific ladder.
      */
     @Override
-    public String getPrefix(String server) {
-        Group group = getPrimaryGroup();
-        if (!prefix.isEmpty())
-            return prefix;
-        if (group != null) {
-            String groupPrefix = group.getPrefix(server);
-            if (groupPrefix != null && !groupPrefix.isEmpty())
-                return groupPrefix;
+    public String getPrefix(String ladder) {
+        List<Group> input = getGroups();
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        // Sort groups by rank if same ladder
+        for (Group group : input) {
+            if (group.getLadder().equalsIgnoreCase(ladder)) {
+                sortedGroups.put(group.getRank(), group);
+            }
         }
-        group = getSecondaryGroup();
-        if (group != null) {
-            String groupPrefix = group.getPrefix(server);
-            if (groupPrefix != null)
-                return groupPrefix;
+
+        // Return prefix from group with highest rank, if not found, move on to next rank
+        Iterator<Group> it = sortedGroups.descendingMap().values().iterator();
+        while (it.hasNext()) {
+            Group group = it.next();
+            String prefix = group.getPrefix(PermissionManagerBase.serverName);
+            if (!prefix.isEmpty())
+                return prefix;
         }
-        return "";
+        return null;
     }
 
     /**
-     * Returns the player's suffix. If player has no suffix set, return the suffix of the primary group.
-     * 
-     * @return The suffix.
+     * Returns the player's suffix on a specific ladder.
      */
     @Override
-    public String getSuffix(String server) {
-        if (!suffix.isEmpty())
-            return suffix;
-        Group group = getPrimaryGroup();
-        if (group != null) {
-            String groupSuffix = group.getSuffix(server);
-            if (groupSuffix != null && !groupSuffix.isEmpty())
-                return groupSuffix;
+    public String getSuffix(String ladder) {
+        List<Group> input = getGroups();
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        // Sort groups by rank if same ladder
+        for (Group group : input) {
+            if (group.getLadder().equalsIgnoreCase(ladder)) {
+                sortedGroups.put(group.getRank(), group);
+            }
         }
-        group = getSecondaryGroup();
-        if (group != null) {
-            String groupSuffix = group.getSuffix(server);
-            if (groupSuffix != null)
-                return groupSuffix;
+
+        // Return prefix from group with highest rank, if not found, move on to next rank
+        Iterator<Group> it = sortedGroups.descendingMap().values().iterator();
+        while (it.hasNext()) {
+            Group group = it.next();
+            String suffix = group.getSuffix(PermissionManagerBase.serverName);
+            if (!suffix.isEmpty())
+                return suffix;
         }
-        return "";
+        return null;
     }
 
     /**
-     * Returns the player's prefix. If player has no prefix set, return the prefix of the primary group.
-     * 
-     * @return The prefix.
+     * Returns the player's default prefix. Uses group order.
      */
     @Override
     public String getPrefix() {
-        return getPrefix(PermissionManagerBase.serverName);
+        if (!prefix.isEmpty())
+            return prefix;
+        List<Group> input = getGroups();
+        Iterator<Group> it = input.iterator();
+        while (it.hasNext()) {
+            Group group = it.next();
+            String prefix = group.getPrefix(PermissionManagerBase.serverName);
+            if (!prefix.isEmpty())
+                return prefix;
+        }
+        return "";
     }
 
     /**
-     * Returns the player's suffix. If player has no suffix set, return the suffix of the primary group.
-     * 
-     * @return The suffix.
+     * Returns the player's default suffix. Uses group order.
      */
     @Override
     public String getSuffix() {
-        return getSuffix(PermissionManagerBase.serverName);
+        if (!suffix.isEmpty())
+            return suffix;
+        List<Group> input = getGroups();
+        Iterator<Group> it = input.iterator();
+        while (it.hasNext()) {
+            Group group = it.next();
+            String suffix = group.getSuffix(PermissionManagerBase.serverName);
+            if (!suffix.isEmpty())
+                return suffix;
+        }
+        return "";
     }
 
     /**
      * Returns the player's own prefix.
-     * 
-     * @return The prefix.
      */
     @Override
     public String getOwnPrefix() {
@@ -380,8 +313,6 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
     /**
      * Returns the player's own suffix.
-     * 
-     * @return The suffix.
      */
     @Override
     public String getOwnSuffix() {
@@ -391,24 +322,14 @@ public class PermissionPlayerBase implements PermissionPlayer {
     protected List<String> calculatePermissions(String playerServer, String playerWorld) {
         ArrayList<Permission> unprocessedPerms = new ArrayList<Permission>();
 
-        Group primary = this.getPrimaryGroup();
-        Group secondary = this.getSecondaryGroup();
-
-        // Add permissions derived from groups. Not from groups same as primary and secondary.
+        // Add permissions from groups in reverse order.
         plugin.debug("current groups count " + currentGroups.size());
-        for (Group group : currentGroups) {
-            if (group != null && (primary == null || primary != null && group.getId() != primary.getId()) && (secondary == null || secondary != null && group.getId() != secondary.getId())) {
-                unprocessedPerms.addAll(group.getPermissions());
-            }
+        List<Group> input = getGroups();
+        ListIterator<Group> it = input.listIterator(input.size());
+        while (it.hasPrevious()) {
+            Group group = it.previous();
+            unprocessedPerms.addAll(group.getPermissions());
         }
-
-        // Add permissions from secondary group and parents.
-        if (secondary != null)
-            unprocessedPerms.addAll(secondary.getPermissions());
-
-        // Add permissions from primary group and parents.
-        if (primary != null)
-            unprocessedPerms.addAll(primary.getPermissions());
 
         // Add own permissions.
         unprocessedPerms.addAll(this.permissions);
@@ -422,9 +343,9 @@ public class PermissionPlayerBase implements PermissionPlayer {
         }
 
         if (plugin.isDebug()) {
-            Iterator<String> it = output.iterator();
-            while (it.hasNext()) {
-                String perm = it.next();
+            Iterator<String> it2 = output.iterator();
+            while (it2.hasNext()) {
+                String perm = it2.next();
                 plugin.debug("base added perm " + perm);
             }
         }
