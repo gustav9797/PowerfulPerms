@@ -271,7 +271,20 @@ public class PermissionCommand {
                 if (args[2].equalsIgnoreCase("clearperms")) {
                     permissionManager.removeGroupPermissions(groupName, response);
                 } else if (args[2].equalsIgnoreCase("create")) {
-                    permissionManager.createGroup(groupName, response);
+                    String ladder = "default";
+                    if (args.length >= 4)
+                        ladder = args[3];
+                    int rank = 100;
+                    if (args.length >= 5) {
+                        try {
+                            rank = Integer.parseInt(args[4]);
+                        } catch (NumberFormatException e) {
+                            showCommandInfo(invoker, sender);
+                            return true;
+                        }
+                    }
+                    permissionManager.createGroup(groupName, ladder, rank, response);
+
                 } else if (args[2].equalsIgnoreCase("delete")) {
                     permissionManager.deleteGroup(groupName, response);
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
@@ -432,7 +445,33 @@ public class PermissionCommand {
                             } else
                                 sendSender(invoker, sender, "Group has no parents.");
                         } else
-                            sendSender(invoker, sender, "Group doesn't exist.");
+                            sendSender(invoker, sender, "Group does not exist.");
+                    }
+                } else if (args[2].equalsIgnoreCase("ladder")) {
+                    if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
+                        String ladder = args[4];
+                        permissionManager.setGroupLadder(groupName, ladder, response);
+                    } else {
+                        Group group = permissionManager.getGroup(groupName);
+                        if (group != null) {
+                            sendSender(invoker, sender, "Ladder for group " + groupName + ": \"" + group.getLadder() + "\"");
+                        } else
+                            sendSender(invoker, sender, "Group does not exist.");
+                    }
+                } else if (args[2].equalsIgnoreCase("rank")) {
+                    if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
+                        try {
+                            int rank = Integer.parseInt(args[4]);
+                            permissionManager.setGroupRank(groupName, rank, response);
+                        } catch (NumberFormatException e) {
+                            showCommandInfo(invoker, sender);
+                        }
+                    } else {
+                        Group group = permissionManager.getGroup(groupName);
+                        if (group != null) {
+                            sendSender(invoker, sender, "Rank for group " + groupName + ": \"" + group.getRank() + "\"");
+                        } else
+                            sendSender(invoker, sender, "Group does not exist.");
                     }
                 } else {
                     try {
@@ -452,7 +491,7 @@ public class PermissionCommand {
                 Queue<String> rows = new java.util.ArrayDeque<String>();
                 Group group = permissionManager.getGroup(groupName);
                 if (group != null) {
-                    rows.add("Listing permissions for group " + groupName + ":");
+                    rows.add(ChatColor.BLUE + "Listing permissions for group " + groupName + ".");
                     List<Permission> permissions = group.getOwnPermissions();
                     if (permissions.size() > 0) {
                         for (Permission e : permissions)
@@ -461,7 +500,8 @@ public class PermissionCommand {
                                     + (e.getServer() == null || e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
                     } else
                         rows.add("Group has no permissions.");
-
+                    rows.add(ChatColor.GREEN + "Ladder" + ChatColor.WHITE + ": " + group.getLadder());
+                    rows.add(ChatColor.GREEN + "Rank" + ChatColor.WHITE + ": " + group.getRank());
                 } else
                     sendSender(invoker, sender, "Group doesn't exist.");
 
@@ -540,18 +580,18 @@ public class PermissionCommand {
         String helpPrefix = "§b ";
         command.sendSender(sender, ChatColor.RED + "~ " + ChatColor.BLUE + "PowerfulPerms" + ChatColor.BOLD + ChatColor.RED + " Reference ~");
         command.sendSender(sender, helpPrefix + "/pp user <username>");
-        command.sendSender(sender, helpPrefix + "/pp user <username> setprimary/setsecondary <group> (server)");
-        command.sendSender(sender, helpPrefix + "/pp user <username> removeprimary/removesecondary (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> addgroup/removegroup <group> (server)");
         command.sendSender(sender, helpPrefix + "/pp user <username> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp user <username> clearperms");
         command.sendSender(sender, helpPrefix + "/pp user <username> prefix/suffix set/remove <prefix/suffix>");
         command.sendSender(sender, helpPrefix + "/pp groups");
         command.sendSender(sender, helpPrefix + "/pp group <group>");
-        command.sendSender(sender, helpPrefix + "/pp group <group> create/delete/clearperms");
+        command.sendSender(sender, helpPrefix + "/pp group <group> create (ladder) (rank)");
+        command.sendSender(sender, helpPrefix + "/pp group <group> delete/clearperms");
         command.sendSender(sender, helpPrefix + "/pp group <group> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp group <group> parents add/remove <parent>");
         command.sendSender(sender, helpPrefix + "/pp group <group> prefix/suffix set/remove <prefix/suffix> (server)");
+        command.sendSender(sender, helpPrefix + "/pp group <group> ladder/rank set <ladder/rank>");
         command.sendSender(sender, helpPrefix + "/pp haspermission <permission>");
         command.sendSender(sender, helpPrefix + "/pp reload  |  /pp globalreload");
         command.sendSender(sender, helpPrefix + "PowerfulPerms version " + command.getVersion() + " by gustav9797");

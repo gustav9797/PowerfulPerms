@@ -43,6 +43,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     private final Database db;
     protected PowerfulPermsPlugin plugin;
+    protected PermissionPlayerBase defaultPlayer;
 
     public static boolean redis;
     public static String redis_ip;
@@ -121,8 +122,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 }
             }
         });
-        
-        db.applyPatches(this);
+
+        db.applyPatches(plugin);
+
+        loadGroups(true, true);
+
+        reloadDefaultPlayers(true);
 
         // Initialize Redis
         if (redis_password == null || redis_password.isEmpty())
@@ -366,6 +371,35 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
+    public void reloadDefaultPlayers(final boolean samethread) {
+        final UUID defaultUUID = java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8));
+        db.getPlayer(defaultUUID, new DBRunnable(samethread) {
+
+            @Override
+            public void run() {
+                final DBDocument row = result.next();
+                if (row != null) {
+
+                    loadPlayerPermissions(defaultUUID, new ResultRunnable<List<Permission>>(samethread) {
+
+                        @Override
+                        public void run() {
+                            if (result != null) {
+                                defaultPlayer = new PermissionPlayerBase(getPlayerGroups(row.getString("groups")), result, row.getString("prefix"), row.getString("suffix"), plugin);
+                                reloadPlayers();
+                                debug("DEFAULT PLAYER LOADED: " + (defaultPlayer != null));
+                            } else
+                                plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. 2");
+                        }
+                    });
+
+                } else
+                    plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. 1");
+            }
+        });
+    }
+
+    @Override
     public void reloadPlayer(String name) {
         if (plugin.isPlayerOnline(name)) {
             UUID uuid = plugin.getPlayerUUID(name);
@@ -434,23 +468,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             loadPlayerFinished(row, login, uuid);
                     } else {
                         // Could not find player with UUID. Create new player.
-                        db.getPlayers("[default]", new DBRunnable(login) {
+                        db.insertPlayer(uuid, name, "", "", "", new DBRunnable(login) {
 
                             @Override
                             public void run() {
-                                final DBDocument row = result.next();
-                                if (row != null) {
-
-                                    db.insertPlayer(uuid, name, row.getString("groups"), row.getString("prefix"), row.getString("suffix"), new DBRunnable(login) {
-
-                                        @Override
-                                        public void run() {
-                                            debug("NEW PLAYER CREATED");
-                                            loadPlayerFinished(row, login, uuid);
-                                        }
-                                    });
-                                } else
-                                    plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. Please create the default user.");
+                                debug("NEW PLAYER CREATED");
+                                loadPlayerFinished(null, login, uuid);
                             }
                         });
                     }
@@ -509,8 +532,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
             players.remove(uuid);
         }
 
-        PermissionPlayerBase base = new PermissionPlayerBase(this.getPlayerGroups(cachedPlayer.getGroups()), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin);
-
+        PermissionPlayerBase base;
+        if (cachedPlayer.getGroups().isEmpty()) {
+            // Player has no groups, put default data
+            base = new PermissionPlayerBase(defaultPlayer.getCachedGroups(), cachedPlayer.getPermissions(),
+                    (cachedPlayer.getPrefix().isEmpty() ? defaultPlayer.getPrefix() : cachedPlayer.getPrefix()), (cachedPlayer.getSuffix().isEmpty() ? defaultPlayer.getSuffix()
+                            : cachedPlayer.getSuffix()), plugin);
+        } else
+            base = new PermissionPlayerBase(this.getPlayerGroups(cachedPlayer.getGroups()), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin);
         cachedPlayers.remove(uuid);
         return base;
     }
@@ -846,10 +875,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         DBDocument row = result.next();
                         Permission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"));
                         perms.add(tempPerm);
-                        resultRunnable.setResult(perms);
                     }
+                    resultRunnable.setResult(perms);
                     db.scheduler.runSync(resultRunnable, resultRunnable.sameThread());
-                }
+                } else
+                    plugin.getLogger().severe("Could not load player permissions.");
             }
         });
     }
@@ -1008,7 +1038,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
             db.scheduler.runSync(response);
             return;
         }
-
         // Check if the same permission already exists.
         db.playerHasPermission(uuid, permission, world, server, new DBRunnable() {
 
@@ -1545,7 +1574,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     loadGroups();
                     notifyReloadGroups();
                 } else
-                    response.setResponse(false, "Could set group prefix. Check console for errors.");
+                    response.setResponse(false, "Could not set group prefix. Check console for errors.");
                 db.scheduler.runSync(response);
             }
         });
@@ -1584,7 +1613,55 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     loadGroups();
                     notifyReloadGroups();
                 } else
-                    response.setResponse(false, "Could set group suffix. Check console for errors.");
+                    response.setResponse(false, "Could not set group suffix. Check console for errors.");
+                db.scheduler.runSync(response);
+            }
+        });
+    }
+
+    @Override
+    public void setGroupLadder(String groupName, String ladder, final ResponseRunnable response) {
+        Group group = getGroup(groupName);
+        if (group == null) {
+            response.setResponse(false, "Group does not exist.");
+            db.scheduler.runSync(response);
+            return;
+        }
+
+        db.setGroupLadder(groupName, ladder, new DBRunnable() {
+
+            @Override
+            public void run() {
+                if (result.booleanValue()) {
+                    response.setResponse(true, "Group ladder set.");
+                    loadGroups();
+                    notifyReloadGroups();
+                } else
+                    response.setResponse(false, "Could not set group ladder. Check console for errors.");
+                db.scheduler.runSync(response);
+            }
+        });
+    }
+
+    @Override
+    public void setGroupRank(String groupName, int rank, final ResponseRunnable response) {
+        Group group = getGroup(groupName);
+        if (group == null) {
+            response.setResponse(false, "Group does not exist.");
+            db.scheduler.runSync(response);
+            return;
+        }
+
+        db.setGroupRank(groupName, rank, new DBRunnable() {
+
+            @Override
+            public void run() {
+                if (result.booleanValue()) {
+                    response.setResponse(true, "Group rank set.");
+                    loadGroups();
+                    notifyReloadGroups();
+                } else
+                    response.setResponse(false, "Could not set group rank. Check console for errors.");
                 db.scheduler.runSync(response);
             }
         });

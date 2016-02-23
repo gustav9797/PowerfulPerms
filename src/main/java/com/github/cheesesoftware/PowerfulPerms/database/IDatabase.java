@@ -65,4 +65,8 @@ public interface IDatabase {
     public void setGroupPrefix(String group, String prefix, DBRunnable done);
 
     public void setGroupSuffix(String group, String suffix, DBRunnable done);
+
+    public void setGroupLadder(String group, String ladder, DBRunnable done);
+
+    public void setGroupRank(String group, int rank, DBRunnable done);
 }

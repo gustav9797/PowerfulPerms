@@ -19,7 +19,7 @@ public class MySQLDatabase extends Database {
 
     private SQL sql;
 
-    public MySQLDatabase(IScheduler scheduler, SQL sql, PowerfulPermsPlugin plugin) {
+    public MySQLDatabase(IScheduler scheduler, SQL sql) {
         super(scheduler);
         this.sql = sql;
     }
@@ -793,6 +793,54 @@ public class MySQLDatabase extends Database {
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `suffix`=? WHERE `name`=?");
                     s.setString(1, suffix);
+                    s.setString(2, group);
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    public void setGroupLadder(final String group, final String ladder, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `ladder`=? WHERE `name`=?");
+                    s.setString(1, ladder);
+                    s.setString(2, group);
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    public void setGroupRank(final String group, final int rank, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `rank`=? WHERE `name`=?");
+                    s.setInt(1, rank);
                     s.setString(2, group);
                     s.execute();
                     s.close();
