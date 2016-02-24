@@ -196,6 +196,11 @@ public class PermissionCommand {
                                         tempUUID = row.getString("uuid");
                                     rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
 
+                                    PermissionPlayer permissionPlayer = permissionManager.getPermissionPlayer(uuid);
+                                    if (permissionPlayer != null && permissionPlayer.isDefault()) {
+                                        rows.add(ChatColor.RED + "This player has no groups and is automatically using settings from player [default].");
+                                    }
+
                                     permissionManager.getPlayerGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
 
                                         @Override
@@ -536,7 +541,7 @@ public class PermissionCommand {
             sendSender(invoker, sender, "Groups and players have been reloaded globally.");
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("haspermission")) {
             String permission = args[1];
-            PermissionPlayer p = permissionManager.getPermissionsPlayer(sender);
+            PermissionPlayer p = permissionManager.getPermissionPlayer(sender);
             if (p != null) {
                 Boolean has = p.hasPermission(permission);
                 if (has != null) {

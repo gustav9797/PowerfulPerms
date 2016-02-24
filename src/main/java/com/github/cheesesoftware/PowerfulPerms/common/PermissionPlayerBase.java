@@ -26,6 +26,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     protected String prefix = "";
     protected String suffix = "";
     protected PowerfulPermsPlugin plugin;
+    protected boolean isDefault = false;
 
     public PermissionPlayerBase(HashMap<String, List<CachedGroup>> groups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin) {
         this.groups = groups;
@@ -387,6 +388,11 @@ public class PermissionPlayerBase implements PermissionPlayer {
             l.add(ls);
         }
         return l;
+    }
+
+    @Override
+    public boolean isDefault() {
+        return isDefault;
     }
 
 }

@@ -40,7 +40,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public String[] getPlayerGroups(String world, String player) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
             List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
             List<String> groupNames = new ArrayList<String>();
@@ -53,7 +53,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public String getPrimaryGroup(String world, String player) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
             List<Group> groups = p.getGroups();
             if (groups != null) {
@@ -112,7 +112,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerInGroup(String world, String player, String groupName) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
             List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
             for (Group group : groups) {
@@ -138,7 +138,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerHas(String world, String player, String permission) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
             Boolean has = p.hasPermission(permission);
             if (has != null)

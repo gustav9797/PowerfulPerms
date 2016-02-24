@@ -33,7 +33,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public String getPlayerPrefix(String world, String player) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null)
             return p.getPrefix();
         return null;
@@ -53,7 +53,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public String getPlayerSuffix(String world, String player) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null)
             return p.getSuffix();
         return null;

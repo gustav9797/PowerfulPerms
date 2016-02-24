@@ -119,7 +119,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         // Check again if
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.
-            continueLoadPlayer(e.getPlayer());
+            loadCachedPlayer(e.getPlayer());
         } else
             debug("onPlayerJoin player isn't cached");
         debug("PostLoginEvent finish");
@@ -144,15 +144,14 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     /**
      * Continues loading a previously cached player.
      */
-    private void continueLoadPlayer(ProxiedPlayer player) {
+    private void loadCachedPlayer(ProxiedPlayer player) {
         PermissionPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
         if (base != null && player != null) {
             PowerfulPermissionPlayer permissionsPlayer = new PowerfulPermissionPlayer(player, base, plugin);
-            permissionsPlayer.updatePermissions();
             players.put(player.getUniqueId(), permissionsPlayer);
         } else
-            debug("continueLoadPlayer: ProxiedPlayer or PermissionPlayerBase is null");
-        debug("continueLoadPlayer finish");
+            debug("loadCachedPlayer: ProxiedPlayer or PermissionPlayerBase is null");
+        debug("loadCachedPlayer finish");
     }
 
 }

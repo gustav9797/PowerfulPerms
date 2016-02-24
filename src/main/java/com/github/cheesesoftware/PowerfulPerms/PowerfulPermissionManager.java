@@ -111,14 +111,14 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
 
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.s
-            continueLoadPlayer(e.getPlayer());
+            loadCachedPlayer(e.getPlayer());
         } else {
             // Player is not cached, Load directly on Bukkit main thread.
             debug("onPlayerJoin player isn't cached, loading directly");
             loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
 
             if (e.getResult() == PlayerLoginEvent.Result.ALLOWED)
-                this.continueLoadPlayer(e.getPlayer());
+                loadCachedPlayer(e.getPlayer());
         }
     }
 
@@ -166,7 +166,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                 loadPlayer(p);
             } else {
                 loadPlayer(p.getUniqueId(), p.getName(), true);
-                continueLoadPlayer(p);
+                loadCachedPlayer(p);
             }
         }
     }
@@ -192,8 +192,8 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         loadPlayer(player.getUniqueId(), player.getName(), false);
     }
 
-    private void continueLoadPlayer(Player p) {
-        debug("continueLoadPlayer begin");
+    private void loadCachedPlayer(Player p) {
+        debug("loadCachedPlayer begin");
         PermissionPlayerBase base = super.loadCachedPlayer(p.getUniqueId());
         if (base != null) {
             if (players.containsKey(p.getUniqueId()))
@@ -211,7 +211,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             }
             players.put(p.getUniqueId(), permissionsPlayer);
         }
-        debug("continueLoadPlayer end");
+        debug("loadCachedPlayer end");
     }
 
 }

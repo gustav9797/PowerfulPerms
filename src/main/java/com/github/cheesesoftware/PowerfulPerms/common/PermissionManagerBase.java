@@ -143,7 +143,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public void getConvertUUID(final String playerName, final ResultRunnable<UUID> resultRunnable) {
         if (playerName.equalsIgnoreCase("[default]")) {
-            resultRunnable.setResult(java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)));
+            resultRunnable.setResult(DefaultPermissionPlayer.getUUID());
             db.scheduler.runSync(resultRunnable);
             return;
         }
@@ -329,7 +329,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void notifyReloadPlayer(final UUID uuid) {
-        if (redis) {
+        if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
+            notifyReloadPlayers();
+        } else if (redis) {
             plugin.runTaskAsynchronously(new Runnable() {
                 @SuppressWarnings("deprecation")
                 public void run() {
@@ -367,12 +369,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
             if (name != null) {
                 this.loadPlayer(uuid, name, false);
             }
+        } else if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
+            reloadDefaultPlayers(false);
         }
     }
 
     @Override
     public void reloadDefaultPlayers(final boolean samethread) {
-        final UUID defaultUUID = java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8));
+        final UUID defaultUUID = DefaultPermissionPlayer.getUUID();
         db.getPlayer(defaultUUID, new DBRunnable(samethread) {
 
             @Override
@@ -413,7 +417,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
      * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
      */
     @Override
-    public PermissionPlayer getPermissionsPlayer(UUID uuid) {
+    public PermissionPlayer getPermissionPlayer(UUID uuid) {
         return players.get(uuid);
     }
 
@@ -421,7 +425,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
      * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
      */
     @Override
-    public PermissionPlayer getPermissionsPlayer(String name) {
+    public PermissionPlayer getPermissionPlayer(String name) {
         UUID uuid = plugin.getPlayerUUID(name);
         return players.get(uuid);
     }
@@ -507,7 +511,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     // Player should be reloaded if "login" is false. Reload already loaded player.
                     if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
                         PermissionPlayerBase toUpdate = (PermissionPlayerBase) players.get(uuid);
-                        PermissionPlayerBase base = new PermissionPlayerBase(getPlayerGroups(groups_loaded), perms, prefix_loaded, suffix_loaded, plugin);
+                        PermissionPlayerBase base;
+                        HashMap<String, List<CachedGroup>> tempGroups = getPlayerGroups(groups_loaded);
+                        if (tempGroups.isEmpty()) {
+                            // Player has no groups, put default data
+                            base = new DefaultPermissionPlayer(defaultPlayer.getCachedGroups(), perms, (prefix_loaded.isEmpty() ? defaultPlayer.getOwnPrefix() : prefix_loaded), (suffix_loaded
+                                    .isEmpty() ? defaultPlayer.getOwnSuffix() : suffix_loaded), plugin);
+                        } else
+                            base = new PermissionPlayerBase(tempGroups, perms, prefix_loaded, suffix_loaded, plugin);
                         toUpdate.update(base);
 
                         if (cachedPlayers.get(uuid) != null)
@@ -535,9 +546,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
         PermissionPlayerBase base;
         if (cachedPlayer.getGroups().isEmpty()) {
             // Player has no groups, put default data
-            base = new PermissionPlayerBase(defaultPlayer.getCachedGroups(), cachedPlayer.getPermissions(),
-                    (cachedPlayer.getPrefix().isEmpty() ? defaultPlayer.getPrefix() : cachedPlayer.getPrefix()), (cachedPlayer.getSuffix().isEmpty() ? defaultPlayer.getSuffix()
-                            : cachedPlayer.getSuffix()), plugin);
+            base = new DefaultPermissionPlayer(defaultPlayer.getCachedGroups(), cachedPlayer.getPermissions(), (cachedPlayer.getPrefix().isEmpty() ? defaultPlayer.getOwnPrefix()
+                    : cachedPlayer.getPrefix()), (cachedPlayer.getSuffix().isEmpty() ? defaultPlayer.getOwnSuffix() : cachedPlayer.getSuffix()), plugin);
         } else
             base = new PermissionPlayerBase(this.getPlayerGroups(cachedPlayer.getGroups()), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin);
         cachedPlayers.remove(uuid);
@@ -640,11 +650,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             }
 
                             // Reload players too.
-                            Set<UUID> keysCopy = new HashSet<UUID>(players.keySet());
-                            for (UUID uuid : keysCopy) {
-                                if (plugin.isPlayerOnline(uuid))
-                                    reloadPlayer(uuid);
-                            }
+                            reloadPlayers();
                             debug("loadGroups end");
                         }
                     }, endSameThread);

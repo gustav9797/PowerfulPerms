@@ -185,7 +185,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     public void onPermissionCheck(PermissionCheckEvent e) {
         if (e != null && e.getSender() != null && e.getSender() instanceof ProxiedPlayer) {
             ProxiedPlayer player = (ProxiedPlayer) e.getSender();
-            PermissionPlayer gp = permissionManager.getPermissionsPlayer(player.getUniqueId());
+            PermissionPlayer gp = permissionManager.getPermissionPlayer(player.getUniqueId());
             if (gp != null) {
                 Boolean hasPermission = gp.hasPermission(e.getPermission());
                 if (hasPermission == null)

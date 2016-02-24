@@ -27,6 +27,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     public PowerfulPermissionPlayer(Player p, PermissionPlayerBase base, PowerfulPermsPlugin plugin) {
         super(base.getCachedGroups(), base.getPermissions(), base.getOwnPrefix(), base.getOwnSuffix(), plugin);
         this.player = p;
+        super.isDefault = base.isDefault();
         this.updatePermissions();
     }
 
@@ -40,7 +41,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     }
 
     /**
-     * Returns the player attached to this PermissionsPlayer.
+     * Returns the player attached to this PermissionPlayer.
      */
     public Player getPlayer() {
         return this.player;
@@ -60,7 +61,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
      */
     public void updatePermissions() {
         this.updateGroups(PermissionManagerBase.serverName);
-        
+
         List<String> perms = super.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName());
         List<String> realPerms = new ArrayList<String>();
         for (String permString : perms) {
