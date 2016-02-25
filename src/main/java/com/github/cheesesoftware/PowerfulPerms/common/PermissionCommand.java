@@ -3,6 +3,7 @@ package com.github.cheesesoftware.PowerfulPerms.common;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -211,8 +212,54 @@ public class PermissionCommand {
                                         public void run() {
                                             Map<String, List<CachedGroup>> groups = result;
 
+                                            // Store by ladder instead of server
+                                            Map<String, List<Pair<String, CachedGroup>>> ladderGroups = new LinkedHashMap<String, List<Pair<String, CachedGroup>>>();
+                                            Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
+                                            while (it.hasNext()) {
+                                                Entry<String, List<CachedGroup>> currentGroups = it.next();
+                                                if (currentGroups != null) {
+                                                    Iterator<CachedGroup> it2 = currentGroups.getValue().iterator();
+                                                    while (it2.hasNext()) {
+                                                        CachedGroup currentGroup = it2.next();
+                                                        String ladder = currentGroup.getGroup().getLadder();
+
+                                                        List<Pair<String, CachedGroup>> out = ladderGroups.get(ladder);
+                                                        if (out == null)
+                                                            out = new ArrayList<Pair<String, CachedGroup>>();
+
+                                                        out.add(new Pair<String, CachedGroup>(currentGroups.getKey(), currentGroup));
+                                                        ladderGroups.put(ladder, out);
+                                                    }
+                                                }
+                                            }
+
                                             // List groups
-                                            String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
+                                            // String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
+                                            if (groups != null && groups.size() > 0) {
+                                                Iterator<Entry<String, List<Pair<String, CachedGroup>>>> it3 = ladderGroups.entrySet().iterator();
+                                                while (it3.hasNext()) {
+                                                    Entry<String, List<Pair<String, CachedGroup>>> current = it3.next();
+                                                    Iterator<Pair<String, CachedGroup>> it4 = current.getValue().iterator();
+                                                    String otherGroups = ChatColor.GREEN + "On ladder " + ChatColor.WHITE + "\"" + current.getKey() + "\": ";
+                                                    while (it4.hasNext()) {
+                                                        Pair<String, CachedGroup> cachedGroup = it4.next();
+                                                        Group group = cachedGroup.getSecond().getGroup();
+                                                        if (group != null) {
+                                                            otherGroups += (cachedGroup.getSecond().isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
+                                                                    + (cachedGroup.getFirst() == null || cachedGroup.getFirst().isEmpty() ? "ALL" : cachedGroup.getFirst());
+                                                            otherGroups += ", ";
+                                                        }
+                                                    }
+                                                    if (otherGroups.endsWith(", "))
+                                                        otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
+
+                                                    rows.add(otherGroups);
+                                                }
+                                            } else
+                                                rows.add("Player has no groups.");
+
+                                            // List groups
+                                            /*-String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
                                             if (groups != null && groups.size() > 0) {
                                                 Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
                                                 while (it.hasNext()) {
@@ -232,7 +279,7 @@ public class PermissionCommand {
                                                 otherGroups += "Player has no groups.";
                                             if (otherGroups.endsWith(", "))
                                                 otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
-                                            rows.add(otherGroups);
+                                            rows.add(otherGroups);*/
 
                                             permissionManager.getPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>() {
 
@@ -456,31 +503,15 @@ public class PermissionCommand {
                         } else
                             sendSender(invoker, sender, "Group does not exist.");
                     }
-                } else if (args[2].equalsIgnoreCase("ladder")) {
-                    if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
-                        String ladder = args[4];
-                        permissionManager.setGroupLadder(groupName, ladder, response);
-                    } else {
-                        Group group = permissionManager.getGroup(groupName);
-                        if (group != null) {
-                            sendSender(invoker, sender, "Ladder for group " + groupName + ": \"" + group.getLadder() + "\"");
-                        } else
-                            sendSender(invoker, sender, "Group does not exist.");
-                    }
-                } else if (args[2].equalsIgnoreCase("rank")) {
-                    if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
-                        try {
-                            int rank = Integer.parseInt(args[4]);
-                            permissionManager.setGroupRank(groupName, rank, response);
-                        } catch (NumberFormatException e) {
-                            showCommandInfo(invoker, sender);
-                        }
-                    } else {
-                        Group group = permissionManager.getGroup(groupName);
-                        if (group != null) {
-                            sendSender(invoker, sender, "Rank for group " + groupName + ": \"" + group.getRank() + "\"");
-                        } else
-                            sendSender(invoker, sender, "Group does not exist.");
+                } else if (args[2].equalsIgnoreCase("setladder") && args.length >= 4) {
+                    String ladder = args[3];
+                    permissionManager.setGroupLadder(groupName, ladder, response);
+                } else if (args[2].equalsIgnoreCase("setrank") && args.length >= 4) {
+                    try {
+                        int rank = Integer.parseInt(args[3]);
+                        permissionManager.setGroupRank(groupName, rank, response);
+                    } catch (NumberFormatException e) {
+                        sendSender(invoker, sender, "Rank must be a number.");
                     }
                 } else {
                     try {
@@ -601,7 +632,7 @@ public class PermissionCommand {
         command.sendSender(sender, helpPrefix + "/pp group <group> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp group <group> parents add/remove <parent>");
         command.sendSender(sender, helpPrefix + "/pp group <group> prefix/suffix set/remove <prefix/suffix> (server)");
-        command.sendSender(sender, helpPrefix + "/pp group <group> ladder/rank set <ladder/rank>");
+        command.sendSender(sender, helpPrefix + "/pp group <group> setladder/setrank <ladder/rank>");
         command.sendSender(sender, helpPrefix + "/pp haspermission <permission>");
         command.sendSender(sender, helpPrefix + "/pp reload  |  /pp globalreload");
         command.sendSender(sender, helpPrefix + "PowerfulPerms version " + command.getVersion() + " by gustav9797");

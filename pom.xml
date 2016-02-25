@@ -110,6 +110,7 @@
 									<include>org.apache.commons:commons-pool2</include>
 									<include>redis.clients:jedis</include>
 									<include>com.github.cheesesoftware:PowerfulPermsAPI</include>
+									<include>com.googlecode.json-simple:json-simple</include>
 								</includes>
 							</artifactSet>
 							<relocations>
@@ -120,6 +121,10 @@
 								<relocation>
 									<pattern>org.apache</pattern>
 									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.apache</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.googlecode</pattern>
+									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.com.googlecode</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
@@ -204,6 +209,11 @@
 			<groupId>be.maximvdw</groupId>
 			<artifactId>MVdWUpdater</artifactId>
 			<version>1.0.2-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.googlecode.json-simple</groupId>
+			<artifactId>json-simple</artifactId>
+			<version>1.1</version>
 		</dependency>
 	</dependencies>
 </project>

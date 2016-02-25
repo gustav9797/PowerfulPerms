@@ -599,7 +599,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         String parents = row.getString("parents");
                         final String prefix = row.getString("prefix");
                         final String suffix = row.getString("suffix");
-                        final String ladder = row.getString("ladder");
+                        String ladder1 = row.getString("ladder");
+                        final String ladder = (ladder1 == null || ladder1.isEmpty() ? "default" : ladder1);
                         final int rank = row.getInt("rank");
 
                         tempParents.put(groupId, parents);
@@ -1739,6 +1740,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void setGroupLadder(String groupName, String ladder, final ResponseRunnable response) {
+        if (ladder == null || ladder.isEmpty())
+            ladder = "default";
+
         Group group = getGroup(groupName);
         if (group == null) {
             response.setResponse(false, "Group does not exist.");
