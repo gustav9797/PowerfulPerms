@@ -726,8 +726,17 @@ public class MySQLDatabase extends Database {
                     success = false;
                 }
 
-                done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done, done.sameThread());
+                final boolean success2 = success;
+                final int amount2 = amount;
+
+                deleteGroupPermissions(group, new DBRunnable(true) {
+
+                    @Override
+                    public void run() {
+                        done.setResult(new DBResult(result.booleanValue() && success2, amount2));
+                        scheduler.runSync(done, done.sameThread());
+                    }
+                });
             }
         }, done.sameThread());
     }
