@@ -198,7 +198,7 @@ public class PermissionCommand {
 
                                     PermissionPlayer permissionPlayer = permissionManager.getPermissionPlayer(uuid);
                                     if (permissionPlayer != null && permissionPlayer.isDefault()) {
-                                        rows.add(ChatColor.RED + "This player has no groups and is automatically using settings from player [default].");
+                                        rows.add("This player has no groups and is using [default] groups.");
                                     }
 
                                     permissionManager.getPlayerGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
@@ -497,6 +497,8 @@ public class PermissionCommand {
                 Group group = permissionManager.getGroup(groupName);
                 if (group != null) {
                     rows.add(ChatColor.BLUE + "Listing permissions for group " + groupName + ".");
+                    rows.add(ChatColor.GREEN + "Ladder" + ChatColor.WHITE + ": " + group.getLadder());
+                    rows.add(ChatColor.GREEN + "Rank" + ChatColor.WHITE + ": " + group.getRank());
                     List<Permission> permissions = group.getOwnPermissions();
                     if (permissions.size() > 0) {
                         for (Permission e : permissions)
@@ -505,8 +507,6 @@ public class PermissionCommand {
                                     + (e.getServer() == null || e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
                     } else
                         rows.add("Group has no permissions.");
-                    rows.add(ChatColor.GREEN + "Ladder" + ChatColor.WHITE + ": " + group.getLadder());
-                    rows.add(ChatColor.GREEN + "Rank" + ChatColor.WHITE + ": " + group.getRank());
                 } else
                     sendSender(invoker, sender, "Group doesn't exist.");
 

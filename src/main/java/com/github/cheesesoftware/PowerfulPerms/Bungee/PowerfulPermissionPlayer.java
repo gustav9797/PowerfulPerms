@@ -14,15 +14,14 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     private ProxiedPlayer player;
 
-    public PowerfulPermissionPlayer(ProxiedPlayer p, HashMap<String, List<CachedGroup>> serverGroups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin) {
-        super(serverGroups, permissions, prefix, suffix, plugin);
+    public PowerfulPermissionPlayer(ProxiedPlayer p, HashMap<String, List<CachedGroup>> serverGroups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin, boolean isDefault) {
+        super(serverGroups, permissions, prefix, suffix, plugin, isDefault);
         this.player = p;
     }
 
     public PowerfulPermissionPlayer(ProxiedPlayer p, PermissionPlayerBase base, PowerfulPermsPlugin plugin) {
-        super(base.getCachedGroups(), base.getPermissions(), base.getOwnPrefix(), base.getOwnSuffix(), plugin);
+        super(base.getCachedGroups(), base.getPermissions(), base.getOwnPrefix(), base.getOwnSuffix(), plugin, base.isDefault());
         this.player = p;
-        super.isDefault = base.isDefault();
         this.updatePermissions();
     }
 

@@ -28,12 +28,13 @@ public class PermissionPlayerBase implements PermissionPlayer {
     protected PowerfulPermsPlugin plugin;
     protected boolean isDefault = false;
 
-    public PermissionPlayerBase(HashMap<String, List<CachedGroup>> groups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin) {
+    public PermissionPlayerBase(HashMap<String, List<CachedGroup>> groups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin, boolean isDefault) {
         this.groups = groups;
         this.permissions = permissions;
         this.prefix = prefix;
         this.suffix = suffix;
         this.plugin = plugin;
+        this.isDefault = isDefault;
     }
 
     public void update(PermissionPlayerBase base) {
@@ -41,6 +42,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
         this.permissions = base.permissions;
         this.prefix = base.prefix;
         this.suffix = base.suffix;
+        this.isDefault = base.isDefault;
     }
 
     public void updateGroups(String server) {
