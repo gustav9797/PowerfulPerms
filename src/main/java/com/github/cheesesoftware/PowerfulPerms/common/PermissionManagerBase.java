@@ -1339,6 +1339,79 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     }
 
+    @Override
+    public void setPlayerRank(final UUID uuid, String groupName, final ResponseRunnable response) {
+        // Get player groups on specified ladder
+        // Use the group type of the first one of those groups
+        // replace old group with group "groupname"
+
+        final Group group = getGroup(groupName);
+        if (group == null) {
+            response.setResponse(false, "Group does not exist.");
+            db.scheduler.runSync(response);
+            return;
+        }
+
+        getPlayerCurrentGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+
+            @Override
+            public void run() {
+                if (result != null) {
+                    List<CachedGroup> playerCurrentGroups = result.get(group.getLadder());
+                    if (playerCurrentGroups != null && !playerCurrentGroups.isEmpty()) {
+                        // Clone list to avoid making changes on online player
+                        List<CachedGroup> clone = new ArrayList<CachedGroup>(playerCurrentGroups);
+
+                        Iterator<CachedGroup> it = playerCurrentGroups.iterator();
+                        Group toUse = null;
+                        while (it.hasNext()) {
+                            CachedGroup current = it.next();
+                            if (toUse == null)
+                                toUse = current.getGroup();
+                            else if (current.getGroup().getId() == toUse.getId())
+                                clone.set(clone.indexOf(current), new CachedGroup(group, current.isNegated()));
+                        }
+
+                        result.put(group.getLadder(), clone);
+
+                        String playerGroupStringOutput = getPlayerGroupsRawCached(result);
+                        db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
+
+                            @Override
+                            public void run() {
+                                if (result.booleanValue()) {
+                                    response.setResponse(true, "Player rank set on ladder \"" + group.getLadder() + "\".");
+                                    reloadPlayer(uuid);
+                                    notifyReloadPlayer(uuid);
+                                } else
+                                    response.setResponse(false, "Could not set player rank. Check console for errors.");
+                                db.scheduler.runSync(response);
+                            }
+                        });
+
+                    } else {
+                        response.setResponse(false, "Player has no groups on the specified ladder.");
+                        db.scheduler.runSync(response);
+                    }
+                } else {
+                    response.setResponse(false, "Player does not exist.");
+                    db.scheduler.runSync(response);
+                }
+            }
+        });
+
+    }
+
+    @Override
+    public void promotePlayer(UUID uuid, String ladder, final ResponseRunnable response) {
+
+    }
+
+    @Override
+    public void demotePlayer(UUID uuid, String ladder, final ResponseRunnable response) {
+
+    }
+
     // -------------------------------------------------------------------//
     // //
     // ------------GROUP PERMISSION MODIFYING FUNCTIONS BELOW-------------//

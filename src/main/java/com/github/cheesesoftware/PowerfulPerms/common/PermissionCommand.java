@@ -52,6 +52,10 @@ public class PermissionCommand {
                                 permissionManager.createPlayer(playerName, uuid, response);
                             } else if (args[2].equalsIgnoreCase("clearperms")) {
                                 permissionManager.removePlayerPermissions(uuid, response);
+                            } else if (args[2].equalsIgnoreCase("setrank") && args.length >= 4) {
+                                String group = args[3];
+                                permissionManager.setPlayerRank(uuid, group, response);
+
                             } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
                                 String group = args[3];
                                 String server = "";
@@ -586,6 +590,7 @@ public class PermissionCommand {
         command.sendSender(sender, ChatColor.RED + "~ " + ChatColor.BLUE + "PowerfulPerms" + ChatColor.BOLD + ChatColor.RED + " Reference ~");
         command.sendSender(sender, helpPrefix + "/pp user <username>");
         command.sendSender(sender, helpPrefix + "/pp user <username> addgroup/removegroup <group> (server)");
+        command.sendSender(sender, helpPrefix + "/pp user <username> setrank <group>");
         command.sendSender(sender, helpPrefix + "/pp user <username> add/remove <permission> (server) (world)");
         command.sendSender(sender, helpPrefix + "/pp user <username> clearperms");
         command.sendSender(sender, helpPrefix + "/pp user <username> prefix/suffix set/remove <prefix/suffix>");
