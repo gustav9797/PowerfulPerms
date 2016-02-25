@@ -814,7 +814,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void getPlayerGroups(UUID uuid, final ResultRunnable<Map<String, List<CachedGroup>>> resultRunnable) {
         // If player is online, get data directly from player
         PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
-        if (gp != null) {
+        if (gp != null && !gp.isDefault()) {
             resultRunnable.setResult(gp.getCachedGroups());
             db.scheduler.runSync(resultRunnable);
             return;
@@ -1357,40 +1357,57 @@ public abstract class PermissionManagerBase implements PermissionManager {
             @Override
             public void run() {
                 if (result != null) {
-                    List<CachedGroup> playerCurrentGroups = result.get(group.getLadder());
-                    if (playerCurrentGroups != null && !playerCurrentGroups.isEmpty()) {
-                        // Clone list to avoid making changes on online player
-                        List<CachedGroup> clone = new ArrayList<CachedGroup>(playerCurrentGroups);
-
-                        Iterator<CachedGroup> it = playerCurrentGroups.iterator();
-                        Group toUse = null;
+                    if (!result.isEmpty()) {
+                        Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
+                        HashMap<String, List<CachedGroup>> output = new HashMap<String, List<CachedGroup>>();
+                        boolean changed = false;
                         while (it.hasNext()) {
-                            CachedGroup current = it.next();
-                            if (toUse == null)
-                                toUse = current.getGroup();
-                            else if (current.getGroup().getId() == toUse.getId())
-                                clone.set(clone.indexOf(current), new CachedGroup(group, current.isNegated()));
+                            Entry<String, List<CachedGroup>> next = it.next();
+                            String server = next.getKey();
+                            List<CachedGroup> playerCurrentGroups = next.getValue();
+
+                            // Clone list to avoid making changes on online player
+                            List<CachedGroup> clone = new ArrayList<CachedGroup>(playerCurrentGroups);
+
+                            Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
+                            Group toUse = null;
+                            while (it2.hasNext()) {
+                                CachedGroup current = it2.next();
+                                if (current.getGroup().getLadder().equals(group.getLadder())) {
+                                    if (toUse == null)
+                                        toUse = current.getGroup();
+                                    // Replace with new group if they are on the same ladder and if toUse and current is the same group
+                                    if (toUse.getId() == current.getGroup().getId()) {
+                                        clone.set(clone.indexOf(current), new CachedGroup(group, current.isNegated()));
+                                        changed = true;
+                                    }
+                                }
+                            }
+
+                            output.put(server, clone);
                         }
 
-                        result.put(group.getLadder(), clone);
+                        if (!changed) {
+                            response.setResponse(false, "Player has no groups on the specified ladder.");
+                            db.scheduler.runSync(response);
+                        } else {
+                            String playerGroupStringOutput = getPlayerGroupsRawCached(output);
+                            db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
 
-                        String playerGroupStringOutput = getPlayerGroupsRawCached(result);
-                        db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
-
-                            @Override
-                            public void run() {
-                                if (result.booleanValue()) {
-                                    response.setResponse(true, "Player rank set on ladder \"" + group.getLadder() + "\".");
-                                    reloadPlayer(uuid);
-                                    notifyReloadPlayer(uuid);
-                                } else
-                                    response.setResponse(false, "Could not set player rank. Check console for errors.");
-                                db.scheduler.runSync(response);
-                            }
-                        });
-
+                                @Override
+                                public void run() {
+                                    if (result.booleanValue()) {
+                                        response.setResponse(true, "Player rank set on ladder \"" + group.getLadder() + "\".");
+                                        reloadPlayer(uuid);
+                                        notifyReloadPlayer(uuid);
+                                    } else
+                                        response.setResponse(false, "Could not set player rank. Check console for errors.");
+                                    db.scheduler.runSync(response);
+                                }
+                            });
+                        }
                     } else {
-                        response.setResponse(false, "Player has no groups on the specified ladder.");
+                        response.setResponse(false, "Player has no groups.");
                         db.scheduler.runSync(response);
                     }
                 } else {

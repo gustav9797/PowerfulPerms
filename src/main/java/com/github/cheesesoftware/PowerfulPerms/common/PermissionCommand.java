@@ -205,7 +205,7 @@ public class PermissionCommand {
                                         rows.add("This player has no groups and is using [default] groups.");
                                     }
 
-                                    permissionManager.getPlayerGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+                                    permissionManager.getPlayerCurrentGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
 
                                         @Override
                                         public void run() {
