@@ -1,6 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
@@ -14,7 +14,8 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     private ProxiedPlayer player;
 
-    public PowerfulPermissionPlayer(ProxiedPlayer p, HashMap<String, List<CachedGroup>> serverGroups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin, boolean isDefault) {
+    public PowerfulPermissionPlayer(ProxiedPlayer p, LinkedHashMap<String, List<CachedGroup>> serverGroups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin,
+            boolean isDefault) {
         super(serverGroups, permissions, prefix, suffix, plugin, isDefault);
         this.player = p;
     }
@@ -45,7 +46,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
      * Sets the player's groups as seen in getServerGroups() Changes won't save for now.
      */
     @Override
-    public void setGroups(HashMap<String, List<CachedGroup>> serverGroups) {
+    public void setGroups(LinkedHashMap<String, List<CachedGroup>> serverGroups) {
         super.setGroups(serverGroups);
         this.updatePermissions();
     }

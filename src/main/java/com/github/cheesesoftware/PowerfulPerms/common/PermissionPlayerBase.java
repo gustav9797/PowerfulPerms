@@ -1,8 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.TreeMap;
@@ -15,7 +15,7 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
 public class PermissionPlayerBase implements PermissionPlayer {
 
-    protected HashMap<String, List<CachedGroup>> groups = new HashMap<String, List<CachedGroup>>(); // Contains -all- groups for this player.
+    protected LinkedHashMap<String, List<CachedGroup>> groups = new LinkedHashMap<String, List<CachedGroup>>(); // Contains -all- groups for this player.
 
     protected List<Group> currentGroups = new ArrayList<Group>();
 
@@ -28,7 +28,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     protected PowerfulPermsPlugin plugin;
     protected boolean isDefault = false;
 
-    public PermissionPlayerBase(HashMap<String, List<CachedGroup>> groups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin, boolean isDefault) {
+    public PermissionPlayerBase(LinkedHashMap<String, List<CachedGroup>> groups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin, boolean isDefault) {
         this.groups = groups;
         this.permissions = permissions;
         this.prefix = prefix;
@@ -52,7 +52,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
         this.currentGroups = getGroups(server);
     }
 
-    public void setGroups(HashMap<String, List<CachedGroup>> groups) {
+    public void setGroups(LinkedHashMap<String, List<CachedGroup>> groups) {
         this.groups = groups;
     }
 
@@ -68,7 +68,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
      * Returns all groups a player has, including primary groups, indexed by server name.
      */
     @Override
-    public HashMap<String, List<CachedGroup>> getCachedGroups() {
+    public LinkedHashMap<String, List<CachedGroup>> getCachedGroups() {
         return this.groups;
     }
 

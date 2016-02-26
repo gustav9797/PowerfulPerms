@@ -3,6 +3,7 @@ package com.github.cheesesoftware.PowerfulPerms.common;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -510,7 +511,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
                         PermissionPlayerBase toUpdate = (PermissionPlayerBase) players.get(uuid);
                         PermissionPlayerBase base;
-                        HashMap<String, List<CachedGroup>> tempGroups = getPlayerGroups(groups_loaded);
+                        LinkedHashMap<String, List<CachedGroup>> tempGroups = getPlayerGroups(groups_loaded);
                         debug("loadPlayerFinished reload group count:" + tempGroups.size());
                         if (tempGroups.isEmpty()) {
                             // Player has no groups, put default data
@@ -697,8 +698,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return (Map<Integer, Group>) this.groups.clone();
     }
 
-    protected HashMap<String, List<CachedGroup>> getPlayerGroups(String raw) {
-        HashMap<String, List<CachedGroup>> tempGroups = new HashMap<String, List<CachedGroup>>();
+    protected LinkedHashMap<String, List<CachedGroup>> getPlayerGroups(String raw) {
+        LinkedHashMap<String, List<CachedGroup>> tempGroups = new LinkedHashMap<String, List<CachedGroup>>();
         for (String s : raw.split(";")) {
             // Each group entry
             String[] split = s.split(":");
@@ -744,8 +745,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return tempGroups;
     }
 
-    protected HashMap<String, List<CachedGroupRaw>> getPlayerGroupsRaw(String raw) {
-        HashMap<String, List<CachedGroupRaw>> tempGroups = new HashMap<String, List<CachedGroupRaw>>();
+    protected LinkedHashMap<String, List<CachedGroupRaw>> getPlayerGroupsRaw(String raw) {
+        LinkedHashMap<String, List<CachedGroupRaw>> tempGroups = new LinkedHashMap<String, List<CachedGroupRaw>>();
         for (String s : raw.split(";")) {
             // Each group entry
             String[] split = s.split(":");
@@ -827,7 +828,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             public void run() {
                 if (result.hasNext()) {
                     DBDocument row = result.next();
-                    HashMap<String, List<CachedGroup>> output = getPlayerGroups(row.getString("groups"));
+                    LinkedHashMap<String, List<CachedGroup>> output = getPlayerGroups(row.getString("groups"));
                     resultRunnable.setResult(output);
                 }
                 db.scheduler.runSync(resultRunnable);
@@ -851,7 +852,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             public void run() {
                 if (result.hasNext()) {
                     DBDocument row = result.next();
-                    HashMap<String, List<CachedGroup>> output = getPlayerGroups(row.getString("groups"));
+                    LinkedHashMap<String, List<CachedGroup>> output = getPlayerGroups(row.getString("groups"));
                     if (output.isEmpty()) {
                         output.putAll(defaultPlayer.getCachedGroups());
                     }
@@ -1360,7 +1361,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 if (result != null) {
                     if (!result.isEmpty()) {
                         Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
-                        HashMap<String, List<CachedGroup>> output = new HashMap<String, List<CachedGroup>>();
+                        LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
                         boolean changed = false;
                         while (it.hasNext()) {
                             Entry<String, List<CachedGroup>> next = it.next();
