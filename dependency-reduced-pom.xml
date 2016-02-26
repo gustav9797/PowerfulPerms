@@ -160,6 +160,10 @@
       <id>sk89q-repo</id>
       <url>http://maven.sk89q.com/repo/</url>
     </repository>
+    <repository>
+      <id>placeholderapi</id>
+      <url>http://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>
@@ -261,6 +265,12 @@
       <artifactId>MVdWUpdater</artifactId>
       <version>1.0.2-SNAPSHOT</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>me.clip</groupId>
+      <artifactId>placeholderapi</artifactId>
+      <version>2.0.6</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 </project>

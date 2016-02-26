@@ -90,6 +90,12 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
             vaultHook.hook(this);
         }
 
+        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Enabling PlaceholderAPI integration.");
+            PlaceholderAPIHook placeholderAPIHook = new PlaceholderAPIHook(this, "powerfulperms");
+            placeholderAPIHook.hook();
+        }
+
         this.getCommand("powerfulperms").setExecutor(new PermissionCommandExecutor(permissionManager));
 
         if (Bukkit.getOnlinePlayers().size() > 0) { // Admin used /reload command

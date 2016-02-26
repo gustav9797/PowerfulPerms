@@ -2,8 +2,7 @@ name: PowerfulPerms
 main: com.github.cheesesoftware.PowerfulPerms.PowerfulPerms
 version: ${version}
 author: gustav9797
-softdepend: [Vault]
-load: startup
+softdepend: [Vault, PlaceholderAPI]
 
 commands:
  powerfulperms:
