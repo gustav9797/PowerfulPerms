@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1363,6 +1364,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
                         LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
                         boolean changed = false;
+                        Group toUse = null;
                         while (it.hasNext()) {
                             Entry<String, List<CachedGroup>> next = it.next();
                             String server = next.getKey();
@@ -1372,7 +1374,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             List<CachedGroup> clone = new ArrayList<CachedGroup>(playerCurrentGroups);
 
                             Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
-                            Group toUse = null;
                             while (it2.hasNext()) {
                                 CachedGroup current = it2.next();
                                 if (current.getGroup().getLadder().equals(group.getLadder())) {
@@ -1421,14 +1422,206 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     }
 
-    @Override
-    public void promotePlayer(UUID uuid, String ladder, final ResponseRunnable response) {
+    public Group getHigherGroup(Group group, List<Group> groups) {
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        for (Group current : groups) {
+            if (current.getLadder().equals(group.getLadder()))
+                sortedGroups.put(current.getRank(), current);
+        }
 
+        Iterator<Entry<Integer, Group>> it = sortedGroups.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<Integer, Group> entry = it.next();
+            if (entry.getKey() == group.getRank() && entry.getValue().getName().equals(group.getName())) {
+                if (it.hasNext())
+                    return it.next().getValue();
+                else
+                    return null;
+            }
+        }
+        return null;
+    }
+
+    public Group getLowerGroup(Group group, List<Group> groups) {
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        for (Group current : groups) {
+            if (current.getLadder().equals(group.getLadder()))
+                sortedGroups.put(current.getRank(), current);
+        }
+
+        Iterator<Entry<Integer, Group>> it = sortedGroups.descendingMap().entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<Integer, Group> entry = it.next();
+            if (entry.getKey() == group.getRank() && entry.getValue().getName().equals(group.getName())) {
+                if (it.hasNext())
+                    return it.next().getValue();
+                else
+                    return null;
+            }
+        }
+        return null;
     }
 
     @Override
-    public void demotePlayer(UUID uuid, String ladder, final ResponseRunnable response) {
+    public void promotePlayer(final UUID uuid, final String ladder, final ResponseRunnable response) {
+        final List<Group> groupsClone = new ArrayList<Group>(groups.values());
+        getPlayerCurrentGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
 
+            @Override
+            public void run() {
+                if (result != null) {
+                    if (!result.isEmpty()) {
+                        Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
+                        LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
+                        boolean changed = false;
+                        Group toUse = null;
+                        Group toPromoteTo = null;
+                        while (it.hasNext()) {
+                            Entry<String, List<CachedGroup>> next = it.next();
+                            String server = next.getKey();
+                            List<CachedGroup> playerCurrentGroups = next.getValue();
+
+                            // Clone list to avoid making changes on online player
+                            List<CachedGroup> clone = new ArrayList<CachedGroup>(playerCurrentGroups);
+
+                            Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
+
+                            while (it2.hasNext()) {
+                                CachedGroup current = it2.next();
+                                if (current.getGroup().getLadder().equals(ladder)) {
+                                    if (toUse == null) {
+                                        toUse = current.getGroup();
+                                        toPromoteTo = getHigherGroup(toUse, groupsClone);
+                                        if (toPromoteTo == null) {
+                                            response.setResponse(false, "There is no group on this ladder with a higher rank.");
+                                            db.scheduler.runSync(response);
+                                            return;
+                                        }
+                                    }
+                                    // Replace with new group if they are on the same ladder and if toUse and current is the same group
+                                    if (toUse.getId() == current.getGroup().getId()) {
+                                        // This is the group to promote from
+                                        clone.set(clone.indexOf(current), new CachedGroup(toPromoteTo, current.isNegated()));
+                                        changed = true;
+                                    }
+                                }
+                            }
+
+                            output.put(server, clone);
+                        }
+
+                        if (!changed) {
+                            response.setResponse(false, "Player has no groups on the specified ladder.");
+                            db.scheduler.runSync(response);
+                        } else {
+                            final Group toPromoteToFinal = toPromoteTo;
+                            String playerGroupStringOutput = getPlayerGroupsRawCached(output);
+                            db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
+
+                                @Override
+                                public void run() {
+                                    if (result.booleanValue()) {
+                                        response.setResponse(true, "Player was promoted to \"" + toPromoteToFinal.getName() + "\".");
+                                        reloadPlayer(uuid);
+                                        notifyReloadPlayer(uuid);
+                                    } else
+                                        response.setResponse(false, "Could not promote player. Check console for errors.");
+                                    db.scheduler.runSync(response);
+                                }
+                            });
+                        }
+
+                    } else {
+                        response.setResponse(false, "Player has no groups.");
+                        db.scheduler.runSync(response);
+                    }
+                } else {
+                    response.setResponse(false, "Player does not exist.");
+                    db.scheduler.runSync(response);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void demotePlayer(final UUID uuid, final String ladder, final ResponseRunnable response) {
+        final List<Group> groupsClone = new ArrayList<Group>(groups.values());
+        getPlayerCurrentGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+
+            @Override
+            public void run() {
+                if (result != null) {
+                    if (!result.isEmpty()) {
+                        Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
+                        LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
+                        boolean changed = false;
+                        Group toUse = null;
+                        Group toPromoteTo = null;
+                        while (it.hasNext()) {
+                            Entry<String, List<CachedGroup>> next = it.next();
+                            String server = next.getKey();
+                            List<CachedGroup> playerCurrentGroups = next.getValue();
+
+                            // Clone list to avoid making changes on online player
+                            List<CachedGroup> clone = new ArrayList<CachedGroup>(playerCurrentGroups);
+
+                            Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
+
+                            while (it2.hasNext()) {
+                                CachedGroup current = it2.next();
+                                if (current.getGroup().getLadder().equals(ladder)) {
+                                    if (toUse == null) {
+                                        toUse = current.getGroup();
+                                        toPromoteTo = getLowerGroup(toUse, groupsClone);
+                                        if (toPromoteTo == null) {
+                                            response.setResponse(false, "There is no group on this ladder with a lower rank.");
+                                            db.scheduler.runSync(response);
+                                            return;
+                                        }
+                                    }
+                                    // Replace with new group if they are on the same ladder and if toUse and current is the same group
+                                    if (toUse.getId() == current.getGroup().getId()) {
+                                        // This is the group to promote from
+                                        clone.set(clone.indexOf(current), new CachedGroup(toPromoteTo, current.isNegated()));
+                                        changed = true;
+                                    }
+                                }
+                            }
+
+                            output.put(server, clone);
+                        }
+
+                        if (!changed) {
+                            response.setResponse(false, "Player has no groups on the specified ladder.");
+                            db.scheduler.runSync(response);
+                        } else {
+                            final Group toPromoteToFinal = toPromoteTo;
+                            String playerGroupStringOutput = getPlayerGroupsRawCached(output);
+                            db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
+
+                                @Override
+                                public void run() {
+                                    if (result.booleanValue()) {
+                                        response.setResponse(true, "Player was demoted to \"" + toPromoteToFinal.getName() + "\".");
+                                        reloadPlayer(uuid);
+                                        notifyReloadPlayer(uuid);
+                                    } else
+                                        response.setResponse(false, "Could not demote player. Check console for errors.");
+                                    db.scheduler.runSync(response);
+                                }
+                            });
+                        }
+
+                    } else {
+                        response.setResponse(false, "Player has no groups.");
+                        db.scheduler.runSync(response);
+                    }
+                } else {
+                    response.setResponse(false, "Player does not exist.");
+                    db.scheduler.runSync(response);
+                }
+            }
+        });
     }
 
     // -------------------------------------------------------------------//
