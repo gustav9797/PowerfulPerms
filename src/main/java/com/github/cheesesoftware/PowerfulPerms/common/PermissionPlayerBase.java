@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
@@ -271,37 +272,53 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns the player's default prefix. Uses group order.
+     * Returns the player's default prefix. Uses group rank.
      */
     @Override
     public String getPrefix() {
         if (!prefix.isEmpty())
             return prefix;
-        List<Group> input = getGroups();
-        Iterator<Group> it = input.iterator();
-        while (it.hasNext()) {
-            Group group = it.next();
-            String prefix = group.getPrefix(PermissionManagerBase.serverName);
-            if (!prefix.isEmpty())
-                return prefix;
+
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        for (Group current : getGroups()) {
+            if (current.getLadder().equals("default"))
+                sortedGroups.put(current.getRank(), current);
+        }
+
+        if (!sortedGroups.isEmpty()) {
+            Iterator<Entry<Integer, Group>> reverse = sortedGroups.descendingMap().entrySet().iterator();
+            if (reverse.hasNext()) {
+                Group current = reverse.next().getValue();
+                String prefix = current.getPrefix(PermissionManagerBase.serverName);
+                if (!prefix.isEmpty())
+                    return prefix;
+            }
         }
         return "";
     }
 
     /**
-     * Returns the player's default suffix. Uses group order.
+     * Returns the player's default suffix. Uses group rank.
      */
     @Override
     public String getSuffix() {
         if (!suffix.isEmpty())
             return suffix;
-        List<Group> input = getGroups();
-        Iterator<Group> it = input.iterator();
-        while (it.hasNext()) {
-            Group group = it.next();
-            String suffix = group.getSuffix(PermissionManagerBase.serverName);
-            if (!suffix.isEmpty())
-                return suffix;
+
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        for (Group current : getGroups()) {
+            if (current.getLadder().equals("default"))
+                sortedGroups.put(current.getRank(), current);
+        }
+
+        if (!sortedGroups.isEmpty()) {
+            Iterator<Entry<Integer, Group>> reverse = sortedGroups.descendingMap().entrySet().iterator();
+            if (reverse.hasNext()) {
+                Group current = reverse.next().getValue();
+                String suffix = current.getSuffix(PermissionManagerBase.serverName);
+                if (!suffix.isEmpty())
+                    return suffix;
+            }
         }
         return "";
     }

@@ -13,6 +13,7 @@ import java.util.UUID;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.Pair;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
@@ -44,7 +45,7 @@ public class PermissionCommand {
                     final UUID uuid = result;
                     if (uuid == null) {
                         response.setResponse(false, "Could not find player UUID.");
-                        permissionManager.getScheduler().runSync(response);
+                        permissionManager.getScheduler().runSync(response, response.isSameThread());
                     } else {
 
                         int page = -1;
@@ -214,7 +215,10 @@ public class PermissionCommand {
 
                                         @Override
                                         public void run() {
+
                                             Map<String, List<CachedGroup>> groups = result;
+                                            if (groups == null)
+                                                groups = new LinkedHashMap<String, List<CachedGroup>>();
 
                                             // Store by ladder instead of server
                                             Map<String, List<Pair<String, CachedGroup>>> ladderGroups = new LinkedHashMap<String, List<Pair<String, CachedGroup>>>();

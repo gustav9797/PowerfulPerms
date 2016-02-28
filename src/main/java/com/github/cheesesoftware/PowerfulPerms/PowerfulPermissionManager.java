@@ -61,7 +61,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                                                 Bukkit.getLogger().info(consolePrefix + "Reloaded all groups.");
                                             } else if (first.equals("[players]")) {
                                                 loadGroups();
-                                                Bukkit.getLogger().info(consolePrefix + "Reloaded all players. ");
+                                                Bukkit.getLogger().info(consolePrefix + "Reloaded all players.");
                                             } else {
                                                 UUID uuid = UUID.fromString(first);
                                                 Player player = Bukkit.getPlayer(uuid);

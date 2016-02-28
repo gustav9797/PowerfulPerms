@@ -58,7 +58,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                                                 tempPlugin.getLogger().info(consolePrefix + "Reloaded all groups.");
                                             } else if (first.equals("[players]")) {
                                                 loadGroups();
-                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all players. ");
+                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all players.");
                                             } else {
                                                 UUID uuid = UUID.fromString(first);
                                                 ProxiedPlayer player = tempPlugin.getProxy().getPlayer(uuid);

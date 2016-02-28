@@ -576,7 +576,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
      * Loads groups from MySQL, removes old group data. Will reload all players too.
      */
     protected void loadGroups() {
-        loadGroups(false, false);
+        loadGroups(false);
+    }
+
+    protected void loadGroups(boolean sameThread) {
+        loadGroups(sameThread, sameThread);
     }
 
     /**
@@ -905,7 +909,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     protected void loadPlayerOwnPermissions(UUID uuid, final ResultRunnable<List<Permission>> resultRunnable) {
-        db.getPlayerPermissions(uuid, new DBRunnable(resultRunnable.sameThread()) {
+        db.getPlayerPermissions(uuid, new DBRunnable(resultRunnable.isSameThread()) {
 
             @Override
             public void run() {
@@ -917,7 +921,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         perms.add(tempPerm);
                     }
                     resultRunnable.setResult(perms);
-                    db.scheduler.runSync(resultRunnable, resultRunnable.sameThread());
+                    db.scheduler.runSync(resultRunnable, resultRunnable.isSameThread());
                 } else
                     plugin.getLogger().severe("Could not load player permissions.");
             }
@@ -1062,26 +1066,26 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void addPlayerPermission(final UUID uuid, final String playerName, final String permission, final String world, final String server, final ResponseRunnable response) {
         if (playerName.equalsIgnoreCase("[default]")) {
             response.setResponse(false, "You can not add permissions to the default player. Add them to a group instead and add the group to the default player.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
         // Check if the same permission already exists.
-        db.playerHasPermission(uuid, permission, world, server, new DBRunnable() {
+        db.playerHasPermission(uuid, permission, world, server, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     response.setResponse(false, "Player already has the specified permission.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                 } else {
-                    db.getPlayer(uuid, new DBRunnable() {
+                    db.getPlayer(uuid, new DBRunnable(response.isSameThread()) {
 
                         @Override
                         public void run() {
                             if (result.hasNext()) {
                                 final UUID uuid = UUID.fromString(result.next().getString("uuid"));
                                 if (uuid != null) {
-                                    db.insertPermission(uuid, playerName, "", permission, world, server, new DBRunnable() {
+                                    db.insertPermission(uuid, playerName, "", permission, world, server, new DBRunnable(response.isSameThread()) {
 
                                         @Override
                                         public void run() {
@@ -1091,16 +1095,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                 notifyReloadPlayer(uuid);
                                             } else
                                                 response.setResponse(false, "Could not add permission. Check console for any errors.");
-                                            db.scheduler.runSync(response);
+                                            db.scheduler.runSync(response, response.isSameThread());
                                         }
                                     });
                                 } else {
                                     response.setResponse(false, "Could not add permission. Player's UUID is invalid.");
-                                    db.scheduler.runSync(response);
+                                    db.scheduler.runSync(response, response.isSameThread());
                                 }
                             } else {
                                 response.setResponse(false, "Could not add permission. Player doesn't exist.");
-                                db.scheduler.runSync(response);
+                                db.scheduler.runSync(response, response.isSameThread());
                             }
                         }
                     });
@@ -1116,7 +1120,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void removePlayerPermission(final UUID uuid, String permission, String world, String server, final ResponseRunnable response) {
-        db.deletePlayerPermission(uuid, permission, world, server, new DBRunnable() {
+        db.deletePlayerPermission(uuid, permission, world, server, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
@@ -1127,7 +1131,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     notifyReloadPlayer(uuid);
                 } else
                     response.setResponse(false, "Player does not have the specified permission.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
@@ -1135,7 +1139,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public void removePlayerPermissions(final UUID uuid, final ResponseRunnable response) {
 
-        db.deletePlayerPermissions(uuid, new DBRunnable() {
+        db.deletePlayerPermissions(uuid, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
@@ -1146,7 +1150,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     notifyReloadPlayer(uuid);
                 } else
                     response.setResponse(false, "Player does not have any permissions.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
@@ -1155,11 +1159,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void setPlayerPrefix(final UUID uuid, String prefix, final ResponseRunnable response) {
         if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
             response.setResponse(false, "You can not set the prefix of the default player. Add it to a group instead and add the group to the default player.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
 
-        db.setPlayerPrefix(uuid, prefix, new DBRunnable() {
+        db.setPlayerPrefix(uuid, prefix, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
@@ -1169,7 +1173,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     notifyReloadPlayer(uuid);
                 } else
                     response.setResponse(false, "Could not set player prefix. Check console for errors.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
@@ -1178,11 +1182,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void setPlayerSuffix(final UUID uuid, String suffix, final ResponseRunnable response) {
         if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
             response.setResponse(false, "You can not set the suffix of the default player. Add it to a group instead and add the group to the default player.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
 
-        db.setPlayerSuffix(uuid, suffix, new DBRunnable() {
+        db.setPlayerSuffix(uuid, suffix, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
@@ -1192,7 +1196,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     notifyReloadPlayer(uuid);
                 } else
                     response.setResponse(false, "Could not set player suffix. Check console for errors.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
@@ -1217,7 +1221,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         final Group group = getGroup(groupName);
         if (group == null) {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
 
@@ -1245,12 +1249,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         playerGroups.put(serv, groupList);
                     else {
                         response.setResponse(false, "Player does not have the specified group for the specified server.");
-                        db.scheduler.runSync(response);
+                        db.scheduler.runSync(response, response.isSameThread());
                         return;
                     }
 
                     String playerGroupStringOutput = getPlayerGroupsRawCached(playerGroups);
-                    db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
+                    db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable(response.isSameThread()) {
 
                         @Override
                         public void run() {
@@ -1260,12 +1264,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 notifyReloadPlayer(uuid);
                             } else
                                 response.setResponse(false, "Could not remove player group. Check console for errors.");
-                            db.scheduler.runSync(response);
+                            db.scheduler.runSync(response, response.isSameThread());
                         }
                     });
                 } else {
                     response.setResponse(false, "Player does not exist.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                 }
             }
         });
@@ -1291,7 +1295,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         final Group group = getGroup(groupName);
         if (group == null) {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
 
@@ -1310,7 +1314,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         CachedGroup cachedGroup = it.next();
                         if (cachedGroup.getGroup().getId() == group.getId() && cachedGroup.isNegated() == negated) {
                             response.setResponse(false, "Player already has this group.");
-                            db.scheduler.runSync(response);
+                            db.scheduler.runSync(response, response.isSameThread());
                             return;
                         }
                     }
@@ -1319,7 +1323,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     playerGroups.put(serv, groupList);
 
                     String playerGroupStringOutput = getPlayerGroupsRawCached(playerGroups);
-                    db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
+                    db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable(response.isSameThread()) {
 
                         @Override
                         public void run() {
@@ -1329,13 +1333,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 notifyReloadPlayer(uuid);
                             } else
                                 response.setResponse(false, "Could not add player group. Check console for errors.");
-                            db.scheduler.runSync(response);
+                            db.scheduler.runSync(response, response.isSameThread());
                         }
                     });
 
                 } else {
                     response.setResponse(false, "Player does not exist.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                 }
             }
         });
@@ -1351,7 +1355,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         final Group group = getGroup(groupName);
         if (group == null) {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
 
@@ -1392,10 +1396,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                         if (!changed) {
                             response.setResponse(false, "Player has no groups on the specified ladder.");
-                            db.scheduler.runSync(response);
+                            db.scheduler.runSync(response, response.isSameThread());
                         } else {
                             String playerGroupStringOutput = getPlayerGroupsRawCached(output);
-                            db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
+                            db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable(response.isSameThread()) {
 
                                 @Override
                                 public void run() {
@@ -1405,17 +1409,17 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         notifyReloadPlayer(uuid);
                                     } else
                                         response.setResponse(false, "Could not set player rank. Check console for errors.");
-                                    db.scheduler.runSync(response);
+                                    db.scheduler.runSync(response, response.isSameThread());
                                 }
                             });
                         }
                     } else {
                         response.setResponse(false, "Player has no groups.");
-                        db.scheduler.runSync(response);
+                        db.scheduler.runSync(response, response.isSameThread());
                     }
                 } else {
                     response.setResponse(false, "Player does not exist.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                 }
             }
         });
@@ -1494,7 +1498,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         toPromoteTo = getHigherGroup(toUse, groupsClone);
                                         if (toPromoteTo == null) {
                                             response.setResponse(false, "There is no group on this ladder with a higher rank.");
-                                            db.scheduler.runSync(response);
+                                            db.scheduler.runSync(response, response.isSameThread());
                                             return;
                                         }
                                     }
@@ -1512,11 +1516,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                         if (!changed) {
                             response.setResponse(false, "Player has no groups on the specified ladder.");
-                            db.scheduler.runSync(response);
+                            db.scheduler.runSync(response, response.isSameThread());
                         } else {
                             final Group toPromoteToFinal = toPromoteTo;
                             String playerGroupStringOutput = getPlayerGroupsRawCached(output);
-                            db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
+                            db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable(response.isSameThread()) {
 
                                 @Override
                                 public void run() {
@@ -1526,18 +1530,18 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         notifyReloadPlayer(uuid);
                                     } else
                                         response.setResponse(false, "Could not promote player. Check console for errors.");
-                                    db.scheduler.runSync(response);
+                                    db.scheduler.runSync(response, response.isSameThread());
                                 }
                             });
                         }
 
                     } else {
                         response.setResponse(false, "Player has no groups.");
-                        db.scheduler.runSync(response);
+                        db.scheduler.runSync(response, response.isSameThread());
                     }
                 } else {
                     response.setResponse(false, "Player does not exist.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                 }
             }
         });
@@ -1575,7 +1579,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         toPromoteTo = getLowerGroup(toUse, groupsClone);
                                         if (toPromoteTo == null) {
                                             response.setResponse(false, "There is no group on this ladder with a lower rank.");
-                                            db.scheduler.runSync(response);
+                                            db.scheduler.runSync(response, response.isSameThread());
                                             return;
                                         }
                                     }
@@ -1593,11 +1597,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                         if (!changed) {
                             response.setResponse(false, "Player has no groups on the specified ladder.");
-                            db.scheduler.runSync(response);
+                            db.scheduler.runSync(response, response.isSameThread());
                         } else {
                             final Group toPromoteToFinal = toPromoteTo;
                             String playerGroupStringOutput = getPlayerGroupsRawCached(output);
-                            db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable() {
+                            db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable(response.isSameThread()) {
 
                                 @Override
                                 public void run() {
@@ -1607,18 +1611,18 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         notifyReloadPlayer(uuid);
                                     } else
                                         response.setResponse(false, "Could not demote player. Check console for errors.");
-                                    db.scheduler.runSync(response);
+                                    db.scheduler.runSync(response, response.isSameThread());
                                 }
                             });
                         }
 
                     } else {
                         response.setResponse(false, "Player has no groups.");
-                        db.scheduler.runSync(response);
+                        db.scheduler.runSync(response, response.isSameThread());
                     }
                 } else {
                     response.setResponse(false, "Player does not exist.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                 }
             }
         });
@@ -1638,39 +1642,39 @@ public abstract class PermissionManagerBase implements PermissionManager {
             if (e.getValue().getName().equalsIgnoreCase(name)) {
                 // Group already exists
                 response.setResponse(false, "Group already exists.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
                 return;
             }
         }
 
-        db.insertGroup(name, "", "", "", ladder, rank, new DBRunnable() {
+        db.insertGroup(name, "", "", "", ladder, rank, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     response.setResponse(true, "Created group.");
-                    loadGroups();
+                    loadGroups(response.isSameThread());
                     notifyReloadGroups();
                 } else
                     response.setResponse(false, "Group already exists.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
 
     @Override
     public void deleteGroup(String groupName, final ResponseRunnable response) {
-        db.deleteGroup(groupName, new DBRunnable() {
+        db.deleteGroup(groupName, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     response.setResponse(true, "Deleted group.");
-                    loadGroups();
+                    loadGroups(response.isSameThread());
                     notifyReloadGroups();
                 } else
                     response.setResponse(false, "Group does not exist.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
@@ -1691,29 +1695,29 @@ public abstract class PermissionManagerBase implements PermissionManager {
             for (Permission temp : groupPermissions) {
                 if (temp.getPermissionString().equals(permission) && temp.getServer().equals(server) && temp.getWorld().equals(world)) {
                     response.setResponse(false, "Group already has the specified permission.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                     return;
                 }
             }
 
             groupPermissions.add(sp);
 
-            db.insertPermission((UUID) null, "", groupName, permission, world, server, new DBRunnable() {
+            db.insertPermission((UUID) null, "", groupName, permission, world, server, new DBRunnable(response.isSameThread()) {
 
                 @Override
                 public void run() {
                     if (result.booleanValue()) {
                         response.setResponse(true, "Added permission to group.");
-                        loadGroups();
+                        loadGroups(response.isSameThread());
                         notifyReloadGroups();
                     } else
                         response.setResponse(false, "Could not add permission to group. Check console for errors.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                 }
             });
         } else {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
         }
     }
 
@@ -1726,23 +1730,23 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void removeGroupPermission(String groupName, String permission, String world, String server, final ResponseRunnable response) {
         Group group = getGroup(groupName);
         if (group != null) {
-            db.deleteGroupPermission(groupName, permission, world, server, new DBRunnable() {
+            db.deleteGroupPermission(groupName, permission, world, server, new DBRunnable(response.isSameThread()) {
 
                 @Override
                 public void run() {
                     if (result.booleanValue()) {
                         response.setResponse(true, "Removed " + result.rowsChanged() + " permissions from the group.");
-                        loadGroups();
+                        loadGroups(response.isSameThread());
                         notifyReloadGroups();
                     } else
                         response.setResponse(false, "Group does not have the specified permission.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                 }
             });
 
         } else {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
         }
     }
 
@@ -1754,12 +1758,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
             if (groupPermissions.size() <= 0) {
                 response.setResponse(false, "Group does not have any permissions.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
                 return;
             }
 
             final Counter counter = new Counter();
-            db.deleteGroupPermissions(groupName, new DBRunnable() {
+            db.deleteGroupPermissions(groupName, new DBRunnable(response.isSameThread()) {
 
                 @Override
                 public void run() {
@@ -1768,12 +1772,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
             });
 
             response.setResponse(true, "Removed " + counter.amount() + " permissions from the group.");
-            db.scheduler.runSync(response);
-            loadGroups();
+            db.scheduler.runSync(response, response.isSameThread());
+            loadGroups(response.isSameThread());
             notifyReloadGroups();
         } else {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
         }
     }
 
@@ -1786,32 +1790,32 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 String currentParents = PowerfulGroup.encodeParents(group.getParents());
                 if (currentParents.contains(parentGroupName)) {
                     response.setResponse(false, "Group already has the specified parent.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                     return;
                 }
                 currentParents += parentGroup.getId() + ";";
 
-                db.setGroupParents(groupName, currentParents, new DBRunnable() {
+                db.setGroupParents(groupName, currentParents, new DBRunnable(response.isSameThread()) {
 
                     @Override
                     public void run() {
                         if (result.booleanValue()) {
                             response.setResponse(true, "Added parent to group.");
-                            loadGroups();
+                            loadGroups(response.isSameThread());
                             notifyReloadGroups();
                         } else
                             response.setResponse(false, "Could not add parent to group. Check console for errors.");
-                        db.scheduler.runSync(response);
+                        db.scheduler.runSync(response, response.isSameThread());
                     }
                 });
 
             } else {
                 response.setResponse(false, "Parent group does not exist.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         } else {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
         }
     }
 
@@ -1825,32 +1829,32 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 String toRemove = parentGroup.getId() + ";";
                 if (!currentParents.contains(toRemove)) {
                     response.setResponse(false, "Group does not have the specified parent.");
-                    db.scheduler.runSync(response);
+                    db.scheduler.runSync(response, response.isSameThread());
                     return;
                 }
                 currentParents = currentParents.replaceFirst(parentGroup.getId() + ";", "");
 
-                db.setGroupParents(groupName, currentParents, new DBRunnable() {
+                db.setGroupParents(groupName, currentParents, new DBRunnable(response.isSameThread()) {
 
                     @Override
                     public void run() {
                         if (result.booleanValue()) {
                             response.setResponse(true, "Removed parent from group.");
-                            loadGroups();
+                            loadGroups(response.isSameThread());
                             notifyReloadGroups();
                         } else
                             response.setResponse(false, "Could not remove parent from group. Check console for errors.");
-                        db.scheduler.runSync(response);
+                        db.scheduler.runSync(response, response.isSameThread());
                     }
                 });
 
             } else {
                 response.setResponse(false, "Parent group does not exist.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         } else {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
         }
     }
 
@@ -1867,7 +1871,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         Group group = getGroup(groupName);
         if (group == null) {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
 
@@ -1878,17 +1882,17 @@ public abstract class PermissionManagerBase implements PermissionManager {
             currentPrefix.put(server, prefix);
         final String output = PowerfulGroup.encodePrefixSuffix(currentPrefix);
 
-        db.setGroupPrefix(groupName, output, new DBRunnable() {
+        db.setGroupPrefix(groupName, output, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     response.setResponse(true, "Group prefix set.");
-                    loadGroups();
+                    loadGroups(response.isSameThread());
                     notifyReloadGroups();
                 } else
                     response.setResponse(false, "Could not set group prefix. Check console for errors.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
@@ -1906,7 +1910,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         Group group = getGroup(groupName);
         if (group == null) {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
 
@@ -1917,17 +1921,17 @@ public abstract class PermissionManagerBase implements PermissionManager {
             currentSuffix.put(server, suffix);
         final String output = PowerfulGroup.encodePrefixSuffix(currentSuffix);
 
-        db.setGroupSuffix(groupName, output, new DBRunnable() {
+        db.setGroupSuffix(groupName, output, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     response.setResponse(true, "Group suffix set.");
-                    loadGroups();
+                    loadGroups(response.isSameThread());
                     notifyReloadGroups();
                 } else
                     response.setResponse(false, "Could not set group suffix. Check console for errors.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
@@ -1940,21 +1944,21 @@ public abstract class PermissionManagerBase implements PermissionManager {
         Group group = getGroup(groupName);
         if (group == null) {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
 
-        db.setGroupLadder(groupName, ladder, new DBRunnable() {
+        db.setGroupLadder(groupName, ladder, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     response.setResponse(true, "Group ladder set.");
-                    loadGroups();
+                    loadGroups(response.isSameThread());
                     notifyReloadGroups();
                 } else
                     response.setResponse(false, "Could not set group ladder. Check console for errors.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
@@ -1964,21 +1968,21 @@ public abstract class PermissionManagerBase implements PermissionManager {
         Group group = getGroup(groupName);
         if (group == null) {
             response.setResponse(false, "Group does not exist.");
-            db.scheduler.runSync(response);
+            db.scheduler.runSync(response, response.isSameThread());
             return;
         }
 
-        db.setGroupRank(groupName, rank, new DBRunnable() {
+        db.setGroupRank(groupName, rank, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
                     response.setResponse(true, "Group rank set.");
-                    loadGroups();
+                    loadGroups(response.isSameThread());
                     notifyReloadGroups();
                 } else
                     response.setResponse(false, "Could not set group rank. Check console for errors.");
-                db.scheduler.runSync(response);
+                db.scheduler.runSync(response, response.isSameThread());
             }
         });
     }
