@@ -127,8 +127,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
         loadGroups(true, true);
 
-        reloadDefaultPlayers(true);
-
         // Initialize Redis
         if (redis_password == null || redis_password.isEmpty())
             pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0);
@@ -588,7 +586,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
      * false and it will run asynchronously. endSameThread: Set this to true if you want to finish and insert groups on the same thread. Note: This -MUST- be Bukkit main thread you execute on. Set to
      * false if you want to run it synchronously but scheduled.
      */
-    protected void loadGroups(boolean beginSameThread, final boolean endSameThread) {
+    protected void loadGroups(final boolean beginSameThread, final boolean endSameThread) {
         debug("loadGroups begin");
         groups.clear();
 
@@ -654,7 +652,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             }
 
                             // Reload players too.
-                            reloadPlayers();
+                            reloadDefaultPlayers(beginSameThread);
                             debug("loadGroups end");
                         }
                     }, endSameThread);
@@ -722,18 +720,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                 int groupId = Integer.parseInt(split[1]);
 
-                /*-boolean primary = false;
-                boolean secondary = false;
-                if (split.length >= 3) {
-                    if (split[2].equals("p"))
-                        primary = true;
-                    else if (split[2].equals("s"))
-                        secondary = true;
-                }*/
-
-                debug("add group:" + groupId + " negated:" + negated);
-                input.add(new CachedGroup(groups.get(groupId), negated));
-                tempGroups.put(server, input);
+                Group group = groups.get(groupId);
+                if (group != null) {
+                    debug("add group:" + groupId + " negated:" + negated);
+                    input.add(new CachedGroup(group, negated));
+                    tempGroups.put(server, input);
+                }
             } else {
                 if (!s.isEmpty()) {
                     // If list null, initialize list
@@ -750,68 +742,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return tempGroups;
     }
 
-    protected LinkedHashMap<String, List<CachedGroupRaw>> getPlayerGroupsRaw(String raw) {
-        LinkedHashMap<String, List<CachedGroupRaw>> tempGroups = new LinkedHashMap<String, List<CachedGroupRaw>>();
-        for (String s : raw.split(";")) {
-            // Each group entry
-            String[] split = s.split(":");
-            if (split.length >= 2) {
-                String server = split[0];
-
-                // If list null, initialize list
-                List<CachedGroupRaw> input = tempGroups.get(server);
-                if (input == null)
-                    input = new ArrayList<CachedGroupRaw>();
-
-                boolean negated = split[1].startsWith("-");
-                if (negated)
-                    split[1] = split[1].substring(1);
-
-                int groupId = Integer.parseInt(split[1]);
-
-                /*-boolean primary = false;
-                boolean secondary = false;
-                if (split.length >= 3) {
-                    if (split[2].equals("p"))
-                        primary = true;
-                    else if (split[2].equals("s"))
-                        secondary = true;
-                }*/
-
-                debug("add group:" + groupId + " negated:" + negated);
-                input.add(new CachedGroupRaw(groupId, negated));
-                tempGroups.put(server, input);
-            } else {
-                if (!s.isEmpty()) {
-                    // If list null, initialize list
-                    List<CachedGroupRaw> input = tempGroups.get("");
-                    if (input == null)
-                        input = new ArrayList<CachedGroupRaw>();
-
-                    input.add(new CachedGroupRaw(Integer.parseInt(s), false));
-                    tempGroups.put("", input);
-                    debug(s + " old ");
-                }
-            }
-        }
-        return tempGroups;
-    }
-
     public static String getPlayerGroupsRawCached(Map<String, List<CachedGroup>> input) {
         String output = "";
         for (Entry<String, List<CachedGroup>> entry : input.entrySet()) {
             for (CachedGroup cachedGroup : entry.getValue()) {
                 output += entry.getKey() + ":" + (cachedGroup.isNegated() ? "-" : "") + cachedGroup.getGroup().getId() + ":" /* old primary/secondary here */+ ";";
-            }
-        }
-        return output;
-    }
-
-    public static String getPlayerGroupsRawCachedRaw(Map<String, List<CachedGroupRaw>> input) {
-        String output = "";
-        for (Entry<String, List<CachedGroupRaw>> entry : input.entrySet()) {
-            for (CachedGroupRaw cachedGroup : entry.getValue()) {
-                output += entry.getKey() + ":" + (cachedGroup.isNegated() ? "-" : "") + cachedGroup.getGroupId() + ":" /* old primary/secondary here */+ ";";
             }
         }
         return output;
@@ -863,6 +798,28 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     }
                     resultRunnable.setResult(output);
                 }
+                db.scheduler.runSync(resultRunnable);
+            }
+        });
+    }
+
+    @Override
+    public void isPlayerDefault(UUID uuid, final ResultRunnable<Boolean> resultRunnable) {
+        PermissionPlayer permissionPlayer = (PermissionPlayer) players.get(uuid);
+        if (permissionPlayer != null) {
+            resultRunnable.setResult(permissionPlayer.isDefault());
+            db.scheduler.runSync(resultRunnable);
+            return;
+        }
+
+        getPlayerGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+
+            @Override
+            public void run() {
+                if (result == null || result.isEmpty())
+                    resultRunnable.setResult(true);
+                else
+                    resultRunnable.setResult(false);
                 db.scheduler.runSync(resultRunnable);
             }
         });

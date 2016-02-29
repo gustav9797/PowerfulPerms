@@ -17,7 +17,7 @@ redis_password: ""
 
 # Use Bungee-sided command
 # If this is enabled and you have PowerfulPerms installed in your Bungee proxy, it will send the /powerfulperms command through Bungee instead of Bukkit.
-# Note: This is only meant to be used if you're using Redis or/and you are running PowerfulPerms on Bungee side only.
+# READ: This is only meant to be used if your whole network is running the same setting AND: *You're using Redis. OR *You are running PowerfulPerms on Bungee side -only-.
 # If you're not using Redis your Spigot servers won't be notified of permission changes and you will have to reload all servers manually.
 # It will also replace/mess with Bukkit sided PowerfulPerms command. 
 # Highly recommended to set to false.
@@ -29,3 +29,8 @@ servername: ""
 
 # Set "onlinemode: false" if you run your server in offline mode. Set to "onlinemode: mixed" for mixed mode, more details about this on the PowerfulPerms wiki. Defaults to true.
 onlinemode: true
+
+# Chat format used along with PlaceholderAPI. PlaceholderAPI must be installed. Disable if you are using a different chat plugin. 
+# Use PlaceholderAPI's placeholders but with brackets instead of percentage. This is not used Bungee-side.
+use_chatformat: true
+chatformat: "{powerfulperms_prefix}{player_name}{powerfulperms_suffix}{message}"

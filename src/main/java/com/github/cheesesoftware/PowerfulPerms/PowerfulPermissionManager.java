@@ -146,7 +146,11 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerChat(AsyncPlayerChatEvent e) {
         PermissionPlayer gp = this.getPermissionsPlayer(e.getPlayer());
-        e.setFormat(ChatColor.translateAlternateColorCodes('&', gp.getPrefix() + "%1$s" + gp.getSuffix() + "%2$s"));
+        if (PowerfulPerms.useChatFormat) {
+            String output = me.clip.placeholderapi.PlaceholderAPI.setBracketPlaceholders(e.getPlayer(), PowerfulPerms.chatFormat);
+            e.setFormat(ChatColor.translateAlternateColorCodes('&', output.replace("{message}", "%2$s")));
+        } else
+            e.setFormat(ChatColor.translateAlternateColorCodes('&', gp.getPrefix() + "%1$s" + gp.getSuffix() + "%2$s"));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

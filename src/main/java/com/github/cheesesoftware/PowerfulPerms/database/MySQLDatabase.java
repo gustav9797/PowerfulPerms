@@ -147,7 +147,7 @@ public class MySQLDatabase extends Database {
                     // Insert player [default]
                     s = sql.getConnection().prepareStatement(
                             "INSERT INTO `" + tblPlayers + "` (`uuid`, `name`, `groups`, `prefix`, `suffix`) VALUES ('"
-                                    + java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)).toString() + "', '[default]', '', '', '');");
+                                    + java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)).toString() + "', '[default]', ':1:;', '', '');");
                     s.execute();
                     s.close();
                 } catch (SQLException e1) {
@@ -733,7 +733,7 @@ public class MySQLDatabase extends Database {
 
                     @Override
                     public void run() {
-                        done.setResult(new DBResult(result.booleanValue() && success2, amount2));
+                        done.setResult(new DBResult(success2, amount2));
                         scheduler.runSync(done, done.sameThread());
                     }
                 });

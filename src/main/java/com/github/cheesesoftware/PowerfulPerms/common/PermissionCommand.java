@@ -206,114 +206,118 @@ public class PermissionCommand {
                                         tempUUID = row.getString("uuid");
                                     rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
 
-                                    PermissionPlayer permissionPlayer = permissionManager.getPermissionPlayer(uuid);
-                                    if (permissionPlayer != null && permissionPlayer.isDefault()) {
-                                        rows.add("This player has no groups and is using [default] groups.");
-                                    }
-
-                                    permissionManager.getPlayerCurrentGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+                                    permissionManager.isPlayerDefault(uuid, new ResultRunnable<Boolean>() {
 
                                         @Override
                                         public void run() {
+                                            if (result)
+                                                rows.add("This player has no groups and is using [default] groups.");
 
-                                            Map<String, List<CachedGroup>> groups = result;
-                                            if (groups == null)
-                                                groups = new LinkedHashMap<String, List<CachedGroup>>();
-
-                                            // Store by ladder instead of server
-                                            Map<String, List<Pair<String, CachedGroup>>> ladderGroups = new LinkedHashMap<String, List<Pair<String, CachedGroup>>>();
-                                            Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
-                                            while (it.hasNext()) {
-                                                Entry<String, List<CachedGroup>> currentGroups = it.next();
-                                                if (currentGroups != null) {
-                                                    Iterator<CachedGroup> it2 = currentGroups.getValue().iterator();
-                                                    while (it2.hasNext()) {
-                                                        CachedGroup currentGroup = it2.next();
-                                                        String ladder = currentGroup.getGroup().getLadder();
-
-                                                        List<Pair<String, CachedGroup>> out = ladderGroups.get(ladder);
-                                                        if (out == null)
-                                                            out = new ArrayList<Pair<String, CachedGroup>>();
-
-                                                        out.add(new Pair<String, CachedGroup>(currentGroups.getKey(), currentGroup));
-                                                        ladderGroups.put(ladder, out);
-                                                    }
-                                                }
-                                            }
-
-                                            // List groups
-                                            // String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
-                                            if (groups != null && groups.size() > 0) {
-                                                Iterator<Entry<String, List<Pair<String, CachedGroup>>>> it3 = ladderGroups.entrySet().iterator();
-                                                while (it3.hasNext()) {
-                                                    Entry<String, List<Pair<String, CachedGroup>>> current = it3.next();
-                                                    Iterator<Pair<String, CachedGroup>> it4 = current.getValue().iterator();
-                                                    String otherGroups = ChatColor.GREEN + "On ladder " + ChatColor.WHITE + "\"" + current.getKey() + "\": ";
-                                                    while (it4.hasNext()) {
-                                                        Pair<String, CachedGroup> cachedGroup = it4.next();
-                                                        Group group = cachedGroup.getSecond().getGroup();
-                                                        if (group != null) {
-                                                            otherGroups += (cachedGroup.getSecond().isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
-                                                                    + (cachedGroup.getFirst() == null || cachedGroup.getFirst().isEmpty() ? "ALL" : cachedGroup.getFirst());
-                                                            otherGroups += ", ";
-                                                        }
-                                                    }
-                                                    if (otherGroups.endsWith(", "))
-                                                        otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
-
-                                                    rows.add(otherGroups);
-                                                }
-                                            } else
-                                                rows.add("Player has no groups.");
-
-                                            // List groups
-                                            /*-String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
-                                            if (groups != null && groups.size() > 0) {
-                                                Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
-                                                while (it.hasNext()) {
-                                                    Entry<String, List<CachedGroup>> current = it.next();
-                                                    Iterator<CachedGroup> itt = current.getValue().iterator();
-                                                    while (itt.hasNext()) {
-                                                        CachedGroup cachedGroup = itt.next();
-                                                        Group group = cachedGroup.getGroup();
-                                                        if (group != null) {
-                                                            otherGroups += (cachedGroup.isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
-                                                                    + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
-                                                            otherGroups += ", ";
-                                                        }
-                                                    }
-                                                }
-                                            } else
-                                                otherGroups += "Player has no groups.";
-                                            if (otherGroups.endsWith(", "))
-                                                otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
-                                            rows.add(otherGroups);*/
-
-                                            permissionManager.getPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>() {
+                                            permissionManager.getPlayerCurrentGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
 
                                                 @Override
                                                 public void run() {
-                                                    List<Permission> playerPerms = result;
-                                                    if (playerPerms != null && playerPerms.size() > 0)
-                                                        for (Permission e : playerPerms) {
-                                                            rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
-                                                                    + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
-                                                                    + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
+
+                                                    Map<String, List<CachedGroup>> groups = result;
+                                                    if (groups == null)
+                                                        groups = new LinkedHashMap<String, List<CachedGroup>>();
+
+                                                    // Store by ladder instead of server
+                                                    Map<String, List<Pair<String, CachedGroup>>> ladderGroups = new LinkedHashMap<String, List<Pair<String, CachedGroup>>>();
+                                                    Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
+                                                    while (it.hasNext()) {
+                                                        Entry<String, List<CachedGroup>> currentGroups = it.next();
+                                                        if (currentGroups != null) {
+                                                            Iterator<CachedGroup> it2 = currentGroups.getValue().iterator();
+                                                            while (it2.hasNext()) {
+                                                                CachedGroup currentGroup = it2.next();
+                                                                String ladder = currentGroup.getGroup().getLadder();
+
+                                                                List<Pair<String, CachedGroup>> out = ladderGroups.get(ladder);
+                                                                if (out == null)
+                                                                    out = new ArrayList<Pair<String, CachedGroup>>();
+
+                                                                out.add(new Pair<String, CachedGroup>(currentGroups.getKey(), currentGroup));
+                                                                ladderGroups.put(ladder, out);
+                                                            }
                                                         }
-                                                    else
-                                                        rows.add("Player has no permissions.");
+                                                    }
 
-                                                    List<List<String>> list = createList(rows, 19);
-                                                    sendSender(invoker, sender, ChatColor.BLUE + "Page " + (pageCopy + 1) + " of " + list.size());
+                                                    // List groups
+                                                    // String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
+                                                    if (groups != null && groups.size() > 0) {
+                                                        Iterator<Entry<String, List<Pair<String, CachedGroup>>>> it3 = ladderGroups.entrySet().iterator();
+                                                        while (it3.hasNext()) {
+                                                            Entry<String, List<Pair<String, CachedGroup>>> current = it3.next();
+                                                            Iterator<Pair<String, CachedGroup>> it4 = current.getValue().iterator();
+                                                            String otherGroups = ChatColor.GREEN + "On ladder " + ChatColor.WHITE + "\"" + current.getKey() + "\": ";
+                                                            while (it4.hasNext()) {
+                                                                Pair<String, CachedGroup> cachedGroup = it4.next();
+                                                                Group group = cachedGroup.getSecond().getGroup();
+                                                                if (group != null) {
+                                                                    otherGroups += (cachedGroup.getSecond().isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":"
+                                                                            + ChatColor.RED + (cachedGroup.getFirst() == null || cachedGroup.getFirst().isEmpty() ? "ALL" : cachedGroup.getFirst());
+                                                                    otherGroups += ", ";
+                                                                }
+                                                            }
+                                                            if (otherGroups.endsWith(", "))
+                                                                otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
 
-                                                    if (pageCopy < list.size()) {
-                                                        for (String s : list.get(pageCopy))
-                                                            sendSender(invoker, sender, s);
+                                                            rows.add(otherGroups);
+                                                        }
                                                     } else
-                                                        sendSender(invoker, sender, "Invalid page. Page too high. ");
+                                                        rows.add("Player has no groups.");
+
+                                                    // List groups
+                                                    /*-String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
+                                                    if (groups != null && groups.size() > 0) {
+                                                        Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
+                                                        while (it.hasNext()) {
+                                                            Entry<String, List<CachedGroup>> current = it.next();
+                                                            Iterator<CachedGroup> itt = current.getValue().iterator();
+                                                            while (itt.hasNext()) {
+                                                                CachedGroup cachedGroup = itt.next();
+                                                                Group group = cachedGroup.getGroup();
+                                                                if (group != null) {
+                                                                    otherGroups += (cachedGroup.isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":" + ChatColor.RED
+                                                                            + (current.getKey() == null || current.getKey().isEmpty() ? "ALL" : current.getKey());
+                                                                    otherGroups += ", ";
+                                                                }
+                                                            }
+                                                        }
+                                                    } else
+                                                        otherGroups += "Player has no groups.";
+                                                    if (otherGroups.endsWith(", "))
+                                                        otherGroups = otherGroups.substring(0, otherGroups.length() - 2);
+                                                    rows.add(otherGroups);*/
+
+                                                    permissionManager.getPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>() {
+
+                                                        @Override
+                                                        public void run() {
+                                                            List<Permission> playerPerms = result;
+                                                            if (playerPerms != null && playerPerms.size() > 0)
+                                                                for (Permission e : playerPerms) {
+                                                                    rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
+                                                                            + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
+                                                                            + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
+                                                                }
+                                                            else
+                                                                rows.add("Player has no permissions.");
+
+                                                            List<List<String>> list = createList(rows, 19);
+                                                            sendSender(invoker, sender, ChatColor.BLUE + "Page " + (pageCopy + 1) + " of " + list.size());
+
+                                                            if (pageCopy < list.size()) {
+                                                                for (String s : list.get(pageCopy))
+                                                                    sendSender(invoker, sender, s);
+                                                            } else
+                                                                sendSender(invoker, sender, "Invalid page. Page too high. ");
+                                                        }
+                                                    });
+
                                                 }
                                             });
-
                                         }
                                     });
 
