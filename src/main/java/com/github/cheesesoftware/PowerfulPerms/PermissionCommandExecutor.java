@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionCommand;
@@ -39,6 +40,16 @@ public class PermissionCommandExecutor implements ICommand, CommandExecutor {
     @Override
     public String getVersion() {
         return PowerfulPerms.getPlugin().getDescription().getVersion();
+    }
+
+    @Override
+    public boolean hasPermission(String name, String permission) {
+        if (name.equals("console"))
+            return true;
+        Player player = Bukkit.getPlayerExact(name);
+        if (player != null && (player.hasPermission("powerfulperms.admin") || player.hasPermission(permission)))
+            return true;
+        return false;
     }
 
 }
