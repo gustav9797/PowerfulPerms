@@ -121,8 +121,8 @@
                   <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.apache</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>com.googlecode</pattern>
-                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.com.googlecode</shadedPattern>
+                  <pattern>org.json</pattern>
+                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.json</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>

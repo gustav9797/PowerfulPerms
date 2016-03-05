@@ -8,4 +8,3 @@ commands:
  powerfulperms:
   description: The global command of PowerfulPerms for modifying permissions.
   aliases: [pp, pop, pow]
-  permission: powerfulperms.admin
