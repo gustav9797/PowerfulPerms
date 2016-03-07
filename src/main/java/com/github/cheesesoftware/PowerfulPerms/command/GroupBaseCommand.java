@@ -13,6 +13,16 @@ public class GroupBaseCommand extends SubCommand {
         super(plugin, permissionManager);
 
         subCommands.add(new GroupCommand(plugin, permissionManager));
+        subCommands.add(new GroupCreateCommand(plugin, permissionManager));
+        subCommands.add(new GroupDeleteCommand(plugin, permissionManager));
+        subCommands.add(new GroupClearPermissionsCommand(plugin, permissionManager));
+        subCommands.add(new GroupAddPermissionCommand(plugin, permissionManager));
+        subCommands.add(new GroupRemovePermissionCommand(plugin, permissionManager));
+        subCommands.add(new GroupParentsCommand(plugin, permissionManager));
+        subCommands.add(new GroupPrefixCommand(plugin, permissionManager));
+        subCommands.add(new GroupSuffixCommand(plugin, permissionManager));
+        subCommands.add(new GroupSetLadderCommand(plugin, permissionManager));
+        subCommands.add(new GroupSetRankCommand(plugin, permissionManager));
     }
 
     @Override
@@ -28,18 +38,16 @@ public class GroupBaseCommand extends SubCommand {
                     CommandResult result = subCommand.execute(invoker, sender, newArgs);
                     if (result == CommandResult.success) {
                         return CommandResult.success;
-                    } else if (result == CommandResult.showUsage) {
-                        sendSender(invoker, sender, subCommand.getUsage());
-                        return CommandResult.success;
                     } else if (result == CommandResult.noMatch) {
                         hasSomePermission = true;
 
                     }
                 }
 
-                if (hasSomePermission)
-                    return CommandResult.showUsage;
-                else
+                if (hasSomePermission) {
+                    sendSender(invoker, sender, getUsage());
+                    return CommandResult.success;
+                } else
                     return CommandResult.noPermission;
             }
             return CommandResult.noMatch;
@@ -52,7 +60,6 @@ public class GroupBaseCommand extends SubCommand {
         List<String> usage = new ArrayList<String>();
         for (SubCommand subCommand : subCommands)
             usage.addAll(subCommand.getUsage());
-        usage.add("This is from GroupBaseCommand");
         return usage;
     }
 

@@ -140,7 +140,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void getConvertUUID(final String playerName, final ResultRunnable<UUID> resultRunnable) {
-        if (playerName.equalsIgnoreCase("[default]")) {
+        if (playerName.equalsIgnoreCase("[default]") || playerName.equalsIgnoreCase("{default}")) {
             resultRunnable.setResult(DefaultPermissionPlayer.getUUID());
             db.scheduler.runSync(resultRunnable);
             return;
@@ -1394,9 +1394,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
         while (it.hasNext()) {
             Entry<Integer, Group> entry = it.next();
             if (entry.getKey() == group.getRank() && entry.getValue().getName().equals(group.getName())) {
-                if (it.hasNext())
-                    return it.next().getValue();
-                else
+                if (it.hasNext()) {
+                    Group next = it.next().getValue();
+                    if (next.getId() == group.getId())
+                        return null;
+                    return next;
+                } else
                     return null;
             }
         }
@@ -1414,9 +1417,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
         while (it.hasNext()) {
             Entry<Integer, Group> entry = it.next();
             if (entry.getKey() == group.getRank() && entry.getValue().getName().equals(group.getName())) {
-                if (it.hasNext())
-                    return it.next().getValue();
-                else
+                if (it.hasNext()) {
+                    Group next = it.next().getValue();
+                    if (next.getId() == group.getId())
+                        return null;
+                } else
                     return null;
             }
         }

@@ -50,134 +50,7 @@ public class PermissionCommand {
 
                         int page = -1;
                         if (args.length >= 3) {
-                            if (args[2].equalsIgnoreCase("create")) {
-                                permissionManager.createPlayer(playerName, uuid, response);
-                            } else if (args[2].equalsIgnoreCase("clearperms")) {
-                                permissionManager.removePlayerPermissions(uuid, response);
-                            } else if (args[2].equalsIgnoreCase("promote") && args.length >= 4) {
-                                permissionManager.promotePlayer(uuid, args[3], response);
-                            } else if (args[2].equalsIgnoreCase("demote") && args.length >= 4) {
-                                permissionManager.demotePlayer(uuid, args[3], response);
-                            } else if (args[2].equalsIgnoreCase("setrank") && args.length >= 4) {
-                                String group = args[3];
-                                permissionManager.setPlayerRank(uuid, group, response);
-
-                            } else if (args[2].equalsIgnoreCase("addgroup") && args.length >= 4) {
-                                String group = args[3];
-                                String server = "";
-                                if (args.length >= 5)
-                                    server = args[4];
-                                boolean negated = group.startsWith("-");
-                                if (negated)
-                                    group = group.substring(1);
-                                permissionManager.addPlayerGroup(uuid, group, server, negated, response);
-                            } else if (args[2].equalsIgnoreCase("removegroup") && args.length >= 4) {
-                                String group = args[3];
-                                String server = "";
-                                if (args.length >= 5)
-                                    server = args[4];
-                                boolean negated = group.startsWith("-");
-                                if (negated)
-                                    group = group.substring(1);
-                                permissionManager.removePlayerGroup(uuid, group, server, negated, response);
-                            } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
-                                String permission = args[3];
-                                String world = "";
-                                String server = "";
-                                if (args.length >= 5)
-                                    server = args[4];
-                                if (args.length >= 6)
-                                    world = args[5];
-                                if (server.equalsIgnoreCase("all"))
-                                    server = "";
-                                if (world.equalsIgnoreCase("all"))
-                                    world = "";
-                                permissionManager.addPlayerPermission(uuid, playerName, permission, world, server, response);
-                            } else if (args.length >= 4 && args[2].equalsIgnoreCase("remove")) {
-                                String permission = args[3];
-                                String world = "";
-                                String server = "";
-                                if (args.length >= 5)
-                                    server = args[4];
-                                if (args.length >= 6)
-                                    world = args[5];
-                                if (server.equalsIgnoreCase("all"))
-                                    server = "";
-                                if (world.equalsIgnoreCase("all"))
-                                    world = "";
-                                permissionManager.removePlayerPermission(uuid, permission, world, server, response);
-                            } else if (args[2].equalsIgnoreCase("prefix")) {
-                                if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
-                                    String prefix = "";
-                                    if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
-                                        // Input is between quote marks.
-                                        String result = "";
-                                        result += args[4].substring(1) + " ";
-
-                                        if (args.length >= 6) {
-                                            for (int i = 5; i < args.length; i++) {
-                                                result += args[i] + " ";
-                                            }
-                                        }
-
-                                        if (result.toCharArray()[result.length() - 1] == ' ')
-                                            result = result.substring(0, result.length() - 1);
-                                        if (result.toCharArray()[result.length() - 1] == '"')
-                                            result = result.substring(0, result.length() - 1);
-
-                                        prefix = result;
-                                    } else
-                                        prefix = args[4];
-
-                                    permissionManager.setPlayerPrefix(uuid, prefix, response);
-
-                                } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                                    permissionManager.setPlayerPrefix(uuid, "", response);
-                                } else
-                                    permissionManager.getPlayerOwnPrefix(uuid, new ResultRunnable<String>() {
-
-                                        @Override
-                                        public void run() {
-                                            sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
-                                        }
-                                    });
-
-                            } else if (args[2].equalsIgnoreCase("suffix")) {
-                                if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
-                                    String suffix = "";
-                                    if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
-                                        // Input is between quote marks.
-                                        String result = "";
-                                        result += args[4].substring(1) + " ";
-
-                                        if (args.length >= 6) {
-                                            for (int i = 5; i < args.length; i++) {
-                                                result += args[i] + " ";
-                                            }
-                                        }
-
-                                        if (result.toCharArray()[result.length() - 1] == ' ')
-                                            result = result.substring(0, result.length() - 1);
-                                        if (result.toCharArray()[result.length() - 1] == '"')
-                                            result = result.substring(0, result.length() - 1);
-
-                                        suffix = result;
-                                    } else
-                                        suffix = args[4];
-
-                                    permissionManager.setPlayerSuffix(uuid, suffix, response);
-
-                                } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                                    permissionManager.setPlayerSuffix(uuid, "", response);
-                                } else
-                                    permissionManager.getPlayerOwnSuffix(uuid, new ResultRunnable<String>() {
-
-                                        @Override
-                                        public void run() {
-                                            sendSender(invoker, sender, "Suffix for player(non-inherited) " + playerName + ": \"" + (result != null ? result : "") + "\"");
-                                        }
-                                    });
-                            } else {
+                            {
                                 try {
                                     page = Integer.parseInt(args[2]);
                                 } catch (NumberFormatException e) {
@@ -191,7 +64,7 @@ public class PermissionCommand {
                             page--;
                             if (page < 0)
                                 sendSender(invoker, sender, "Invalid page. Page negative.");
-                            
+
                         }
                     }
 
@@ -205,195 +78,16 @@ public class PermissionCommand {
             String groupName = args[1];
             int page = -1;
             if (args.length >= 3) {
-                if (args[2].equalsIgnoreCase("clearperms")) {
-                    permissionManager.removeGroupPermissions(groupName, response);
-                } else if (args[2].equalsIgnoreCase("create")) {
-                    String ladder = "default";
-                    if (args.length >= 4)
-                        ladder = args[3];
-                    int rank = 100;
-                    if (args.length >= 5) {
-                        try {
-                            rank = Integer.parseInt(args[4]);
-                        } catch (NumberFormatException e) {
-                            showCommandInfo(invoker, sender);
-                            return true;
-                        }
-                    }
-                    permissionManager.createGroup(groupName, ladder, rank, response);
-
-                } else if (args[2].equalsIgnoreCase("delete")) {
-                    permissionManager.deleteGroup(groupName, response);
-                } else if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
-                    String permission = args[3];
-                    String world = "";
-                    String server = "";
-                    if (args.length >= 5)
-                        server = args[4];
-                    if (args.length >= 6)
-                        world = args[5];
-                    if (server.equalsIgnoreCase("all"))
-                        server = "";
-                    if (world.equalsIgnoreCase("all"))
-                        world = "";
-                    permissionManager.addGroupPermission(groupName, permission, world, server, response);
-                } else if (args.length >= 4 && args[2].equalsIgnoreCase("remove")) {
-                    String permission = args[3];
-                    String world = "";
-                    String server = "";
-                    if (args.length >= 5)
-                        server = args[4];
-                    if (args.length >= 6)
-                        world = args[5];
-                    if (server.equalsIgnoreCase("all"))
-                        server = "";
-                    if (world.equalsIgnoreCase("all"))
-                        world = "";
-                    permissionManager.removeGroupPermission(groupName, permission, world, server, response);
-                } else if (args[2].equalsIgnoreCase("prefix")) {
-                    String server = "";
-                    if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
-                        String prefix = "";
-                        if (args.length >= 6 && args[4].toCharArray()[0] != '"')
-                            server = args[5];
-                        if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
-                            // Input is between quote marks.
-                            String result = "";
-                            result += args[4].substring(1) + " ";
-
-                            int lastArg = 4;
-                            if (!result.endsWith("\" ")) {
-                                if (args.length >= 6) {
-                                    for (int i = 5; i < args.length; i++) {
-                                        result += args[i] + " ";
-                                        if (args[i].endsWith("\"")) {
-                                            lastArg = i;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            // If server is specified set server to argument after
-                            if (args.length >= lastArg + 2) {
-                                server = args[lastArg + 1];
-                            }
-
-                            // remove '" '
-                            if (result.toCharArray()[result.length() - 1] == ' ')
-                                result = result.substring(0, result.length() - 1);
-                            if (result.toCharArray()[result.length() - 1] == '"')
-                                result = result.substring(0, result.length() - 1);
-
-                            prefix = result;
-                        } else
-                            prefix = args[4];
-
-                        permissionManager.setGroupPrefix(groupName, prefix, server, response);
-                    } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        permissionManager.setGroupPrefix(groupName, "", (args.length >= 5 ? args[4] : ""), response);
-                    } else {
-                        HashMap<String, String> prefix = permissionManager.getGroupServerPrefix(groupName);
-                        if (prefix != null) {
-                            String output = "";
-                            Iterator<Entry<String, String>> it = prefix.entrySet().iterator();
-                            while (it.hasNext()) {
-                                Entry<String, String> entry = it.next();
-                                output += ChatColor.WHITE + "\"" + entry.getValue() + "\":" + (entry.getKey().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : entry.getKey());
-                                if (it.hasNext())
-                                    output += ", ";
-                            }
-                            sendSender(invoker, sender, "Prefixes for group " + groupName + ": " + output);
-                        } else
-                            sendSender(invoker, sender, "Group does not exist.");
-                    }
+                if (args[2].equalsIgnoreCase("prefix")) {
+                    
                 } else if (args[2].equalsIgnoreCase("suffix")) {
-                    String server = "";
-                    if (args.length >= 5 && args[3].equalsIgnoreCase("set")) {
-                        String suffix = "";
-                        if (args.length >= 6 && args[4].toCharArray()[0] != '"')
-                            server = args[5];
-                        if (args[4].length() >= 1 && args[4].toCharArray()[0] == '"') {
-                            // Input is between quote marks.
-                            String result = "";
-                            result += args[4].substring(1) + " ";
-
-                            int lastArg = 4;
-                            if (!result.endsWith("\" ")) {
-                                if (args.length >= 6) {
-                                    for (int i = 5; i < args.length; i++) {
-                                        result += args[i] + " ";
-                                        if (args[i].endsWith("\"")) {
-                                            lastArg = i;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            // If server is specified set server to argument after
-                            if (args.length >= lastArg + 2) {
-                                server = args[lastArg + 1];
-                            }
-
-                            if (result.toCharArray()[result.length() - 1] == ' ')
-                                result = result.substring(0, result.length() - 1);
-                            if (result.toCharArray()[result.length() - 1] == '"')
-                                result = result.substring(0, result.length() - 1);
-
-                            suffix = result;
-                        } else
-                            suffix = args[4];
-
-                        permissionManager.setGroupSuffix(groupName, suffix, server, response);
-                    } else if (args.length >= 4 && args[3].equalsIgnoreCase("remove")) {
-                        permissionManager.setGroupSuffix(groupName, "", (args.length >= 5 ? args[4] : ""), response);
-                    } else {
-                        HashMap<String, String> suffix = permissionManager.getGroupServerSuffix(groupName);
-                        if (suffix != null) {
-                            String output = "";
-                            Iterator<Entry<String, String>> it = suffix.entrySet().iterator();
-                            while (it.hasNext()) {
-                                Entry<String, String> entry = it.next();
-                                output += ChatColor.WHITE + "\"" + entry.getValue() + "\":" + (entry.getKey().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : entry.getKey());
-                                if (it.hasNext())
-                                    output += ", ";
-                            }
-                            sendSender(invoker, sender, "Suffixes for group " + groupName + ": " + output);
-                        } else
-                            sendSender(invoker, sender, "Group does not exist.");
-                    }
+                    
                 } else if (args[2].equalsIgnoreCase("parents")) {
-                    if (args.length >= 5 && args[3].equalsIgnoreCase("add")) {
-                        String parent = args[4];
-                        permissionManager.addGroupParent(groupName, parent, response);
-                    } else if (args.length >= 5 && args[3].equalsIgnoreCase("remove")) {
-                        String parent = args[4];
-                        permissionManager.removeGroupParent(groupName, parent, response);
-                    } else {
-                        // List parents
-                        Group group = permissionManager.getGroup(groupName);
-                        if (group != null) {
-                            sendSender(invoker, sender, "Listing parents for group " + groupName + ":");
-
-                            if (group.getParents() != null && group.getParents().size() > 0) {
-                                for (Group g : group.getParents())
-                                    sendSender(invoker, sender, g.getName());
-                            } else
-                                sendSender(invoker, sender, "Group has no parents.");
-                        } else
-                            sendSender(invoker, sender, "Group does not exist.");
-                    }
+                    
                 } else if (args[2].equalsIgnoreCase("setladder") && args.length >= 4) {
-                    String ladder = args[3];
-                    permissionManager.setGroupLadder(groupName, ladder, response);
+                    
                 } else if (args[2].equalsIgnoreCase("setrank") && args.length >= 4) {
-                    try {
-                        int rank = Integer.parseInt(args[3]);
-                        permissionManager.setGroupRank(groupName, rank, response);
-                    } catch (NumberFormatException e) {
-                        sendSender(invoker, sender, "Rank must be a number.");
-                    }
+
                 } else {
                     try {
                         page = Integer.parseInt(args[2]);
@@ -404,19 +98,7 @@ public class PermissionCommand {
             }
 
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("haspermission")) {
-            String permission = args[1];
-            PermissionPlayer p = permissionManager.getPermissionPlayer(sender);
-            if (p != null) {
-                Boolean has = p.hasPermission(permission);
-                if (has != null) {
-                    if (has)
-                        sendSender(invoker, sender, "You have the permission \"" + permission + "\".");
-                    else
-                        sendSender(invoker, sender, "You do not have the permission \"" + permission + "\".");
-                } else
-                    sendSender(invoker, sender, "The permission \"" + permission + "\" is not set.");
-            } else
-                sendSender(invoker, sender, "Could not check permission. Make sure you are in-game.");
+            
         } else
             showCommandInfo(invoker, sender);
         return true;

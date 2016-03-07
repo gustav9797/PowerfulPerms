@@ -178,10 +178,10 @@ public class UserCommand extends SubCommand {
                 });
                 return CommandResult.success;
 
-            }
-            return CommandResult.noMatch;
-        }
-        return CommandResult.noPermission;
+            } else
+                return CommandResult.noMatch;
+        } else
+            return CommandResult.noPermission;
     }
 
     private List<List<String>> createList(Queue<String> input, int rowsPerPage) {

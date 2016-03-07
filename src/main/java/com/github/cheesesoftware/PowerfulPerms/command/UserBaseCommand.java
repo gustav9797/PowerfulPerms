@@ -13,6 +13,17 @@ public class UserBaseCommand extends SubCommand {
         super(plugin, permissionManager);
 
         subCommands.add(new UserCommand(plugin, permissionManager));
+        subCommands.add(new UserPromoteCommand(plugin, permissionManager));
+        subCommands.add(new UserDemoteCommand(plugin, permissionManager));
+        subCommands.add(new UserSetRankCommand(plugin, permissionManager));
+        subCommands.add(new UserAddGroupCommand(plugin, permissionManager));
+        subCommands.add(new UserRemoveGroupCommand(plugin, permissionManager));
+        subCommands.add(new UserAddPermissionCommand(plugin, permissionManager));
+        subCommands.add(new UserRemovePermissionCommand(plugin, permissionManager));
+        subCommands.add(new UserClearPermissionsCommand(plugin, permissionManager));
+        subCommands.add(new UserCreateCommand(plugin, permissionManager));
+        subCommands.add(new UserPrefixCommand(plugin, permissionManager));
+        subCommands.add(new UserSuffixCommand(plugin, permissionManager));
     }
 
     @Override
@@ -28,18 +39,16 @@ public class UserBaseCommand extends SubCommand {
                     CommandResult result = subCommand.execute(invoker, sender, newArgs);
                     if (result == CommandResult.success) {
                         return CommandResult.success;
-                    } else if (result == CommandResult.showUsage) {
-                        sendSender(invoker, sender, subCommand.getUsage());
-                        return CommandResult.success;
                     } else if (result == CommandResult.noMatch) {
                         hasSomePermission = true;
 
                     }
                 }
 
-                if (hasSomePermission)
-                    return CommandResult.showUsage;
-                else
+                if (hasSomePermission) {
+                    sendSender(invoker, sender, getUsage());
+                    return CommandResult.success;
+                } else
                     return CommandResult.noPermission;
             }
             return CommandResult.noMatch;
@@ -52,7 +61,6 @@ public class UserBaseCommand extends SubCommand {
         List<String> usage = new ArrayList<String>();
         for (SubCommand subCommand : subCommands)
             usage.addAll(subCommand.getUsage());
-        usage.add("This is from UserBaseCommand");
         return usage;
     }
 

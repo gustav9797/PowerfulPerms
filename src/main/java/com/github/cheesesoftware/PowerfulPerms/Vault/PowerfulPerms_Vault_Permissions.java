@@ -114,7 +114,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     public boolean playerInGroup(String world, String player, String groupName) {
         PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
-            List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
+            List<Group> groups = p.getGroups();
             for (Group group : groups) {
                 if (group.getName().equalsIgnoreCase(groupName))
                     return true;

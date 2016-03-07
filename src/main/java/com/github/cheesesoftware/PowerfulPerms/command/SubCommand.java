@@ -7,7 +7,6 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
 
 public abstract class SubCommand {
     protected List<SubCommand> subCommands = new ArrayList<SubCommand>();
@@ -37,6 +36,12 @@ public abstract class SubCommand {
             if (invoker.hasPermission(sender, permission))
                 return true;
         }
+        return false;
+    }
+
+    protected boolean hasPermission(ICommand invoker, String sender, String permission) {
+        if (invoker.hasPermission(sender, permission))
+            return true;
         return false;
     }
 
