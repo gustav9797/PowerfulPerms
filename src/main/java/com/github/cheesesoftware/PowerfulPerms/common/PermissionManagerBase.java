@@ -1730,13 +1730,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 @Override
                 public void run() {
                     counter.add(result.rowsChanged());
+                    response.setResponse(true, "Removed " + counter.amount() + " permissions from the group.");
+                    db.scheduler.runSync(response, response.isSameThread());
+                    loadGroups(response.isSameThread());
+                    notifyReloadGroups();
                 }
             });
 
-            response.setResponse(true, "Removed " + counter.amount() + " permissions from the group.");
-            db.scheduler.runSync(response, response.isSameThread());
-            loadGroups(response.isSameThread());
-            notifyReloadGroups();
         } else {
             response.setResponse(false, "Group does not exist.");
             db.scheduler.runSync(response, response.isSameThread());

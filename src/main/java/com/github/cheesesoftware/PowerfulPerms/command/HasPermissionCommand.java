@@ -15,7 +15,7 @@ public class HasPermissionCommand extends SubCommand {
     @Override
     public CommandResult execute(ICommand invoker, String sender, String[] args) {
         if (hasBasicPerms(invoker, sender, "powerfulperms.haspermission")) {
-            if (args != null && args.length >= 1) {
+            if (args != null && args.length >= 1 && args[0].equalsIgnoreCase("haspermission")) {
                 if (args.length < 2) {
                     sendSender(invoker, sender, getUsage());
                     return CommandResult.success;

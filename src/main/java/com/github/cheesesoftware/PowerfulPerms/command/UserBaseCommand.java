@@ -28,32 +28,29 @@ public class UserBaseCommand extends SubCommand {
 
     @Override
     public CommandResult execute(ICommand invoker, String sender, String[] args) {
-        if (hasBasicPerms(invoker, sender, null)) {
-            if (args.length >= 1 && args[0].equalsIgnoreCase("user")) {
+        if (args.length >= 1 && args[0].equalsIgnoreCase("user")) {
 
-                String[] newArgs = new String[args.length - 1];
-                System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+            String[] newArgs = new String[args.length - 1];
+            System.arraycopy(args, 1, newArgs, 0, args.length - 1);
 
-                boolean hasSomePermission = false;
-                for (SubCommand subCommand : subCommands) {
-                    CommandResult result = subCommand.execute(invoker, sender, newArgs);
-                    if (result == CommandResult.success) {
-                        return CommandResult.success;
-                    } else if (result == CommandResult.noMatch) {
-                        hasSomePermission = true;
-
-                    }
-                }
-
-                if (hasSomePermission) {
-                    sendSender(invoker, sender, getUsage());
+            boolean hasSomePermission = false;
+            for (SubCommand subCommand : subCommands) {
+                CommandResult result = subCommand.execute(invoker, sender, newArgs);
+                if (result == CommandResult.success) {
                     return CommandResult.success;
-                } else
-                    return CommandResult.noPermission;
+                } else if (result == CommandResult.noMatch) {
+                    hasSomePermission = true;
+
+                }
             }
+
+            if (hasSomePermission) {
+                sendSender(invoker, sender, getUsage());
+                return CommandResult.success;
+            } else
+                return CommandResult.noPermission;
+        } else
             return CommandResult.noMatch;
-        }
-        return CommandResult.noPermission;
     }
 
     @Override
