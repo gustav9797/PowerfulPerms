@@ -228,4 +228,9 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public int getOldVersion() {
         return oldVersion;
     }
+
+    @Override
+    public String getVersion() {
+        return this.getDescription().getVersion();
+    }
 }

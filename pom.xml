@@ -122,8 +122,8 @@
 									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.apache</shadedPattern>
 								</relocation>
 								<relocation>
-									<pattern>com.googlecode</pattern>
-									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.com.googlecode</shadedPattern>
+									<pattern>org.json</pattern>
+									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.json</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
@@ -216,7 +216,7 @@
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>
-			<version>1.1</version>
+			<version>1.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>me.clip</groupId>
