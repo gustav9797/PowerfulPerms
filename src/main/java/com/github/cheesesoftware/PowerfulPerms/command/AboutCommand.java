@@ -19,7 +19,7 @@ public class AboutCommand extends SubCommand {
                 String spigotUser = "%%__USER__%%";
                 String uniqueDownloadID = "%%__NONCE__%%";
                 String copy = "https://www.SpigotMC.org/members/" + spigotUser;
-                sendSender(invoker, sender, "This copy of the plugin is bound to " + copy + " and the Unique ID for this file is " + uniqueDownloadID);
+                sendSender(invoker, sender, "This copy of the plugin is bound to " + copy + " and the Unique ID for this file is \"" + uniqueDownloadID + "\"");
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;
