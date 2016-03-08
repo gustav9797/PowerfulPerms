@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
 import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.google.common.base.Charsets;
 
 public class MySQLDatabase extends Database {
@@ -35,6 +36,42 @@ public class MySQLDatabase extends Database {
             rows.add(new DBDocument(row));
         }
         return new DBResult(rows);
+    }
+
+    @Override
+    public void applyPatches(PowerfulPermsPlugin plugin) {
+        if (plugin.getOldVersion() < 233) {
+            // Set [default] UUID
+            final PowerfulPermsPlugin pl = plugin;
+            setPlayerUUID("[default]", java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)), new DBRunnable(true) {
+
+                @Override
+                public void run() {
+                    pl.getLogger().info("Applied database patch #1: Inserted UUID for player [default].");
+                }
+            });
+        }
+
+        if (plugin.getOldVersion() < 240) {
+            // Add "ladder" and "rank" columns to groups table
+            try {
+
+                PreparedStatement s = sql.getConnection().prepareStatement("SHOW COLUMNS FROM `" + tblGroups + "` LIKE 'ladder';");
+                ResultSet result = s.executeQuery();
+                if (!result.next()) {
+                    s.close();
+                    s = sql.getConnection().prepareStatement("ALTER TABLE `" + tblGroups + "` ADD COLUMN `ladder` VARCHAR(64) NOT NULL AFTER `suffix`,ADD COLUMN `rank` INT NOT NULL AFTER `ladder`");
+                    s.execute();
+                    s.close();
+                    plugin.getLogger().info("Applied database patch #2: Added columns 'ladder' and 'rank' to groups table.");
+                } else {
+                    plugin.getLogger().info("Skipping database patch #2.");
+                }
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -69,14 +106,15 @@ public class MySQLDatabase extends Database {
 
                 String groupsTable = "CREATE TABLE `"
                         + tblGroups
-                        + "` (`id` int(10) unsigned NOT NULL AUTO_INCREMENT,`name` varchar(255) NOT NULL,`parents` longtext NOT NULL,`prefix` text NOT NULL,`suffix` text NOT NULL,PRIMARY KEY (`id`),UNIQUE KEY `id_UNIQUE` (`id`),UNIQUE KEY `name_UNIQUE` (`name`)) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8";
+                        + "` (`id` int(10) unsigned NOT NULL AUTO_INCREMENT,`name` varchar(255) NOT NULL,`parents` longtext NOT NULL,`prefix` text NOT NULL,`suffix` text NOT NULL,`ladder` varchar(64) NOT NULL,`rank` int(11) NOT NULL,PRIMARY KEY (`id`),UNIQUE KEY `id_UNIQUE` (`id`),UNIQUE KEY `name_UNIQUE` (`name`)) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8";
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement(groupsTable);
                     s.execute();
                     s.close();
 
                     // Insert one group "Guest"
-                    s = sql.getConnection().prepareStatement("INSERT INTO `" + tblGroups + "` (`id`, `name`, `parents`, `prefix`, `suffix`) VALUES ('1', 'Guest', '', '[Guest]', ': ');");
+                    s = sql.getConnection().prepareStatement(
+                            "INSERT INTO `" + tblGroups + "` (`id`, `name`, `parents`, `prefix`, `suffix`, `ladder`, `rank`) VALUES ('1', 'Guest', '', '[Guest]', ': ', 'default', '100');");
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -109,7 +147,7 @@ public class MySQLDatabase extends Database {
                     // Insert player [default]
                     s = sql.getConnection().prepareStatement(
                             "INSERT INTO `" + tblPlayers + "` (`uuid`, `name`, `groups`, `prefix`, `suffix`) VALUES ('"
-                                    + java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)).toString() + "', '[default]', ':1:p;', '', '');");
+                                    + java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)).toString() + "', '[default]', ':1:;', '', '');");
                     s.execute();
                     s.close();
                 } catch (SQLException e1) {
@@ -150,7 +188,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void insertGroup(final String group, final String parents, final String prefix, final String suffix, final DBRunnable done) {
+    public void insertGroup(final String group, final String parents, final String prefix, final String suffix, final String ladder, final int rank, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -158,11 +196,13 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroups + " SET `name`=?, `parents`=?, `prefix`=?, `suffix`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroups + " SET `name`=?, `parents`=?, `prefix`=?, `suffix`=?, `ladder`=?, `rank`=?");
                     s.setString(1, group);
                     s.setString(2, parents);
                     s.setString(3, prefix);
                     s.setString(4, suffix);
+                    s.setString(5, ladder);
+                    s.setInt(6, rank);
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -686,8 +726,17 @@ public class MySQLDatabase extends Database {
                     success = false;
                 }
 
-                done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done, done.sameThread());
+                final boolean success2 = success;
+                final int amount2 = amount;
+
+                deleteGroupPermissions(group, new DBRunnable(true) {
+
+                    @Override
+                    public void run() {
+                        done.setResult(new DBResult(success2, amount2));
+                        scheduler.runSync(done, done.sameThread());
+                    }
+                });
             }
         }, done.sameThread());
     }
@@ -753,6 +802,54 @@ public class MySQLDatabase extends Database {
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `suffix`=? WHERE `name`=?");
                     s.setString(1, suffix);
+                    s.setString(2, group);
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    public void setGroupLadder(final String group, final String ladder, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `ladder`=? WHERE `name`=?");
+                    s.setString(1, ladder);
+                    s.setString(2, group);
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    public void setGroupRank(final String group, final int rank, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `rank`=? WHERE `name`=?");
+                    s.setInt(1, rank);
                     s.setString(2, group);
                     s.execute();
                     s.close();

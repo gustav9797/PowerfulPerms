@@ -9,8 +9,6 @@ import redis.clients.jedis.JedisPubSub;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
-import com.github.cheesesoftware.PowerfulPermsAPI.Group;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
@@ -60,7 +58,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                                                 tempPlugin.getLogger().info(consolePrefix + "Reloaded all groups.");
                                             } else if (first.equals("[players]")) {
                                                 loadGroups();
-                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all players. ");
+                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all players.");
                                             } else {
                                                 UUID uuid = UUID.fromString(first);
                                                 ProxiedPlayer player = tempPlugin.getProxy().getPlayer(uuid);
@@ -84,8 +82,6 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                 }
             });
         }
-
-        loadGroups(true, true);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -123,7 +119,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         // Check again if
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.
-            continueLoadPlayer(e.getPlayer());
+            loadCachedPlayer(e.getPlayer());
         } else
             debug("onPlayerJoin player isn't cached");
         debug("PostLoginEvent finish");
@@ -148,25 +144,14 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     /**
      * Continues loading a previously cached player.
      */
-    private void continueLoadPlayer(ProxiedPlayer player) {
+    private void loadCachedPlayer(ProxiedPlayer player) {
         PermissionPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
         if (base != null && player != null) {
             PowerfulPermissionPlayer permissionsPlayer = new PowerfulPermissionPlayer(player, base, plugin);
-            permissionsPlayer.updatePermissions();
             players.put(player.getUniqueId(), permissionsPlayer);
         } else
-            debug("continueLoadPlayer: ProxiedPlayer or PermissionPlayerBase is null");
-        debug("continueLoadPlayer finish");
-    }
-
-    /**
-     * Returns the primary group of an online player.
-     */
-    public Group getPlayerPrimaryGroup(ProxiedPlayer p) {
-        PowerfulPermissionPlayer gp = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
-        if (gp != null)
-            return gp.getPrimaryGroup();
-        return null;
+            debug("loadCachedPlayer: ProxiedPlayer or PermissionPlayerBase is null");
+        debug("loadCachedPlayer finish");
     }
 
 }

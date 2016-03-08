@@ -1,7 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -18,14 +18,15 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     private Player player;
 
-    public PowerfulPermissionPlayer(Player p, HashMap<String, List<CachedGroup>> serverGroups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin) {
-        super(serverGroups, permissions, prefix, suffix, plugin);
+    public PowerfulPermissionPlayer(Player p, LinkedHashMap<String, List<CachedGroup>> serverGroups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin,
+            boolean isDefault) {
+        super(serverGroups, permissions, prefix, suffix, plugin, isDefault);
         this.player = p;
         this.updatePermissions();
     }
 
     public PowerfulPermissionPlayer(Player p, PermissionPlayerBase base, PowerfulPermsPlugin plugin) {
-        super(base.getCachedGroups(), base.getPermissions(), base.getOwnPrefix(), base.getOwnSuffix(), plugin);
+        super(base.getCachedGroups(), base.getPermissions(), base.getOwnPrefix(), base.getOwnSuffix(), plugin, base.isDefault());
         this.player = p;
         this.updatePermissions();
     }
@@ -40,7 +41,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     }
 
     /**
-     * Returns the player attached to this PermissionsPlayer.
+     * Returns the player attached to this PermissionPlayer.
      */
     public Player getPlayer() {
         return this.player;
@@ -50,7 +51,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
      * Sets the player's groups as seen in getServerGroups() Changes won't save for now.
      */
     @Override
-    public void setGroups(HashMap<String, List<CachedGroup>> serverGroups) {
+    public void setGroups(LinkedHashMap<String, List<CachedGroup>> serverGroups) {
         super.setGroups(serverGroups);
         this.updatePermissions();
     }
@@ -60,7 +61,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
      */
     public void updatePermissions() {
         this.updateGroups(PermissionManagerBase.serverName);
-        
+
         List<String> perms = super.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName());
         List<String> realPerms = new ArrayList<String>();
         for (String permString : perms) {

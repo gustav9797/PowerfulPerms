@@ -21,9 +21,7 @@ import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
-import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
@@ -63,7 +61,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                                                 Bukkit.getLogger().info(consolePrefix + "Reloaded all groups.");
                                             } else if (first.equals("[players]")) {
                                                 loadGroups();
-                                                Bukkit.getLogger().info(consolePrefix + "Reloaded all players. ");
+                                                Bukkit.getLogger().info(consolePrefix + "Reloaded all players.");
                                             } else {
                                                 UUID uuid = UUID.fromString(first);
                                                 Player player = Bukkit.getPlayer(uuid);
@@ -87,8 +85,6 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                 }
             });
         }
-
-        loadGroups(true, true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -115,14 +111,14 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
 
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId())) {
             // Player is cached. Continue load it.s
-            continueLoadPlayer(e.getPlayer());
+            loadCachedPlayer(e.getPlayer());
         } else {
             // Player is not cached, Load directly on Bukkit main thread.
             debug("onPlayerJoin player isn't cached, loading directly");
             loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
 
             if (e.getResult() == PlayerLoginEvent.Result.ALLOWED)
-                this.continueLoadPlayer(e.getPlayer());
+                loadCachedPlayer(e.getPlayer());
         }
     }
 
@@ -150,7 +146,11 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerChat(AsyncPlayerChatEvent e) {
         PermissionPlayer gp = this.getPermissionsPlayer(e.getPlayer());
-        e.setFormat(ChatColor.translateAlternateColorCodes('&', gp.getPrefix() + "%1$s" + gp.getSuffix() + "%2$s"));
+        if (PowerfulPerms.useChatFormat) {
+            String output = me.clip.placeholderapi.PlaceholderAPI.setBracketPlaceholders(e.getPlayer(), PowerfulPerms.chatFormat);
+            e.setFormat(ChatColor.translateAlternateColorCodes('&', output.replace("{message}", "%2$s")));
+        } else
+            e.setFormat(ChatColor.translateAlternateColorCodes('&', gp.getPrefix() + "%1$s" + gp.getSuffix() + "%2$s"));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -170,7 +170,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                 loadPlayer(p);
             } else {
                 loadPlayer(p.getUniqueId(), p.getName(), true);
-                continueLoadPlayer(p);
+                loadCachedPlayer(p);
             }
         }
     }
@@ -196,8 +196,8 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         loadPlayer(player.getUniqueId(), player.getName(), false);
     }
 
-    private void continueLoadPlayer(Player p) {
-        debug("continueLoadPlayer begin");
+    private void loadCachedPlayer(Player p) {
+        debug("loadCachedPlayer begin");
         PermissionPlayerBase base = super.loadCachedPlayer(p.getUniqueId());
         if (base != null) {
             if (players.containsKey(p.getUniqueId()))
@@ -215,17 +215,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             }
             players.put(p.getUniqueId(), permissionsPlayer);
         }
-        debug("continueLoadPlayer end");
-    }
-
-    /**
-     * Returns the primary group of an online player.
-     */
-    public Group getPlayerPrimaryGroup(Player p) {
-        PowerfulPermissionPlayer gp = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
-        if (gp != null)
-            return gp.getPrimaryGroup();
-        return null;
+        debug("loadCachedPlayer end");
     }
 
 }

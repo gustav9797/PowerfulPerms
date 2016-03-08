@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -17,11 +18,9 @@ import net.milkbowl.vault.permission.Permission;
 
 public class PowerfulPerms_Vault_Permissions extends Permission {
 
-    private PowerfulPermsPlugin plugin;
     private PermissionManager permissionManager;
 
     public PowerfulPerms_Vault_Permissions(PowerfulPermsPlugin plugin) {
-        this.plugin = plugin;
         this.permissionManager = plugin.getPermissionManager();
     }
 
@@ -41,7 +40,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public String[] getPlayerGroups(String world, String player) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
             List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
             List<String> groupNames = new ArrayList<String>();
@@ -54,11 +53,14 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public String getPrimaryGroup(String world, String player) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
-            Group primary = p.getPrimaryGroup();
-            if (primary != null)
-                return primary.getName();
+            List<Group> groups = p.getGroups();
+            if (groups != null) {
+                Iterator<Group> it = groups.iterator();
+                if (it.hasNext())
+                    return it.next().getName();
+            }
         }
         return null;
     }
@@ -110,9 +112,9 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerInGroup(String world, String player, String groupName) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
-            List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
+            List<Group> groups = p.getGroups();
             for (Group group : groups) {
                 if (group.getName().equalsIgnoreCase(groupName))
                     return true;
@@ -136,7 +138,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerHas(String world, String player, String permission) {
-        PermissionPlayer p = permissionManager.getPermissionsPlayer(player);
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
             Boolean has = p.hasPermission(permission);
             if (has != null)

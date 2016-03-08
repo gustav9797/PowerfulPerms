@@ -37,6 +37,8 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public static boolean debug = false;
     public static ServerMode serverMode = ServerMode.ONLINE;
     public static int oldVersion = 0;
+    public static boolean useChatFormat;
+    public static String chatFormat;
 
     @Override
     public void onEnable() {
@@ -65,6 +67,9 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
             serverMode = ServerMode.MIXED;
         getLogger().info("PowerfulPerms is now running on server mode " + serverMode);
 
+        useChatFormat = getConfig().getBoolean("use_chatformat", false);
+        chatFormat = getConfig().getString("chatformat", "");
+
         try {
             if (sql.getConnection() == null || sql.getConnection().isClosed()) {
                 Bukkit.getLogger().severe(consolePrefix + "Could not access the database!");
@@ -88,6 +93,15 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
             Bukkit.getLogger().info(consolePrefix + "Found Vault. Enabling Vault integration.");
             VaultHook vaultHook = new VaultHook();
             vaultHook.hook(this);
+        }
+
+        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Enabling PlaceholderAPI integration.");
+            PlaceholderAPIHook placeholderAPIHook = new PlaceholderAPIHook(this, "powerfulperms");
+            placeholderAPIHook.hook();
+        } else if (useChatFormat) {
+            Bukkit.getLogger().warning(consolePrefix + "Could not find PlaceholderAPI. Disabling chat format usage.");
+            useChatFormat = false;
         }
 
         this.getCommand("powerfulperms").setExecutor(new PermissionCommandExecutor(permissionManager));
@@ -213,5 +227,10 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     @Override
     public int getOldVersion() {
         return oldVersion;
+    }
+
+    @Override
+    public String getVersion() {
+        return this.getDescription().getVersion();
     }
 }

@@ -6,6 +6,10 @@ public class Versioner {
         String output = input.replace(".", "");
         try {
             int out = Integer.parseInt(output);
+            if (out < 10)
+                out *= 10;
+            if (out < 100)
+                out *= 10;
             return out;
         } catch (NumberFormatException e) {
         }

@@ -3,7 +3,6 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.cheesesoftware</groupId>
 	<artifactId>PowerfulPerms</artifactId>
-	<version>2.3.3</version>
 	<build>
 		<resources>
 			<resource>
@@ -110,6 +109,7 @@
 									<include>org.apache.commons:commons-pool2</include>
 									<include>redis.clients:jedis</include>
 									<include>com.github.cheesesoftware:PowerfulPermsAPI</include>
+									<include>com.googlecode.json-simple:json-simple</include>
 								</includes>
 							</artifactSet>
 							<relocations>
@@ -120,6 +120,10 @@
 								<relocation>
 									<pattern>org.apache</pattern>
 									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.apache</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.json</pattern>
+									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.json</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
@@ -158,6 +162,10 @@
 			<id>sk89q-repo</id>
 			<url>http://maven.sk89q.com/repo/</url>
 		</repository>
+		<repository>
+			<id>placeholderapi</id>
+			<url>http://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
@@ -169,13 +177,13 @@
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
-			<version>1.8.8-R0.1-SNAPSHOT</version>
+			<version>1.9-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.bukkit</groupId>
 			<artifactId>bukkit</artifactId>
-			<version>1.8.8-R0.1-SNAPSHOT</version>
+			<version>1.9-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -205,5 +213,17 @@
 			<artifactId>MVdWUpdater</artifactId>
 			<version>1.0.2-SNAPSHOT</version>
 		</dependency>
+		<dependency>
+			<groupId>com.googlecode.json-simple</groupId>
+			<artifactId>json-simple</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>me.clip</groupId>
+			<artifactId>placeholderapi</artifactId>
+			<version>2.0.8</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
+	<version>3.0</version>
 </project>
