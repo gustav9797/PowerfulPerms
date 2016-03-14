@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -351,7 +352,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void reloadPlayers() {
-        for (UUID uuid : players.keySet()) {
+        ArrayList<UUID> uuids = new ArrayList<UUID>(players.keySet());
+        for (UUID uuid : uuids) {
             if (plugin.isPlayerOnline(uuid)) {
                 players.remove(uuid);
             }

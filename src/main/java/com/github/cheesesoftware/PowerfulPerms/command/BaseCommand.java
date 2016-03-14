@@ -29,6 +29,7 @@ public class BaseCommand extends SubCommand {
             if (result == CommandResult.success) {
                 return CommandResult.success;
             } else if (result == CommandResult.noMatch) {
+                plugin.debug("returned noMatch on command " + subCommand.toString());
                 hasSomePermission = true;
 
             }

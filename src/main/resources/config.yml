@@ -28,6 +28,7 @@ bungee_command: false
 servername: ""
 
 # Set "onlinemode: false" if you run your server in offline mode. Set to "onlinemode: mixed" for mixed mode, more details about this on the PowerfulPerms wiki. Defaults to true.
+# This should be set to the mode of the network, not the mode of the current server. If Bungee is running online mode it will forward online mode UUIDs to Spigot(hopefully) which means onlinemode should be set to true.
 onlinemode: true
 
 # Chat format used along with PlaceholderAPI. PlaceholderAPI must be installed. Disable if you are using a different chat plugin. 
