@@ -1,7 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -1409,20 +1409,22 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     public Group getLowerGroup(Group group, List<Group> groups) {
-        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>(Collections.reverseOrder());
         for (Group current : groups) {
             if (current.getLadder().equals(group.getLadder()))
                 sortedGroups.put(current.getRank(), current);
         }
 
-        Iterator<Entry<Integer, Group>> it = sortedGroups.descendingMap().entrySet().iterator();
+        Iterator<Entry<Integer, Group>> it = sortedGroups.entrySet().iterator();
         while (it.hasNext()) {
+
             Entry<Integer, Group> entry = it.next();
             if (entry.getKey() == group.getRank() && entry.getValue().getName().equals(group.getName())) {
                 if (it.hasNext()) {
                     Group next = it.next().getValue();
                     if (next.getId() == group.getId())
                         return null;
+                    return next;
                 } else
                     return null;
             }
@@ -1524,7 +1526,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
                         boolean changed = false;
                         Group toUse = null;
-                        Group toPromoteTo = null;
+                        Group toDemoteTo = null;
                         while (it.hasNext()) {
                             Entry<String, List<CachedGroup>> next = it.next();
                             String server = next.getKey();
@@ -1540,8 +1542,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 if (current.getGroup().getLadder().equals(ladder)) {
                                     if (toUse == null) {
                                         toUse = current.getGroup();
-                                        toPromoteTo = getLowerGroup(toUse, groupsClone);
-                                        if (toPromoteTo == null) {
+                                        toDemoteTo = getLowerGroup(toUse, groupsClone);
+                                        if (toDemoteTo == null) {
                                             response.setResponse(false, "There is no group on this ladder with a lower rank.");
                                             db.scheduler.runSync(response, response.isSameThread());
                                             return;
@@ -1550,7 +1552,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
                                     if (toUse.getId() == current.getGroup().getId()) {
                                         // This is the group to promote from
-                                        clone.set(clone.indexOf(current), new CachedGroup(toPromoteTo, current.isNegated()));
+                                        clone.set(clone.indexOf(current), new CachedGroup(toDemoteTo, current.isNegated()));
                                         changed = true;
                                     }
                                 }
@@ -1563,14 +1565,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             response.setResponse(false, "Player has no groups on the specified ladder.");
                             db.scheduler.runSync(response, response.isSameThread());
                         } else {
-                            final Group toPromoteToFinal = toPromoteTo;
+                            final Group toDemoteToFinal = toDemoteTo;
                             String playerGroupStringOutput = getPlayerGroupsRawCached(output);
                             db.setPlayerGroups(uuid, playerGroupStringOutput, new DBRunnable(response.isSameThread()) {
 
                                 @Override
                                 public void run() {
                                     if (result.booleanValue()) {
-                                        response.setResponse(true, "Player was demoted to \"" + toPromoteToFinal.getName() + "\".");
+                                        response.setResponse(true, "Player was demoted to \"" + toDemoteToFinal.getName() + "\".");
                                         reloadPlayer(uuid);
                                         notifyReloadPlayer(uuid);
                                     } else

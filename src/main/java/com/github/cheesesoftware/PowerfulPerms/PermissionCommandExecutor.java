@@ -7,24 +7,20 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.github.cheesesoftware.PowerfulPerms.command.BaseCommand;
-import com.github.cheesesoftware.PowerfulPerms.command.CommandResult;
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionCommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 
 public class PermissionCommandExecutor implements ICommand, CommandExecutor {
 
-    private PermissionManager permissionManager;
     private BaseCommand cmd;
 
     protected PermissionCommandExecutor(PermissionManager permissionManager) {
-        this.permissionManager = permissionManager;
         cmd = new BaseCommand(PowerfulPerms.getPlugin(), permissionManager);
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        CommandResult result = cmd.execute(this, sender.getName(), args);
+        cmd.execute(this, sender.getName(), args);
         return true;
     }
 

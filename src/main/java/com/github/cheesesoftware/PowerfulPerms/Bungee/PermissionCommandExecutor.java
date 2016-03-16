@@ -1,9 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
 import com.github.cheesesoftware.PowerfulPerms.command.BaseCommand;
-import com.github.cheesesoftware.PowerfulPerms.command.CommandResult;
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionCommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 
 import net.md_5.bungee.api.CommandSender;
@@ -14,18 +12,16 @@ import net.md_5.bungee.api.plugin.Command;
 
 public class PermissionCommandExecutor extends Command implements ICommand {
 
-    private PermissionManager permissionManager;
     private BaseCommand cmd;
 
     public PermissionCommandExecutor(PermissionManager permissionManager) {
         super("powerfulperms", null, "pp", "pop", "pow");
-        this.permissionManager = permissionManager;
         cmd = new BaseCommand(PowerfulPerms.getPlugin(), permissionManager);
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        CommandResult result = cmd.execute(this, sender.getName(), args);
+        cmd.execute(this, sender.getName(), args);
     }
 
     @Override
