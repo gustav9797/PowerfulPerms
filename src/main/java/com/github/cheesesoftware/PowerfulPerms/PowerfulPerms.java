@@ -96,11 +96,9 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         }
 
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Enabling PlaceholderAPI integration.");
-            PlaceholderAPIHook placeholderAPIHook = new PlaceholderAPIHook(this, "powerfulperms");
-            placeholderAPIHook.hook();
+            Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Using custom chat format.");
         } else if (useChatFormat) {
-            Bukkit.getLogger().warning(consolePrefix + "Could not find PlaceholderAPI. Disabling chat format usage.");
+            Bukkit.getLogger().warning(consolePrefix + "Could not find PlaceholderAPI. Disabling custom chat format usage.");
             useChatFormat = false;
         }
 

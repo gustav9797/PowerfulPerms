@@ -192,7 +192,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
                     hasPermission = false;
                 e.setHasPermission(hasPermission);
             } else
-                debug("PermissionsPlayer is null");
+                debug("PermissionsPlayer is null " + player.getUniqueId() + " " + e.getSender().toString());
         }
     }
 

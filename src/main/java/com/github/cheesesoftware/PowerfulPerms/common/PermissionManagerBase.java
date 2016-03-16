@@ -354,7 +354,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void reloadPlayers() {
         ArrayList<UUID> uuids = new ArrayList<UUID>(players.keySet());
         for (UUID uuid : uuids) {
-            if (plugin.isPlayerOnline(uuid)) {
+            if (!plugin.isPlayerOnline(uuid)) {
                 players.remove(uuid);
             }
             debug("Reloading player " + uuid.toString());

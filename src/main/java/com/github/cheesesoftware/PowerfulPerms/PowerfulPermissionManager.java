@@ -207,10 +207,10 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             try {
                 injector.inject(p, new CustomPermissibleBase(permissionsPlayer));
             } catch (NoSuchFieldException e) {
-                Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "You're not using Spigot. Spigot must be used for permissions to work properly. 2");
+                Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "You're not using Spigot. Spigot must be used for permissions to work properly.");
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
-                Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "Could not inject permissible. Using default Bukkit permissions. 2");
+                Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not inject permissible. Using default Bukkit permissions.");
                 e.printStackTrace();
             }
             players.put(p.getUniqueId(), permissionsPlayer);
