@@ -15,7 +15,7 @@ public class PermissionCommandExecutor extends Command implements ICommand {
     private BaseCommand cmd;
 
     public PermissionCommandExecutor(PermissionManager permissionManager) {
-        super("powerfulperms", null, "pp", "pop", "pow");
+        super("powerfulperms", null, "powerfulpermsbungee", "ppbungee", "popbungee", "powbungee");
         cmd = new BaseCommand(PowerfulPerms.getPlugin(), permissionManager);
     }
 

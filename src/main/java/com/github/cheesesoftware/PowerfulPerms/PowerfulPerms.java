@@ -10,7 +10,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.github.cheesesoftware.PowerfulPerms.Vault.VaultHook;
@@ -38,6 +41,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public static ServerMode serverMode = ServerMode.ONLINE;
     public static int oldVersion = 0;
     public static boolean useChatFormat;
+    public static boolean placeholderAPIEnabled = false;
     public static String chatFormat;
 
     @Override
@@ -95,13 +99,6 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
             vaultHook.hook(this);
         }
 
-        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Using custom chat format.");
-        } else if (useChatFormat) {
-            Bukkit.getLogger().warning(consolePrefix + "Could not find PlaceholderAPI. Disabling custom chat format usage.");
-            useChatFormat = false;
-        }
-
         this.getCommand("powerfulperms").setExecutor(new PermissionCommandExecutor(permissionManager));
 
         if (Bukkit.getOnlinePlayers().size() > 0) { // Admin used /reload command
@@ -119,6 +116,14 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public void onDisable() {
         if (permissionManager != null)
             permissionManager.onDisable();
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPluginEnable(PluginEnableEvent e) {
+        if (e.getPlugin().getName().equals("PlaceholderAPI")) {
+            Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Using custom chat format.");
+            placeholderAPIEnabled = true;
+        }
     }
 
     public void reloadCustomConfig() {

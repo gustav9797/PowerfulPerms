@@ -15,14 +15,6 @@ redis_ip: 127.0.0.1
 redis_port: 6379
 redis_password: ""
 
-# Use Bungee-sided command
-# If this is enabled and you have PowerfulPerms installed in your Bungee proxy, it will send the /powerfulperms command through Bungee instead of Bukkit.
-# READ: This is only meant to be used if your whole network is running the same setting AND: *You're using Redis. OR *You are running PowerfulPerms on Bungee side -only-.
-# If you're not using Redis your Spigot servers won't be notified of permission changes and you will have to reload all servers manually.
-# It will also replace/mess with Bukkit sided PowerfulPerms command. 
-# Highly recommended to set to false.
-bungee_command: false
-
 # Server name used for per-server Bukkit sided permissions to work. Use the same as in BungeeCord config.
 # This is not used Bungee-side.
 servername: ""
@@ -32,6 +24,7 @@ servername: ""
 onlinemode: true
 
 # Chat format used along with PlaceholderAPI. PlaceholderAPI must be installed. Disable if you are using a different chat plugin. 
-# Use PlaceholderAPI's placeholders but with brackets instead of percentage. This is not used Bungee-side.
+# Use PlaceholderAPI's placeholders but with brackets instead of percentage.
+# This is not used Bungee-side.
 use_chatformat: true
 chatformat: "{powerfulperms_prefix}{player_name}{powerfulperms_suffix}{message}"

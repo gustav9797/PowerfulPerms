@@ -46,7 +46,6 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
 
     public static String pluginPrefix = ChatColor.WHITE + "[" + ChatColor.BLUE + "PowerfulPerms" + ChatColor.WHITE + "] ";
     public static String consolePrefix = "[PowerfulPerms] ";
-    public static boolean bungee_command = false;
     public static boolean debug = false;
     public static ServerMode serverMode = ServerMode.ONLINE;
     public static int oldVersion = 0;
@@ -74,7 +73,6 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         PermissionManagerBase.redis_port = config.getInt("redis_port");
         PermissionManagerBase.redis_password = config.getString("redis_password");
 
-        bungee_command = config.getBoolean("bungee_command");
         debug = config.getBoolean("debug");
         if (config.getBoolean("onlinemode", false) == true)
             serverMode = ServerMode.ONLINE;
@@ -102,10 +100,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         this.getProxy().getPluginManager().registerListener(this, this);
         this.getProxy().getPluginManager().registerListener(this, permissionManager);
 
-        if (bungee_command) {
-            getLogger().info("Using Bungee sided command.");
-            getProxy().getPluginManager().registerCommand(this, new PermissionCommandExecutor(permissionManager));
-        }
+        getProxy().getPluginManager().registerCommand(this, new PermissionCommandExecutor(permissionManager));
 
         if (getCustomConfig().getInt("oldversion", -1) == -1 || oldVersion != currentVersion) {
             getCustomConfig().set("oldversion", currentVersion);
