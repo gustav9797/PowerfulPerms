@@ -70,7 +70,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
      */
     @Override
     public LinkedHashMap<String, List<CachedGroup>> getCachedGroups() {
-        return this.groups;
+        return new LinkedHashMap<String, List<CachedGroup>>(this.groups);
     }
 
     /**
@@ -131,7 +131,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
      */
     @Override
     public List<Group> getGroups() {
-        return this.currentGroups;
+        return new ArrayList<Group>(this.currentGroups);
     }
 
     /**
@@ -139,7 +139,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
      */
     @Override
     public List<Permission> getPermissions() {
-        return this.permissions;
+        return new ArrayList<Permission>(this.permissions);
     }
 
     /**
@@ -147,7 +147,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
      */
     @Override
     public List<String> getPermissionsInEffect() {
-        return this.realPermissions;
+        return new ArrayList<String>(this.realPermissions);
     }
 
     @Override
