@@ -44,7 +44,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     private final Database db;
     protected PowerfulPermsPlugin plugin;
-    protected PermissionPlayerBase defaultPlayer;
+
+    protected LinkedHashMap<String, List<CachedGroup>> defaultGroups;
 
     public static boolean redis;
     public static String redis_ip;
@@ -137,6 +138,20 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     protected void debug(String msg) {
         plugin.debug(msg);
+    }
+
+    protected LinkedHashMap<String, List<CachedGroup>> deepCopyDefaultGroups() {
+        if (defaultGroups != null) {
+            LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
+            LinkedHashMap<String, List<CachedGroup>> input = new LinkedHashMap<String, List<CachedGroup>>(defaultGroups);
+            Iterator<Entry<String, List<CachedGroup>>> it = input.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<String, List<CachedGroup>> next = it.next();
+                output.put(next.getKey(), new ArrayList<CachedGroup>(next.getValue()));
+            }
+            return output;
+        }
+        return null;
     }
 
     @Override
@@ -389,9 +404,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         @Override
                         public void run() {
                             if (result != null) {
-                                defaultPlayer = new PermissionPlayerBase(getPlayerGroups(row.getString("groups")), result, row.getString("prefix"), row.getString("suffix"), plugin, false);
+                                defaultGroups = getPlayerGroups(row.getString("groups"));
                                 reloadPlayers();
-                                debug("DEFAULT PLAYER LOADED: " + (defaultPlayer != null));
+                                debug("DEFAULT PLAYER LOADED: " + (defaultGroups != null));
                             } else
                                 plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. 2");
                         }
@@ -511,12 +526,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     // Player should be reloaded if "login" is false. Reload already loaded player.
                     if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
                         PermissionPlayerBase toUpdate = (PermissionPlayerBase) players.get(uuid);
+                        debug("Player instance " + toUpdate.toString());
                         PermissionPlayerBase base;
                         LinkedHashMap<String, List<CachedGroup>> tempGroups = getPlayerGroups(groups_loaded);
                         debug("loadPlayerFinished reload group count:" + tempGroups.size());
                         if (tempGroups.isEmpty()) {
                             // Player has no groups, put default data
-                            base = new PermissionPlayerBase(defaultPlayer.getCachedGroups(), perms, prefix_loaded, suffix_loaded, plugin, true);
+                            base = new PermissionPlayerBase(deepCopyDefaultGroups(), perms, prefix_loaded, suffix_loaded, plugin, true);
                         } else
                             base = new PermissionPlayerBase(tempGroups, perms, prefix_loaded, suffix_loaded, plugin, false);
                         toUpdate.update(base);
@@ -546,7 +562,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         PermissionPlayerBase base;
         if (cachedPlayer.getGroups().isEmpty()) {
             // Player has no groups, put default data
-            base = new PermissionPlayerBase(defaultPlayer.getCachedGroups(), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin, true);
+            base = new PermissionPlayerBase(deepCopyDefaultGroups(), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin, true);
         } else
             base = new PermissionPlayerBase(this.getPlayerGroups(cachedPlayer.getGroups()), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin, false);
         cachedPlayers.remove(uuid);
@@ -697,10 +713,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return groups.get(id);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Map<Integer, Group> getGroups() {
-        return (Map<Integer, Group>) this.groups.clone();
+        return new HashMap<Integer, Group>(this.groups);
     }
 
     protected LinkedHashMap<String, List<CachedGroup>> getPlayerGroups(String raw) {
@@ -796,7 +811,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     DBDocument row = result.next();
                     LinkedHashMap<String, List<CachedGroup>> output = getPlayerGroups(row.getString("groups"));
                     if (output.isEmpty()) {
-                        output.putAll(defaultPlayer.getCachedGroups());
+                        output.putAll(deepCopyDefaultGroups());
                     }
                     resultRunnable.setResult(output);
                 }
