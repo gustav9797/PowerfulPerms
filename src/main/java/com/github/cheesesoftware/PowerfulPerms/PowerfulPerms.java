@@ -3,10 +3,13 @@ package com.github.cheesesoftware.PowerfulPerms;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -22,12 +25,15 @@ import com.github.cheesesoftware.PowerfulPerms.common.Versioner;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
 import com.github.cheesesoftware.PowerfulPerms.database.SQL;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
+import com.sk89q.wepif.PermissionsProvider;
 
-public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPermsPlugin {
+public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPermsPlugin, PermissionsProvider {
 
     private SQL sql;
     private PowerfulPermissionManager permissionManager;
@@ -123,6 +129,9 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         if (e.getPlugin().getName().equals("PlaceholderAPI")) {
             Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Using custom chat format.");
             placeholderAPIEnabled = true;
+        } else if (e.getPlugin().getName().equals("WorldEdit")) {
+            com.sk89q.wepif.PermissionsResolverManager.initialize(this);
+            Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Enabling WEPIF hook.");
         }
     }
 
@@ -235,5 +244,73 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     @Override
     public String getVersion() {
         return this.getDescription().getVersion();
+    }
+
+    @Override
+    public String[] getGroups(String player) {
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
+        if (p != null) {
+            List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
+            List<String> groupNames = new ArrayList<String>();
+            for (Group group : groups)
+                groupNames.add(group.getName());
+            return groupNames.toArray(new String[groupNames.size()]);
+        }
+        return null;
+    }
+
+    @Override
+    public String[] getGroups(OfflinePlayer player) {
+        return null;
+    }
+
+    @Override
+    public boolean hasPermission(String player, String permission) {
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
+        if (p != null) {
+            Boolean has = p.hasPermission(permission);
+            if (has != null)
+                return has;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasPermission(OfflinePlayer player, String permission) {
+        return false;
+    }
+
+    @Override
+    public boolean hasPermission(String world, String player, String permission) {
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
+        if (p != null) {
+            Boolean has = p.hasPermission(permission);
+            if (has != null)
+                return has;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasPermission(String world, OfflinePlayer player, String permission) {
+        return false;
+    }
+
+    @Override
+    public boolean inGroup(String player, String groupName) {
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
+        if (p != null) {
+            List<Group> groups = p.getGroups();
+            for (Group group : groups) {
+                if (group.getName().equalsIgnoreCase(groupName))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean inGroup(OfflinePlayer player, String groupName) {
+        return false;
     }
 }

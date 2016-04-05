@@ -109,8 +109,17 @@
                   <include>redis.clients:jedis</include>
                   <include>com.github.cheesesoftware:PowerfulPermsAPI</include>
                   <include>com.googlecode.json-simple:json-simple</include>
+                  <include>com.sk89q:worldedit</include>
                 </includes>
               </artifactSet>
+              <filters>
+                <filter>
+                  <artifact>com.sk89q:worldedit</artifact>
+                  <includes>
+                    <include>com/sk89q/wepif/**</include>
+                  </includes>
+                </filter>
+              </filters>
               <relocations>
                 <relocation>
                   <pattern>redis.clients</pattern>
@@ -123,6 +132,10 @@
                 <relocation>
                   <pattern>org.json</pattern>
                   <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.json</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.sk89q.wepif</pattern>
+                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.com.sk89q.wepif</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -177,10 +190,6 @@
           <groupId>commons-lang</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>guava</artifactId>
-          <groupId>com.google.guava</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>gson</artifactId>
           <groupId>com.google.code.gson</groupId>
         </exclusion>
@@ -207,10 +216,6 @@
         <exclusion>
           <artifactId>commons-lang</artifactId>
           <groupId>commons-lang</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>guava</artifactId>
-          <groupId>com.google.guava</groupId>
         </exclusion>
         <exclusion>
           <artifactId>gson</artifactId>
@@ -247,10 +252,6 @@
         <exclusion>
           <artifactId>bungeecord-chat</artifactId>
           <groupId>net.md-5</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>guava</artifactId>
-          <groupId>com.google.guava</groupId>
         </exclusion>
       </exclusions>
     </dependency>

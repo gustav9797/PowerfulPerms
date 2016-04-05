@@ -110,8 +110,17 @@
 									<include>redis.clients:jedis</include>
 									<include>com.github.cheesesoftware:PowerfulPermsAPI</include>
 									<include>com.googlecode.json-simple:json-simple</include>
+									<include>com.sk89q:worldedit</include>
 								</includes>
 							</artifactSet>
+							<filters>
+								<filter>
+									<artifact>com.sk89q:worldedit</artifact>
+									<includes>
+										<include>com/sk89q/wepif/**</include>
+									</includes>
+								</filter>
+							</filters>
 							<relocations>
 								<relocation>
 									<pattern>redis.clients</pattern>
@@ -124,6 +133,10 @@
 								<relocation>
 									<pattern>org.json</pattern>
 									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.json</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.sk89q.wepif</pattern>
+									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.com.sk89q.wepif</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
@@ -223,6 +236,11 @@
 			<artifactId>placeholderapi</artifactId>
 			<version>2.3.1</version>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.sk89q</groupId>
+			<artifactId>worldedit</artifactId>
+			<version>6.0.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 	<version>3.0.3</version>
