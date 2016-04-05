@@ -82,6 +82,8 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                 }
             });
         }
+
+        loadGroups(true, true);
     }
 
     @EventHandler(priority = EventPriority.HIGH)

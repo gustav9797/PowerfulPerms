@@ -127,8 +127,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
         db.applyPatches(plugin);
 
-        loadGroups(true, true);
-
         // Initialize Redis
         if (redis_password == null || redis_password.isEmpty())
             pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0);
