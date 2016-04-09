@@ -49,7 +49,9 @@ public class UserBaseCommand extends SubCommand {
                 return CommandResult.success;
             } else
                 return CommandResult.noPermission;
-        } else
+        } else if (!hasPermission(invoker, sender, "powerfulperms.admin"))
+            return CommandResult.noPermission;
+        else
             return CommandResult.noMatch;
     }
 
