@@ -32,6 +32,7 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
 import com.sk89q.wepif.PermissionsProvider;
+import com.sk89q.worldedit.WorldEdit;
 
 public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPermsPlugin, PermissionsProvider {
 
@@ -131,7 +132,8 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
             placeholderAPIEnabled = true;
         } else if (e.getPlugin().getName().equals("WorldEdit")) {
             com.sk89q.wepif.PermissionsResolverManager.initialize(this);
-            Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Enabling WEPIF hook.");
+            Bukkit.getLogger().info(consolePrefix + "Found WorldEdit. Enabling WEPIF hook.");
+            com.sk89q.wepif.PermissionsResolverManager.getInstance().hasPermission("bertil", "some.perm");
         }
     }
 
@@ -248,6 +250,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
     @Override
     public String[] getGroups(String player) {
+        debug("getgroups " + player);
         PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
             List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
@@ -261,49 +264,49 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
     @Override
     public String[] getGroups(OfflinePlayer player) {
-        return null;
+        return getGroups(player.getName());
     }
 
     @Override
     public boolean hasPermission(String player, String permission) {
+        debug("hasPermission " + player + " " + permission);
         PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
             Boolean has = p.hasPermission(permission);
-            if (has != null)
+            if (has != null) {
+                debug("hasPermission " + player + " " + permission + " has");
                 return has;
+            }
         }
         return false;
     }
 
     @Override
     public boolean hasPermission(OfflinePlayer player, String permission) {
-        return false;
+        return hasPermission(player.getName(), permission);
     }
 
     @Override
     public boolean hasPermission(String world, String player, String permission) {
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
-        if (p != null) {
-            Boolean has = p.hasPermission(permission);
-            if (has != null)
-                return has;
-        }
-        return false;
+        return hasPermission(player, permission);
     }
 
     @Override
     public boolean hasPermission(String world, OfflinePlayer player, String permission) {
-        return false;
+        return hasPermission(world, player.getName(), permission);
     }
 
     @Override
     public boolean inGroup(String player, String groupName) {
+        debug("ingroup " + player + " " + groupName);
         PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
             List<Group> groups = p.getGroups();
             for (Group group : groups) {
-                if (group.getName().equalsIgnoreCase(groupName))
+                if (group.getName().equalsIgnoreCase(groupName)) {
+                    debug("ingroup " + player + " " + groupName + " true");
                     return true;
+                }
             }
         }
         return false;
@@ -311,6 +314,6 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
     @Override
     public boolean inGroup(OfflinePlayer player, String groupName) {
-        return false;
+        return inGroup(player.getName(), groupName);
     }
 }

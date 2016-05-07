@@ -160,6 +160,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
+        // If player name is UUID, return it directly
+        try {
+            UUID uuid = UUID.fromString(playerName);
+            resultRunnable.setResult(uuid);
+            db.scheduler.runSync(resultRunnable);
+            return;
+        } catch (Exception e) {
+        }
+
         // If player is online, get UUID directly
         if (plugin.isPlayerOnline(playerName)) {
             resultRunnable.setResult(plugin.getPlayerUUID(playerName));
