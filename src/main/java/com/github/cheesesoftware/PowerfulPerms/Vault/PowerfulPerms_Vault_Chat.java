@@ -41,12 +41,11 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public void setPlayerPrefix(String world, String player, String prefix) {
-        //TODO: Fix
         permissionManager.setPlayerPrefix(plugin.getPlayerUUID(player), prefix, new ResponseRunnable() {
 
             @Override
             public void run() {
-
+                
             }
         });
     }
@@ -61,7 +60,6 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
     @Override
     public void setPlayerSuffix(String world, String player, String suffix) {
-      //TODO: Fix
         permissionManager.setPlayerSuffix(plugin.getPlayerUUID(player), suffix, new ResponseRunnable() {
 
             @Override

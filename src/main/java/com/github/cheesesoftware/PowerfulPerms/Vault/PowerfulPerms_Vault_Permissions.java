@@ -13,15 +13,20 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
+import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
 
 import net.milkbowl.vault.permission.Permission;
 
 public class PowerfulPerms_Vault_Permissions extends Permission {
 
+    private PowerfulPermsPlugin plugin;
     private PermissionManager permissionManager;
+    private String server;
 
     public PowerfulPerms_Vault_Permissions(PowerfulPermsPlugin plugin) {
+        this.plugin = plugin;
         this.permissionManager = plugin.getPermissionManager();
+        this.server = PowerfulPerms.vaultIsLocal ? PermissionManagerBase.serverName : "";
     }
 
     @Override
@@ -67,8 +72,14 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean groupAdd(String world, String group, String permission) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(groupAdd). Please contact the developer of PowerfulPerms(gustav9797)");
-        return false;
+        permissionManager.addGroupPermission(group, permission, "", server, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
+        return true;
     }
 
     @Override
@@ -79,8 +90,14 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean groupRemove(String world, String group, String permission) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(groupRemove). Please contact the developer of PowerfulPerms(gustav9797)");
-        return false;
+        permissionManager.removeGroupPermission(group, permission, "", server, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
+        return true;
     }
 
     @Override
@@ -100,14 +117,26 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerAdd(String world, String player, String permission) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerAdd). Please contact the developer of PowerfulPerms(gustav9797)");
-        return false;
+        permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), player, permission, world, server, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
+        return true;
     }
 
     @Override
     public boolean playerAddGroup(String world, String player, String group) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerAddGroup). Please contact the developer of PowerfulPerms(gustav9797)");
-        return false;
+        permissionManager.addPlayerGroup(plugin.getPlayerUUID(player), group, server, false, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
+        return true;
     }
 
     @Override
@@ -125,15 +154,26 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerRemove(String world, String player, String permission) {
-        Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerRemove). Please contact the developer of PowerfulPerms(gustav9797)");
-        return false;
+        permissionManager.removePlayerPermission(plugin.getPlayerUUID(player), permission, world, server, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
+        return true;
     }
 
     @Override
     public boolean playerRemoveGroup(String world, String player, String group) {
-        Bukkit.getLogger().warning(
-                PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(playerRemoveGroup). Please contact the developer of PowerfulPerms(gustav9797)");
-        return false;
+        permissionManager.removePlayerGroup(plugin.getPlayerUUID(player), group, server, false, new ResponseRunnable() {
+
+            @Override
+            public void run() {
+
+            }
+        });
+        return true;
     }
 
     @Override

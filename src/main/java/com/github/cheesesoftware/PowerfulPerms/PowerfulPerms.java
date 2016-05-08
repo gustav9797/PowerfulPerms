@@ -32,7 +32,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
 import com.sk89q.wepif.PermissionsProvider;
-import com.sk89q.worldedit.WorldEdit;
 
 public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPermsPlugin, PermissionsProvider {
 
@@ -50,6 +49,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public static boolean useChatFormat;
     public static boolean placeholderAPIEnabled = false;
     public static String chatFormat;
+    public static boolean vaultIsLocal;
 
     @Override
     public void onEnable() {
@@ -80,6 +80,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
         useChatFormat = getConfig().getBoolean("use_chatformat", false);
         chatFormat = getConfig().getString("chatformat", "");
+        vaultIsLocal = getConfig().getString("vault_assumption", "local").equals("local") ? true : false;
 
         try {
             if (sql.getConnection() == null || sql.getConnection().isClosed()) {
