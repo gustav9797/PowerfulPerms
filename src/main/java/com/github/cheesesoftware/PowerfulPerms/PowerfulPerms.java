@@ -50,6 +50,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public static boolean placeholderAPIEnabled = false;
     public static String chatFormat;
     public static boolean vaultIsLocal;
+    public static boolean disableChatFormat;
 
     @Override
     public void onEnable() {
@@ -80,6 +81,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
         useChatFormat = getConfig().getBoolean("use_chatformat", false);
         chatFormat = getConfig().getString("chatformat", "");
+        disableChatFormat = getConfig().getBoolean("disable_chatformat", false);
         vaultIsLocal = getConfig().getString("vault_assumption", "local").equals("local") ? true : false;
 
         try {

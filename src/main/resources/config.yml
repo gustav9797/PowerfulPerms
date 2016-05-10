@@ -29,6 +29,9 @@ onlinemode: true
 use_chatformat: true
 chatformat: "{powerfulperms_prefix}{player_name}{powerfulperms_suffix}{message}"
 
+# Disable all chat formatting(If you want to use vanilla formatting)
+disable_chatformat: false
+
 # Vault assumption is either "local" or "global". If it's local, any Vault modifications will have the current server as a parameter. If it's global, the modification will be executed as 
 # global. For example, if you add a permission through Vault and this is set to "local" it will be added only for the current server. (See the command reference)
 # This is not used Bungee-side.
