@@ -72,7 +72,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean groupAdd(String world, String group, String permission) {
-        permissionManager.addGroupPermission(group, permission, "", server, new ResponseRunnable() {
+        permissionManager.addGroupPermission(group, permission, (world != null ? world : ""), server, new ResponseRunnable() {
 
             @Override
             public void run() {
@@ -90,7 +90,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean groupRemove(String world, String group, String permission) {
-        permissionManager.removeGroupPermission(group, permission, "", server, new ResponseRunnable() {
+        permissionManager.removeGroupPermission(group, permission, (world != null ? world : ""), server, new ResponseRunnable() {
 
             @Override
             public void run() {
@@ -117,7 +117,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerAdd(String world, String player, String permission) {
-        permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), player, permission, world, server, new ResponseRunnable() {
+        permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), player, permission, (world != null ? world : ""), server, new ResponseRunnable() {
 
             @Override
             public void run() {
@@ -154,7 +154,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerRemove(String world, String player, String permission) {
-        permissionManager.removePlayerPermission(plugin.getPlayerUUID(player), permission, world, server, new ResponseRunnable() {
+        permissionManager.removePlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, new ResponseRunnable() {
 
             @Override
             public void run() {

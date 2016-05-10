@@ -243,5 +243,5 @@
 			<version>6.0.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
-	<version>3.1.1</version>
+	<version>3.1.2</version>
 </project>
