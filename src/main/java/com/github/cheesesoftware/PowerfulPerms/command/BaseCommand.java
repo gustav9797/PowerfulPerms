@@ -23,6 +23,8 @@ public class BaseCommand extends SubCommand {
 
     @Override
     public CommandResult execute(ICommand invoker, String sender, String[] args) {
+        args = resolveArgs(args);
+
         boolean hasSomePermission = false;
         for (SubCommand subCommand : subCommands) {
             CommandResult result = subCommand.execute(invoker, sender, args);
@@ -49,6 +51,31 @@ public class BaseCommand extends SubCommand {
         for (SubCommand subCommand : subCommands)
             usage.addAll(subCommand.getUsage());
         return usage;
+    }
+
+    public String[] resolveArgs(String[] args) {
+        List<String> output = new ArrayList<String>();
+        String current = "";
+        boolean adding = false;
+        for (String s : args) {
+            if (s.contains("\"")) {
+                for (char c : s.toCharArray()) {
+                    if (c == '"' || c == '\'') {
+                        adding = !adding;
+                        if (!adding) {
+                            // Finished
+                            output.add(current);
+                            current = "";
+                        }
+                    } else if (adding)
+                        current += c;
+                }
+                if (adding)
+                    current += " ";
+            } else
+                output.add(s);
+        }
+        return (String[]) output.toArray();
     }
 
 }

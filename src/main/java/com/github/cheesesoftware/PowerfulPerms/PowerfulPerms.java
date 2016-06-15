@@ -31,9 +31,8 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
-import com.sk89q.wepif.PermissionsProvider;
 
-public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPermsPlugin, PermissionsProvider {
+public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPermsPlugin {
 
     private SQL sql;
     private PowerfulPermissionManager permissionManager;
@@ -133,10 +132,6 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         if (e.getPlugin().getName().equals("PlaceholderAPI")) {
             Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Using custom chat format.");
             placeholderAPIEnabled = true;
-        } else if (e.getPlugin().getName().equals("WorldEdit")) {
-            com.sk89q.wepif.PermissionsResolverManager.initialize(this);
-            Bukkit.getLogger().info(consolePrefix + "Found WorldEdit. Enabling WEPIF hook.");
-            com.sk89q.wepif.PermissionsResolverManager.getInstance().hasPermission("bertil", "some.perm");
         }
     }
 
@@ -249,74 +244,5 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     @Override
     public String getVersion() {
         return this.getDescription().getVersion();
-    }
-
-    @Override
-    public String[] getGroups(String player) {
-        debug("getgroups " + player);
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
-        if (p != null) {
-            List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
-            List<String> groupNames = new ArrayList<String>();
-            for (Group group : groups)
-                groupNames.add(group.getName());
-            return groupNames.toArray(new String[groupNames.size()]);
-        }
-        return null;
-    }
-
-    @Override
-    public String[] getGroups(OfflinePlayer player) {
-        return getGroups(player.getName());
-    }
-
-    @Override
-    public boolean hasPermission(String player, String permission) {
-        debug("hasPermission " + player + " " + permission);
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
-        if (p != null) {
-            Boolean has = p.hasPermission(permission);
-            if (has != null) {
-                debug("hasPermission " + player + " " + permission + " has");
-                return has;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean hasPermission(OfflinePlayer player, String permission) {
-        return hasPermission(player.getName(), permission);
-    }
-
-    @Override
-    public boolean hasPermission(String world, String player, String permission) {
-        return hasPermission(player, permission);
-    }
-
-    @Override
-    public boolean hasPermission(String world, OfflinePlayer player, String permission) {
-        return hasPermission(world, player.getName(), permission);
-    }
-
-    @Override
-    public boolean inGroup(String player, String groupName) {
-        debug("ingroup " + player + " " + groupName);
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player);
-        if (p != null) {
-            List<Group> groups = p.getGroups();
-            for (Group group : groups) {
-                if (group.getName().equalsIgnoreCase(groupName)) {
-                    debug("ingroup " + player + " " + groupName + " true");
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean inGroup(OfflinePlayer player, String groupName) {
-        return inGroup(player.getName(), groupName);
     }
 }
