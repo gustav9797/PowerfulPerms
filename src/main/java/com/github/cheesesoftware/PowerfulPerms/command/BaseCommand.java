@@ -57,25 +57,32 @@ public class BaseCommand extends SubCommand {
         List<String> output = new ArrayList<String>();
         String current = "";
         boolean adding = false;
-        for (String s : args) {
-            if (s.contains("\"")) {
-                for (char c : s.toCharArray()) {
-                    if (c == '"' || c == '\'') {
-                        adding = !adding;
-                        if (!adding) {
-                            // Finished
-                            output.add(current);
-                            current = "";
-                        }
-                    } else if (adding)
-                        current += c;
-                }
-                if (adding)
-                    current += " ";
-            } else
-                output.add(s);
-        }
-        return (String[]) output.toArray();
-    }
 
+        for (int i = 0; i < args.length; ++i) {
+            String s = args[i];
+
+            if (!adding) {
+                current = "";
+            }
+
+            if (!s.contains("\"")) {
+                output.add(s);
+                continue;
+            }
+
+            for (char c : s.toCharArray()) {
+                if (c == '"' || c == '\'') {
+                    adding = !adding;
+                } else
+                    current += c;
+            }
+
+            if ((!adding || (adding && i == args.length - 1)) && !current.isEmpty())
+                output.add(current);
+            else if (adding)
+                current += " ";
+
+        }
+        return output.toArray(new String[output.size()]);
+    }
 }
