@@ -155,7 +155,7 @@ public class UserCommand extends SubCommand {
                                                             else
                                                                 rows.add("Player has no permissions.");
 
-                                                            List<List<String>> list = createList(rows, 19);
+                                                            List<List<String>> list = Paginator.createList(rows, 19);
                                                             sendSender(invoker, sender, ChatColor.BLUE + "Page " + (pageCopy + 1) + " of " + list.size());
 
                                                             if (pageCopy < list.size()) {
@@ -182,25 +182,6 @@ public class UserCommand extends SubCommand {
                 return CommandResult.noMatch;
         } else
             return CommandResult.noPermission;
-    }
-
-    private List<List<String>> createList(Queue<String> input, int rowsPerPage) {
-        int rowWidth = 55;
-        List<List<String>> list = new ArrayList<List<String>>();
-        while (input.size() > 0) {
-            List<String> page = new ArrayList<String>();
-            for (int j = 0; j < rowsPerPage; j++) {
-                if (input.size() > 0) {
-                    String row = input.remove();
-                    page.add(row);
-                    if (row.length() > rowWidth)
-                        j++;
-
-                }
-            }
-            list.add(page);
-        }
-        return list;
     }
 
 }

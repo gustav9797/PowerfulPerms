@@ -1,6 +1,5 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 
@@ -53,7 +52,7 @@ public class GroupCommand extends SubCommand {
                     } else
                         rows.add("Group has no permissions.");
 
-                    List<List<String>> list = createList(rows, 19);
+                    List<List<String>> list = Paginator.createList(rows, 19);
                     if (list.size() > 0) {
                         sendSender(invoker, sender, ChatColor.BLUE + "Page " + (page + 1) + " of " + list.size());
                         if (page < list.size()) {
@@ -70,25 +69,6 @@ public class GroupCommand extends SubCommand {
             return CommandResult.noMatch;
         }
         return CommandResult.noPermission;
-    }
-
-    private List<List<String>> createList(Queue<String> input, int rowsPerPage) {
-        int rowWidth = 55;
-        List<List<String>> list = new ArrayList<List<String>>();
-        while (input.size() > 0) {
-            List<String> page = new ArrayList<String>();
-            for (int j = 0; j < rowsPerPage; j++) {
-                if (input.size() > 0) {
-                    String row = input.remove();
-                    page.add(row);
-                    if (row.length() > rowWidth)
-                        j++;
-
-                }
-            }
-            list.add(page);
-        }
-        return list;
     }
 
 }
