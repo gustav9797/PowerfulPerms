@@ -158,7 +158,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     private Boolean preHasPermission(String permission) {
         Boolean has = null;
 
-        List<String> lperm = toList(permission, ".");
+        List<String> lperm = Utils.toList(permission, ".");
 
         if (temporaryPrePermissions != null) {
             for (String p : temporaryPrePermissions) {
@@ -192,7 +192,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
         } else if (toCheckAgainst.equalsIgnoreCase("-" + toCheck)) {
             has = false;
         } else if (toCheckAgainst.endsWith("*")) {
-            List<String> lp = toList(toCheckAgainst, ".");
+            List<String> lp = Utils.toList(toCheckAgainst, ".");
             int index = 0;
             try {
                 while (index < lp.size() && index < lperm.size()) {
@@ -389,24 +389,6 @@ public class PermissionPlayerBase implements PermissionPlayer {
         if (isSameServer && isSameWorld)
             return true;
         return false;
-    }
-
-    private static List<String> toList(String s, String seperator) {
-        List<String> l = new ArrayList<>();
-        String ls = "";
-        for (int i = 0; i < (s.length() - seperator.length()) + 1; i++) {
-            if (s.substring(i, i + seperator.length()).equalsIgnoreCase(seperator)) {
-                l.add(ls);
-                ls = "";
-                i = i + seperator.length() - 1;
-            } else {
-                ls += s.substring(i, i + 1);
-            }
-        }
-        if (ls.length() > 0) {
-            l.add(ls);
-        }
-        return l;
     }
 
     @Override
