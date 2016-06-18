@@ -19,14 +19,20 @@ public class GroupDeleteCommand extends SubCommand {
 
                 final String groupName = args[0];
 
-                final ResponseRunnable response = new ResponseRunnable() {
-                    @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
-                    }
-                };
+                if (args.length < 3 || !args[2].equalsIgnoreCase("confirm")) {
+                    sendSender(invoker, sender, "You are about to delete a group. Confirm with \"/pp group " + groupName + " delete confirm\"");
+                    return CommandResult.success;
+                } else {
 
-                permissionManager.deleteGroup(groupName, response);
+                    final ResponseRunnable response = new ResponseRunnable() {
+                        @Override
+                        public void run() {
+                            sendSender(invoker, sender, response);
+                        }
+                    };
+
+                    permissionManager.deleteGroup(groupName, response);
+                }
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;
