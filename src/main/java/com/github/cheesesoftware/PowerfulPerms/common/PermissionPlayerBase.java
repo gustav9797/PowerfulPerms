@@ -58,11 +58,15 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     public void setTemporaryPrePermissions(List<String> permissions) {
-        this.temporaryPrePermissions = permissions;
+        synchronized (this.temporaryPrePermissions) {
+            this.temporaryPrePermissions = permissions;
+        }
     }
 
     public void setTemporaryPostPermissions(List<String> permissions) {
-        this.temporaryPostPermissions = permissions;
+        synchronized (this.temporaryPostPermissions) {
+            this.temporaryPostPermissions = permissions;
+        }
     }
 
     /**
@@ -147,7 +151,9 @@ public class PermissionPlayerBase implements PermissionPlayer {
      */
     @Override
     public List<String> getPermissionsInEffect() {
-        return new ArrayList<String>(this.realPermissions);
+        synchronized (this.realPermissions) {
+            return new ArrayList<String>(this.realPermissions);
+        }
     }
 
     @Override
@@ -160,25 +166,31 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
         List<String> lperm = Utils.toList(permission, ".");
 
-        if (temporaryPrePermissions != null) {
-            for (String p : temporaryPrePermissions) {
+        synchronized (this.temporaryPrePermissions) {
+            if (temporaryPrePermissions != null) {
+                for (String p : temporaryPrePermissions) {
+                    Boolean check = internalPermissionCheck(permission, p, lperm);
+                    if (check != null)
+                        has = check;
+                }
+            }
+        }
+
+        synchronized (this.realPermissions) {
+            for (String p : realPermissions) {
                 Boolean check = internalPermissionCheck(permission, p, lperm);
                 if (check != null)
                     has = check;
             }
         }
 
-        for (String p : realPermissions) {
-            Boolean check = internalPermissionCheck(permission, p, lperm);
-            if (check != null)
-                has = check;
-        }
-
-        if (temporaryPostPermissions != null) {
-            for (String p : temporaryPostPermissions) {
-                Boolean check = internalPermissionCheck(permission, p, lperm);
-                if (check != null)
-                    has = check;
+        synchronized (this.temporaryPostPermissions) {
+            if (temporaryPostPermissions != null) {
+                for (String p : temporaryPostPermissions) {
+                    Boolean check = internalPermissionCheck(permission, p, lperm);
+                    if (check != null)
+                        has = check;
+                }
             }
         }
 

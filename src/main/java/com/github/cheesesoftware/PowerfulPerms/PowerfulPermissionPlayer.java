@@ -78,7 +78,9 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
                 realPerms.addAll(calculateChildPermissions(perm.getChildren(), invert));
         }
 
-        this.realPermissions = realPerms;
+        synchronized (this.realPermissions) {
+            this.realPermissions = realPerms;
+        }
     }
 
     private List<String> calculateChildPermissions(Map<String, Boolean> children, boolean invert) {
