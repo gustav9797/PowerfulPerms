@@ -67,8 +67,6 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     public void updatePermissions(ServerInfo serverInfo) {
         String serverName = (serverInfo != null ? serverInfo.getName() : null);
         this.updateGroups(serverName);
-        synchronized (this.realPermissions) {
-            this.realPermissions = super.calculatePermissions(serverName, null);
-        }
+        this.realPermissions = super.calculatePermissions(serverName, null);
     }
 }
