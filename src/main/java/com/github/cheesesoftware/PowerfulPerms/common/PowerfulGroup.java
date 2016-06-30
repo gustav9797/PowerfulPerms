@@ -79,7 +79,8 @@ public class PowerfulGroup implements Group {
         String prefix = serverPrefix.get(server);
         if (prefix != null)
             return prefix;
-        return serverPrefix.get("");
+        prefix = serverPrefix.get("");
+        return (prefix != null ? prefix : "");
     }
 
     @Override
@@ -87,7 +88,8 @@ public class PowerfulGroup implements Group {
         String suffix = serverSuffix.get(server);
         if (suffix != null)
             return suffix;
-        return serverSuffix.get("");
+        suffix = serverSuffix.get("");
+        return (suffix != null ? suffix : "");
     }
 
     @Override

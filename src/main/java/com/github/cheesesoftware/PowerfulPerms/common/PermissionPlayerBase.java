@@ -287,7 +287,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
         if (!sortedGroups.isEmpty()) {
             Iterator<Entry<Integer, Group>> reverse = sortedGroups.descendingMap().entrySet().iterator();
-            if (reverse.hasNext()) {
+            while (reverse.hasNext()) {
                 Group current = reverse.next().getValue();
                 String prefix = current.getPrefix(PermissionManagerBase.serverName);
                 if (!prefix.isEmpty())
@@ -313,7 +313,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
         if (!sortedGroups.isEmpty()) {
             Iterator<Entry<Integer, Group>> reverse = sortedGroups.descendingMap().entrySet().iterator();
-            if (reverse.hasNext()) {
+            while (reverse.hasNext()) {
                 Group current = reverse.next().getValue();
                 String suffix = current.getSuffix(PermissionManagerBase.serverName);
                 if (!suffix.isEmpty())

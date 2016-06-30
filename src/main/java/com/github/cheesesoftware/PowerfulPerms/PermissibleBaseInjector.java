@@ -41,7 +41,11 @@ public class PermissibleBaseInjector {
     }
     
     public Permissible inject(Player player, Permissible permissible) throws NoSuchFieldException, IllegalAccessException {
-        Field permField = getPermissibleField(player);
+        Field permField = null;
+        try {
+            permField = getPermissibleField(player);
+        } catch (Exception e) {
+        }
         if (permField == null) {
             return null;
         }
@@ -56,13 +60,12 @@ public class PermissibleBaseInjector {
         return oldPerm;
     }
     
-    private Field getPermissibleField(Player player) throws NoSuchFieldException {
+    private Field getPermissibleField(Player player) throws Exception {
         Class<?> humanEntity;
         try {
             humanEntity = Class.forName(className);
         } catch (ClassNotFoundException e) {
-            Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "You're not using Spigot. Spigot must be used for permissions to work properly.");
-            return null;
+            throw new Exception("You're not using Spigot. Spigot must be used for permissions to work properly.");
         }
 
         if (!humanEntity.isAssignableFrom(player.getClass())) {
