@@ -222,6 +222,35 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
+     * Returns the player's group on a specific ladder.
+     */
+    @Override
+    public Group getGroup(String ladder) {
+        List<Group> input = getGroups();
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        // Sort groups by rank if same ladder
+        for (Group group : input) {
+            if (group.getLadder().equalsIgnoreCase(ladder)) {
+                sortedGroups.put(group.getRank(), group);
+            }
+        }
+
+        Iterator<Group> it = sortedGroups.descendingMap().values().iterator();
+        if (it.hasNext()) {
+            return it.next();
+        }
+        return null;
+    }
+
+    /**
+     * Returns the player's group on the default ladder.
+     */
+    @Override
+    public Group getGroup() {
+        return getGroup("default");
+    }
+
+    /**
      * Returns the player's prefix on a specific ladder.
      */
     @Override
@@ -278,23 +307,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     public String getPrefix() {
         if (!prefix.isEmpty())
             return prefix;
-
-        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
-        for (Group current : getGroups()) {
-            if (current.getLadder().equals("default"))
-                sortedGroups.put(current.getRank(), current);
-        }
-
-        if (!sortedGroups.isEmpty()) {
-            Iterator<Entry<Integer, Group>> reverse = sortedGroups.descendingMap().entrySet().iterator();
-            while (reverse.hasNext()) {
-                Group current = reverse.next().getValue();
-                String prefix = current.getPrefix(PermissionManagerBase.serverName);
-                if (!prefix.isEmpty())
-                    return prefix;
-            }
-        }
-        return "";
+        return getPrefix("default");
     }
 
     /**
@@ -304,23 +317,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     public String getSuffix() {
         if (!suffix.isEmpty())
             return suffix;
-
-        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
-        for (Group current : getGroups()) {
-            if (current.getLadder().equals("default"))
-                sortedGroups.put(current.getRank(), current);
-        }
-
-        if (!sortedGroups.isEmpty()) {
-            Iterator<Entry<Integer, Group>> reverse = sortedGroups.descendingMap().entrySet().iterator();
-            while (reverse.hasNext()) {
-                Group current = reverse.next().getValue();
-                String suffix = current.getSuffix(PermissionManagerBase.serverName);
-                if (!suffix.isEmpty())
-                    return suffix;
-            }
-        }
-        return "";
+        return getSuffix("default");
     }
 
     /**

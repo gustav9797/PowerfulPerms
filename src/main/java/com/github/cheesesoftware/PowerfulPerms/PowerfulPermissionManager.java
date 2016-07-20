@@ -116,7 +116,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             loadCachedPlayer(e.getPlayer());
         } else {
             // Player is not cached, Load directly on Bukkit main thread.
-            debug("onPlayerJoin player isn't cached, loading directly");
+            debug("onPlayerLogin player isn't cached, loading directly");
             loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
 
             if (e.getResult() == PlayerLoginEvent.Result.ALLOWED)
@@ -126,7 +126,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerLoginMonitor(PlayerLoginEvent e) {
-        debug("PlayerLoginEvent Monitor" + e.getPlayer().getName());
+        debug("PlayerLoginEvent Monitor " + e.getPlayer().getName());
 
         if (e.getResult() != PlayerLoginEvent.Result.ALLOWED) {
             debug("onPlayerLoginMonitor player not allowed, removing cached");
@@ -139,6 +139,14 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     public void onPlayerJoin(final PlayerJoinEvent e) {
         debug("PlayerJoinEvent " + e.getPlayer().getName());
         Player p = e.getPlayer();
+        
+        if (!players.containsKey(p.getUniqueId())) {
+            // Player is not cached, Load directly on Bukkit main thread.
+            debug("onPlayerJoin player isn't loaded, loading directly");
+            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
+            loadCachedPlayer(e.getPlayer());
+        }
+        
         if (players.containsKey(p.getUniqueId())) {
             PowerfulPermissionPlayer permissionsPlayer = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
             permissionsPlayer.updatePermissions();
