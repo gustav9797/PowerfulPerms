@@ -1,17 +1,19 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 
 public class CachedPlayer {
 
-    private String groups;
+    private LinkedHashMap<String, List<CachedGroup>> groups;
     private String prefix;
     private String suffix;
     private List<Permission> perms;
 
-    public CachedPlayer(String groups, String prefix, String suffix, List<Permission> perms) {
+    public CachedPlayer(LinkedHashMap<String, List<CachedGroup>> groups, String prefix, String suffix, List<Permission> perms) {
         this.groups = groups;
         this.prefix = prefix;
         this.suffix = suffix;
@@ -22,7 +24,7 @@ public class CachedPlayer {
 
     }
 
-    public String getGroups() {
+    public LinkedHashMap<String, List<CachedGroup>> getGroups() {
         return groups;
     }
 

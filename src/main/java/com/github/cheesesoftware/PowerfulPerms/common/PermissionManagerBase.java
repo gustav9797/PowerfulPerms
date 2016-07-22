@@ -65,67 +65,28 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
         final PowerfulPermsPlugin tempPlugin = plugin;
 
-        // Create table Groups, add group Guest
-        db.tableExists(Database.tblGroups, new DBRunnable(true) {
+        db.applyPatches();
 
-            @Override
-            public void run() {
-                if (!result.booleanValue()) {
-                    db.createGroupsTable(new DBRunnable(true) {
+        if (!db.tableExists(Database.tblGroupSuffixes)) {
+            db.createTables();
 
-                        @Override
-                        public void run() {
-                            if (result.booleanValue())
-                                tempPlugin.getLogger().info("Created table \"" + Database.tblGroups + "\"");
-                            else
-                                tempPlugin.getLogger().info("Could not create table \"" + Database.tblGroups + "\"");
-                        }
-                    });
+            this.createGroup("Guest", "default", 100, new ResponseRunnable() {
+
+                @Override
+                public void run() {
+
                 }
-            }
-        });
+            });
+            this.createPlayer("[default]", DefaultPermissionPlayer.getUUID(), new ResponseRunnable() {
 
-        // Create table Players
-        db.tableExists(Database.tblPlayers, new DBRunnable(true) {
+                @Override
+                public void run() {
 
-            @Override
-            public void run() {
-                if (!result.booleanValue()) {
-                    db.createPlayersTable(new DBRunnable(true) {
-
-                        @Override
-                        public void run() {
-                            if (result.booleanValue())
-                                tempPlugin.getLogger().info("Created table \"" + Database.tblPlayers + "\"");
-                            else
-                                tempPlugin.getLogger().info("Could not create table \"" + Database.tblPlayers + "\"");
-                        }
-                    });
                 }
-            }
-        });
+            });
 
-        // Create table Permissions
-        db.tableExists(Database.tblPermissions, new DBRunnable(true) {
-
-            @Override
-            public void run() {
-                if (!result.booleanValue()) {
-                    db.createPermissionsTable(new DBRunnable(true) {
-
-                        @Override
-                        public void run() {
-                            if (result.booleanValue())
-                                tempPlugin.getLogger().info("Created table \"" + Database.tblPermissions + "\"");
-                            else
-                                tempPlugin.getLogger().info("Could not create table \"" + Database.tblPermissions + "\"");
-                        }
-                    });
-                }
-            }
-        });
-
-        db.applyPatches(plugin);
+            tempPlugin.getLogger().info("Created tables.");
+        }
 
         // Initialize Redis
         if (redis_password == null || redis_password.isEmpty())
@@ -201,7 +162,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             debug("Retrieved UUID " + onlineuuid);
                             // Check if database contains online UUID.
 
-                            db.getPlayer(onlineuuid, new DBRunnable() {
+                            db.getPlayerNew(onlineuuid, new DBRunnable() {
                                 @Override
                                 public void run() {
                                     if (result.hasNext()) {
@@ -213,7 +174,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         // Could not find online UUID in database.
                                         // Check if offline UUID exists.
                                         debug("online UUID not found in DB");
-                                        db.getPlayer(offlineuuid, new DBRunnable() {
+                                        db.getPlayerNew(offlineuuid, new DBRunnable() {
 
                                             @Override
                                             public void run() {
@@ -398,29 +359,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void reloadDefaultPlayers(final boolean samethread) {
-        final UUID defaultUUID = DefaultPermissionPlayer.getUUID();
-        db.getPlayer(defaultUUID, new DBRunnable(samethread) {
+        loadPlayerGroups(DefaultPermissionPlayer.getUUID(), new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(samethread) {
 
             @Override
             public void run() {
-                final DBDocument row = result.next();
-                if (row != null) {
-
-                    loadPlayerOwnPermissions(defaultUUID, new ResultRunnable<List<Permission>>(samethread) {
-
-                        @Override
-                        public void run() {
-                            if (result != null) {
-                                defaultGroups = getPlayerGroups(row.getString("groups"));
-                                reloadPlayers();
-                                debug("DEFAULT PLAYER LOADED: " + (defaultGroups != null));
-                            } else
-                                plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. 2");
-                        }
-                    });
-
+                if (result != null) {
+                    defaultGroups = result;
+                    reloadPlayers();
+                    debug("DEFAULT PLAYER LOADED: " + (defaultGroups != null));
                 } else
-                    plugin.getLogger().severe(consolePrefix + "Can not get data from user [default]. 1");
+                    plugin.getLogger().severe(consolePrefix + "Can not get data from user [default].");
             }
         });
     }
@@ -455,7 +403,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
         debug("loadPlayer begin");
 
-        db.getPlayer(uuid, new DBRunnable(login) {
+        db.getPlayerNew(uuid, new DBRunnable(login) {
 
             @Override
             public void run() {
@@ -478,14 +426,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     @Override
                                     public void run() {
                                         debug("PLAYER NAME UPDATED. NAMECHANGE");
-                                        db.updatePlayerPermissions(uuid, name, new DBRunnable(login) {
-
-                                            @Override
-                                            public void run() {
-                                                debug("UPDATED PLAYER PERMISSIONS");
-                                                loadPlayerFinished(row, login, uuid);
-                                            }
-                                        });
+                                        loadPlayerFinished(row, login, uuid);
                                     }
                                 });
                             } else
@@ -494,7 +435,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             loadPlayerFinished(row, login, uuid);
                     } else {
                         // Could not find player with UUID. Create new player.
-                        db.insertPlayer(uuid, name, "", "", "", new DBRunnable(login) {
+                        db.insertPlayer(uuid, name, "", "", new DBRunnable(login) {
 
                             @Override
                             public void run() {
@@ -510,45 +451,51 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     protected void loadPlayerFinished(DBDocument row, final boolean login, final UUID uuid) {
         debug("loadPlayerFinished begin");
-        final String groups_loaded = (row != null ? row.getString("groups") : "");
         final String prefix_loaded = (row != null ? row.getString("prefix") : "");
         final String suffix_loaded = (row != null ? row.getString("suffix") : "");
 
-        loadPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>(login) {
+        this.loadPlayerGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>() {
 
             @Override
             public void run() {
-                debug("loadPlayerFinished runnable begin");
-                List<Permission> perms;
-                if (result != null) {
-                    perms = result;
-                } else
-                    perms = new ArrayList<Permission>();
+                final LinkedHashMap<String, List<CachedGroup>> tempGroups = result;
+                loadPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>(login) {
 
-                if (login) {
-                    debug("Inserted into cachedPlayers allowing playerjoin to finish");
-                    cachedPlayers.put(uuid, new CachedPlayer(groups_loaded, prefix_loaded, suffix_loaded, perms));
-
-                } else {
-                    // Player should be reloaded if "login" is false. Reload already loaded player.
-                    if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
-                        PermissionPlayerBase toUpdate = (PermissionPlayerBase) players.get(uuid);
-                        debug("Player instance " + toUpdate.toString());
-                        PermissionPlayerBase base;
-                        LinkedHashMap<String, List<CachedGroup>> tempGroups = getPlayerGroups(groups_loaded);
-                        debug("loadPlayerFinished reload group count:" + tempGroups.size());
-                        if (tempGroups.isEmpty()) {
-                            // Player has no groups, put default data
-                            base = new PermissionPlayerBase(deepCopyDefaultGroups(), perms, prefix_loaded, suffix_loaded, plugin, true);
+                    @Override
+                    public void run() {
+                        debug("loadPlayerFinished runnable begin");
+                        List<Permission> perms;
+                        if (result != null) {
+                            perms = result;
                         } else
-                            base = new PermissionPlayerBase(tempGroups, perms, prefix_loaded, suffix_loaded, plugin, false);
-                        toUpdate.update(base);
+                            perms = new ArrayList<Permission>();
 
-                        if (cachedPlayers.get(uuid) != null)
-                            cachedPlayers.remove(uuid);
+                        if (login) {
+                            debug("Inserted into cachedPlayers allowing playerjoin to finish");
+                            cachedPlayers.put(uuid, new CachedPlayer(tempGroups, prefix_loaded, suffix_loaded, perms));
+
+                        } else {
+                            // Player should be reloaded if "login" is false. Reload already loaded player.
+                            if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
+                                PermissionPlayerBase toUpdate = (PermissionPlayerBase) players.get(uuid);
+                                debug("Player instance " + toUpdate.toString());
+                                PermissionPlayerBase base;
+                                debug("loadPlayerFinished reload group count:" + tempGroups.size());
+                                if (tempGroups.isEmpty()) {
+                                    // Player has no groups, put default data
+                                    base = new PermissionPlayerBase(deepCopyDefaultGroups(), perms, prefix_loaded, suffix_loaded, plugin, true);
+                                } else
+                                    base = new PermissionPlayerBase(tempGroups, perms, prefix_loaded, suffix_loaded, plugin, false);
+                                toUpdate.update(base);
+
+                                if (cachedPlayers.get(uuid) != null)
+                                    cachedPlayers.remove(uuid);
+                            }
+                        }
+                        debug("loadPlayerFinished runnable end");
                     }
-                }
-                debug("loadPlayerFinished runnable end");
+                });
+
             }
         });
 
@@ -571,7 +518,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             // Player has no groups, put default data
             base = new PermissionPlayerBase(deepCopyDefaultGroups(), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin, true);
         } else
-            base = new PermissionPlayerBase(this.getPlayerGroups(cachedPlayer.getGroups()), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin, false);
+            base = new PermissionPlayerBase(cachedPlayer.getGroups(), cachedPlayer.getPermissions(), cachedPlayer.getPrefix(), cachedPlayer.getSuffix(), plugin, false);
         cachedPlayers.remove(uuid);
         return base;
     }
@@ -615,7 +562,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         debug("loadGroups begin");
         groups.clear();
 
-        db.getGroups(new DBRunnable(beginSameThread) {
+        db.getGroupsNew(new DBRunnable(beginSameThread) {
 
             @Override
             public void run() {
@@ -625,9 +572,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         DBDocument row = result.next();
                         final int groupId = row.getInt("id");
                         final String name = row.getString("name");
-                        String parents = row.getString("parents");
-                        final String prefix = row.getString("prefix");
-                        final String suffix = row.getString("suffix");
+                        // String parents = row.getString("parents");
+                        // final String prefix = row.getString("prefix");
+                        // final String suffix = row.getString("suffix");
                         String ladder1 = row.getString("ladder");
                         final String ladder = (ladder1 == null || ladder1.isEmpty() ? "default" : ladder1);
                         final int rank = row.getInt("rank");
@@ -725,56 +672,26 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return new HashMap<Integer, Group>(this.groups);
     }
 
-    protected LinkedHashMap<String, List<CachedGroup>> getPlayerGroups(String raw) {
-        LinkedHashMap<String, List<CachedGroup>> tempGroups = new LinkedHashMap<String, List<CachedGroup>>();
-        for (String s : raw.split(";")) {
-            // Each group entry
-            String[] split = s.split(":");
-            if (split.length >= 2) {
-                String server = split[0];
+    /*
+     * protected LinkedHashMap<String, List<CachedGroup>> getPlayerGroups(String raw) { LinkedHashMap<String, List<CachedGroup>> tempGroups = new LinkedHashMap<String, List<CachedGroup>>(); for
+     * (String s : raw.split(";")) { // Each group entry String[] split = s.split(":"); if (split.length >= 2) { String server = split[0];
+     * 
+     * // If list null, initialize list List<CachedGroup> input = tempGroups.get(server); if (input == null) input = new ArrayList<CachedGroup>();
+     * 
+     * boolean negated = split[1].startsWith("-"); if (negated) split[1] = split[1].substring(1);
+     * 
+     * int groupId = Integer.parseInt(split[1]);
+     * 
+     * Group group = groups.get(groupId); if (group != null) { debug("add group:" + groupId + " negated:" + negated); input.add(new CachedGroup(group, negated)); tempGroups.put(server, input); } }
+     * else { if (!s.isEmpty()) { // If list null, initialize list List<CachedGroup> input = tempGroups.get(""); if (input == null) input = new ArrayList<CachedGroup>();
+     * 
+     * input.add(new CachedGroup(groups.get(Integer.parseInt(s)), false)); tempGroups.put("", input); debug(s + " old "); } } } return tempGroups; }
+     */
 
-                // If list null, initialize list
-                List<CachedGroup> input = tempGroups.get(server);
-                if (input == null)
-                    input = new ArrayList<CachedGroup>();
-
-                boolean negated = split[1].startsWith("-");
-                if (negated)
-                    split[1] = split[1].substring(1);
-
-                int groupId = Integer.parseInt(split[1]);
-
-                Group group = groups.get(groupId);
-                if (group != null) {
-                    debug("add group:" + groupId + " negated:" + negated);
-                    input.add(new CachedGroup(group, negated));
-                    tempGroups.put(server, input);
-                }
-            } else {
-                if (!s.isEmpty()) {
-                    // If list null, initialize list
-                    List<CachedGroup> input = tempGroups.get("");
-                    if (input == null)
-                        input = new ArrayList<CachedGroup>();
-
-                    input.add(new CachedGroup(groups.get(Integer.parseInt(s)), false));
-                    tempGroups.put("", input);
-                    debug(s + " old ");
-                }
-            }
-        }
-        return tempGroups;
-    }
-
-    public static String getPlayerGroupsRawCached(Map<String, List<CachedGroup>> input) {
-        String output = "";
-        for (Entry<String, List<CachedGroup>> entry : input.entrySet()) {
-            for (CachedGroup cachedGroup : entry.getValue()) {
-                output += entry.getKey() + ":" + (cachedGroup.isNegated() ? "-" : "") + cachedGroup.getGroup().getId() + ":" /* old primary/secondary here */+ ";";
-            }
-        }
-        return output;
-    }
+    /*
+     * public static String getPlayerGroupsRawCached(Map<String, List<CachedGroup>> input) { String output = ""; for (Entry<String, List<CachedGroup>> entry : input.entrySet()) { for (CachedGroup
+     * cachedGroup : entry.getValue()) { output += entry.getKey() + ":" + (cachedGroup.isNegated() ? "-" : "") + cachedGroup.getGroup().getId() + ":" + ";"; } } return output; }
+     */
 
     @Override
     public void getPlayerGroups(UUID uuid, final ResultRunnable<Map<String, List<CachedGroup>>> resultRunnable) {
@@ -908,6 +825,112 @@ public abstract class PermissionManagerBase implements PermissionManager {
             }
         });
     }
+
+    protected void loadPlayerGroups(UUID uuid, final ResultRunnable<LinkedHashMap<String, List<CachedGroup>>> resultRunnable) {
+        db.getPlayerGroups(uuid, new DBRunnable(resultRunnable.isSameThread()) {
+
+            @Override
+            public void run() {
+                if (result.booleanValue()) {
+                    LinkedHashMap<String, List<CachedGroup>> localGroups = new LinkedHashMap<String, List<CachedGroup>>();
+                    while (result.hasNext()) {
+                        DBDocument row = result.next();
+                        int groupId = row.getInt("groupid");
+                        Group group = getGroup(groupId);
+                        if (group == null) {
+                            plugin.getLogger().warning("Could not load stored player group, group does not exist");
+                            continue;
+                        }
+
+                        if (!localGroups.containsKey(row.getString("server")))
+                            localGroups.put(row.getString("server"), new ArrayList<CachedGroup>());
+                        List<CachedGroup> serverGroups = localGroups.get(row.getString("server"));
+                        serverGroups.add(new CachedGroup(group, (row.getInt("negated") == 1 ? true : false)));
+                        localGroups.put(row.getString("server"), serverGroups);
+                    }
+                    resultRunnable.setResult(localGroups);
+                    db.scheduler.runSync(resultRunnable, resultRunnable.isSameThread());
+                } else
+                    plugin.getLogger().severe("Could not load player groups.");
+            }
+        });
+    }
+
+    protected void loadGroupParents(int groupId, final ResultRunnable<HashMap<Integer, List<Integer>>> resultRunnable) {
+        db.getGroupParents(groupId, new DBRunnable(resultRunnable.isSameThread()) {
+
+            @Override
+            public void run() {
+                if (result.booleanValue()) {
+                    HashMap<Integer, List<Integer>> parents = new HashMap<Integer, List<Integer>>();
+                    while (result.hasNext()) {
+                        DBDocument row = result.next();
+
+                        int groupId = row.getInt("groupid");
+                        Group group = getGroup(groupId);
+                        if (group == null) {
+                            plugin.getLogger().warning("Could not load parents, group does not exist");
+                            continue;
+                        }
+
+                        int parentId = row.getInt("parentgroupid");
+                        Group parent = getGroup(parentId);
+                        if (parent == null) {
+                            plugin.getLogger().warning("Could not load parents, parent does not exist");
+                            continue;
+                        }
+
+                        if (!parents.containsKey(groupId))
+                            parents.put(groupId, new ArrayList<Integer>());
+                        List<Integer> localParents = parents.get(groupId);
+                        localParents.add(parentId);
+                        parents.put(groupId, localParents);
+                    }
+                    resultRunnable.setResult(parents);
+                    db.scheduler.runSync(resultRunnable, resultRunnable.isSameThread());
+                } else
+                    plugin.getLogger().severe("Could not load group parents.");
+            }
+        });
+    }
+    
+    /*protected void loadGroupPrefixes(int groupId, final ResultRunnable<HashMap<Integer, List<Integer>>> resultRunnable) {
+        db.getGroupPrefixes(groupId, new DBRunnable(resultRunnable.isSameThread()) {
+
+            @Override
+            public void run() {
+                if (result.booleanValue()) {
+                    HashMap<Integer, List<Integer>> parents = new HashMap<Integer, List<Integer>>();
+                    while (result.hasNext()) {
+                        DBDocument row = result.next();
+
+                        int groupId = row.getInt("groupid");
+                        Group group = getGroup(groupId);
+                        if (group == null) {
+                            plugin.getLogger().warning("Could not load parents, group does not exist");
+                            continue;
+                        }
+
+                        int parentId = row.getInt("parentgroupid");
+                        Group parent = getGroup(parentId);
+                        if (parent == null) {
+                            plugin.getLogger().warning("Could not load parents, parent does not exist");
+                            continue;
+                        }
+
+                        if (!parents.containsKey(groupId))
+                            parents.put(groupId, new ArrayList<Integer>());
+                        List<Integer> localParents = parents.get(groupId);
+                        localParents.add(parentId);
+                        parents.put(groupId, localParents);
+                    }
+                    resultRunnable.setResult(parents);
+                    db.scheduler.runSync(resultRunnable, resultRunnable.isSameThread());
+                } else
+                    plugin.getLogger().severe("Could not load group parents.");
+            }
+        });
+    }*/
 
     @Override
     public void getPlayerPrefix(UUID uuid, final ResultRunnable<String> resultRunnable) {

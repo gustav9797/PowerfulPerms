@@ -83,60 +83,42 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void tableExists(final String table, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
+    public boolean tableExists(final String table) {
+        boolean exists = false;
+        try {
 
-            @Override
-            public void run() {
-                boolean exists = false;
-                try {
-
-                    DatabaseMetaData dbm = sql.getConnection().getMetaData();
-                    ResultSet tables = dbm.getTables(null, null, table, null);
-                    if (tables.next())
-                        exists = true;
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                done.setResult(new DBResult(exists));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+            DatabaseMetaData dbm = sql.getConnection().getMetaData();
+            ResultSet tables = dbm.getTables(null, null, table, null);
+            if (tables.next())
+                exists = true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return exists;
     }
 
     @Override
-    public void createTables(final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
+    public void createTables() {
+        try {
+            List<String> in = Files.readAllLines(Paths.get(this.getClass().getResource("tables.sql").toURI()), Charset.defaultCharset());
+            String oneString = "";
+            for (String s : in)
+                oneString += s + System.lineSeparator();
 
-            @Override
-            public void run() {
-                final boolean success = true;
+            try {
+                PreparedStatement s = sql.getConnection().prepareStatement(oneString);
+                s.execute();
+                s.close();
 
-                try {
-                    List<String> in = Files.readAllLines(Paths.get(this.getClass().getResource("tables.sql").toURI()), Charset.defaultCharset());
-                    String oneString = "";
-                    for (String s : in)
-                        oneString += s + System.lineSeparator();
-
-                    try {
-                        PreparedStatement s = sql.getConnection().prepareStatement(oneString);
-                        s.execute();
-                        s.close();
-
-                        done.setResult(new DBResult(success));
-                        scheduler.runSync(done, done.sameThread());
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                } catch (URISyntaxException e1) {
-                    e1.printStackTrace();
-                }
-
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        }, done.sameThread());
+
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        } catch (URISyntaxException e1) {
+            e1.printStackTrace();
+        }
     }
 
     @Override
@@ -193,7 +175,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void getPlayer(final UUID uuid, final DBRunnable done) {
+    public void getPlayerNew(final UUID uuid, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -219,7 +201,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void getPlayers(final String name, final DBRunnable done) {
+    public void getPlayersNew(final String name, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -295,7 +277,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void getGroups(final DBRunnable done) {
+    public void getGroupsNew(final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -624,7 +606,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void addPlayerGroup(final UUID uuid, final int groupId, final String server, final DBRunnable done) {
+    public void addPlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -632,10 +614,11 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?, `negated`=?");
                     s.setString(1, uuid.toString());
                     s.setInt(2, groupId);
                     s.setString(3, server);
+                    s.setInt(4, (negated ? 1 : 0));
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -650,7 +633,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void deletePlayerGroup(final UUID uuid, final int groupId, final String server, final DBRunnable done) {
+    public void deletePlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -658,10 +641,11 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblPlayerGroups + " WHERE `playeruuid`=? AND `groupid`=? AND `server`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblPlayerGroups + " WHERE `playeruuid`=? AND `groupid`=? AND `server`=? AND `negated`=?");
                     s.setString(1, uuid.toString());
                     s.setInt(2, groupId);
                     s.setString(3, server);
+                    s.setInt(4, (negated ? 1 : 0));
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -670,6 +654,32 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
+    public void getPlayerGroups(final UUID uuid, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                DBResult result;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayerGroups + " WHERE `playeruuid`=?");
+                    s.setString(1, uuid.toString());
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    result = fromResultSet(r);
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    result = new DBResult(false);
+                }
+
+                done.setResult(result);
                 scheduler.runSync(done, done.sameThread());
             }
         }, done.sameThread());
@@ -810,6 +820,32 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public void getGroupParents(final int groupId, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                DBResult result;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupParents + " WHERE `groupid`=?");
+                    s.setInt(1, groupId);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    result = fromResultSet(r);
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    result = new DBResult(false);
+                }
+
+                done.setResult(result);
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
     public void addGroupPrefix(final int groupId, final String prefix, final String server, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
@@ -886,6 +922,32 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public void getGroupPrefixes(final int groupId, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                DBResult result;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPrefixes + " WHERE `groupid`=?");
+                    s.setInt(1, groupId);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    result = fromResultSet(r);
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    result = new DBResult(false);
+                }
+
+                done.setResult(result);
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
     public void addGroupSuffix(final int groupId, final String suffix, final String server, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
@@ -956,6 +1018,32 @@ public class MySQLDatabase extends Database {
                 }
 
                 done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
+    public void getGroupSuffixes(final int groupId, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                DBResult result;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupSuffixes + " WHERE `groupid`=?");
+                    s.setInt(1, groupId);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    result = fromResultSet(r);
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    result = new DBResult(false);
+                }
+
+                done.setResult(result);
                 scheduler.runSync(done, done.sameThread());
             }
         }, done.sameThread());
