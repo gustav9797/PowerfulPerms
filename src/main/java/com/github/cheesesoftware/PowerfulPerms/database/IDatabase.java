@@ -6,23 +6,15 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
 public interface IDatabase {
 
-    public static String tblPlayers = "players";
-    public static String tblGroups = "groups";
-    public static String tblPermissions = "permissions";
-
-    public void applyPatches(PowerfulPermsPlugin plugin);
+    public void applyPatches();
 
     public void tableExists(String table, DBRunnable done);
 
-    public void createGroupsTable(DBRunnable done);
+    public void createTables(DBRunnable done);
 
-    public void createPlayersTable(DBRunnable done);
+    public void insertGroup(String group, String ladder, int rank, DBRunnable done);
 
-    public void createPermissionsTable(DBRunnable done);
-
-    public void insertGroup(String group, String parents, String prefix, String suffix, String ladder, int rank, DBRunnable done);
-
-    public void insertPlayer(UUID uuid, String name, String groups, String prefix, String suffix, DBRunnable done);
+    public void insertPlayer(UUID uuid, String name, String prefix, String suffix, DBRunnable done);
 
     public void getPlayer(UUID uuid, DBRunnable done);
 
@@ -34,39 +26,53 @@ public interface IDatabase {
 
     public void getGroups(DBRunnable done);
 
-    public void getGroupPermissions(String group, DBRunnable done);
+    public void getGroupPermissions(int groupId, DBRunnable done);
 
     public void getPlayerPermissions(UUID uuid, DBRunnable done);
 
     public void playerHasPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
 
-    public void insertPermission(UUID uuid, String name, String group, String permission, String world, String server, DBRunnable done);
+    public void insertPlayerPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
 
-    public void updatePlayerPermissions(UUID uuid, String name, DBRunnable done);
+    public void insertGroupPermission(int groupId, String permission, String world, String server, DBRunnable done);
 
     public void deletePlayerPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
 
     public void deletePlayerPermissions(UUID uuid, DBRunnable done);
 
-    public void deleteGroupPermission(String group, String permission, String world, String server, DBRunnable done);
+    public void deleteGroupPermission(int groupId, String permission, String world, String server, DBRunnable done);
 
-    public void deleteGroupPermissions(String group, DBRunnable done);
+    public void deleteGroupPermissions(int groupId, DBRunnable done);
 
     public void setPlayerPrefix(UUID uuid, String prefix, DBRunnable done);
 
     public void setPlayerSuffix(UUID uuid, String suffix, DBRunnable done);
 
-    public void setPlayerGroups(UUID uuid, String groups, DBRunnable done);
+    public void addPlayerGroup(UUID uuid, int groupId, String server, DBRunnable done);
 
-    public void deleteGroup(String group, DBRunnable done);
+    public void deletePlayerGroup(UUID uuid, int groupId, String server, DBRunnable done);
 
-    public void setGroupParents(String group, String parents, DBRunnable done);
+    public void deleteGroup(int groupId, DBRunnable done);
 
-    public void setGroupPrefix(String group, String prefix, DBRunnable done);
+    public void addGroupParent(int groupId, int parentGroupId, DBRunnable done);
 
-    public void setGroupSuffix(String group, String suffix, DBRunnable done);
+    public void deleteGroupParent(int groupId, int parentGroupId, DBRunnable done);
 
-    public void setGroupLadder(String group, String ladder, DBRunnable done);
+    public void deleteGroupParents(int groupId, DBRunnable done);
 
-    public void setGroupRank(String group, int rank, DBRunnable done);
+    public void addGroupPrefix(int groupId, String prefix, String server, DBRunnable done);
+
+    public void deleteGroupPrefix(int groupId, String prefix, String server, DBRunnable done);
+
+    public void deleteGroupPrefixes(int groupId, DBRunnable done);
+
+    public void addGroupSuffix(int groupId, String suffix, String server, DBRunnable done);
+
+    public void deleteGroupSuffix(int groupId, String suffix, String server, DBRunnable done);
+
+    public void deleteGroupSuffixes(int groupId, DBRunnable done);
+
+    public void setGroupLadder(int groupId, String ladder, DBRunnable done);
+
+    public void setGroupRank(int groupId, int rank, DBRunnable done);
 }

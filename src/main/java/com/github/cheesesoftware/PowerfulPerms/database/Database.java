@@ -3,22 +3,37 @@ package com.github.cheesesoftware.PowerfulPerms.database;
 import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 
 public abstract class Database implements IDatabase {
-    public static String tblPlayers = "players";
-    public static String tblGroups = "groups";
-    public static String tblPermissions = "permissions";
     public IScheduler scheduler;
+    public static String tblGroupParents = "groupparents";
+    public static String tblGroupPermissions = "grouppermissions";
+    public static String tblGroupPrefixes = "groupprefixes";
+    public static String tblGroups = "groups";
+    public static String tblGroupSuffixes = "groupsuffixes";
+    public static String tblPlayerGroups = "playergroups";
+    public static String tblPlayerPermissions = "playerpermissions";
+    public static String tblPlayers = "players";
     
     public Database(IScheduler scheduler) {
         this.scheduler = scheduler;
         
-        tblPlayers = "players";
+        tblGroupParents = "groupparents";
+        tblGroupPermissions = "grouppermissions";
+        tblGroupPrefixes = "groupprefixes";
         tblGroups = "groups";
-        tblPermissions = "permissions";
+        tblGroupSuffixes = "groupsuffixes";
+        tblPlayerGroups = "playergroups";
+        tblPlayerPermissions = "playerpermissions";
+        tblPlayers = "players";
     }
 
     public void setTablePrefix(String prefix) {
-        tblPlayers = prefix + tblPlayers;
+        tblGroupParents = prefix + tblGroupParents;
+        tblGroupPermissions = prefix + tblGroupPermissions;
+        tblGroupPrefixes = prefix + tblGroupPrefixes;
         tblGroups = prefix + tblGroups;
-        tblPermissions = prefix + tblPermissions;
+        tblGroupSuffixes = prefix + tblGroupSuffixes;
+        tblPlayerGroups = prefix + tblPlayerGroups;
+        tblPlayerPermissions= prefix + tblPlayerPermissions;
+        tblPlayers = prefix + tblPlayers;
     }
 }
