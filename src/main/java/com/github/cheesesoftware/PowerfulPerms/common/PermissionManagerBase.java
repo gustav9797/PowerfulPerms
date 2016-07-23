@@ -454,7 +454,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         final String prefix_loaded = (row != null ? row.getString("prefix") : "");
         final String suffix_loaded = (row != null ? row.getString("suffix") : "");
 
-        this.loadPlayerGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>() {
+        this.loadPlayerGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(login) {
 
             @Override
             public void run() {
@@ -569,11 +569,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 if (result.booleanValue()) {
                     final DBResult groupResult = result;
 
-                    loadGroupParents(new ResultRunnable<HashMap<Integer, List<Group>>>(beginSameThread) {
+                    loadGroupParents(new ResultRunnable<HashMap<Integer, List<Integer>>>(beginSameThread) {
 
                         @Override
                         public void run() {
-                            final HashMap<Integer, List<Group>> parents = result;
+                            final HashMap<Integer, List<Integer>> parents = result;
+                            debug("loadgroups parents size: " + parents.size());
 
                             loadGroupPrefixes(new ResultRunnable<HashMap<Integer, HashMap<String, String>>>(beginSameThread) {
 
@@ -607,7 +608,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                                 final int rank = row.getInt("rank");
 
                                                                 PowerfulGroup group = new PowerfulGroup(groupId, name, permissions.get(groupId), prefixes.get(groupId), suffixes.get(groupId), ladder,
-                                                                        rank);
+                                                                        rank, plugin.getPermissionManager());
                                                                 group.setParents(parents.get(groupId));
                                                                 groups.put(groupId, group);
                                                             }
@@ -810,7 +811,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (!localGroups.containsKey(row.getString("server")))
                             localGroups.put(row.getString("server"), new ArrayList<CachedGroup>());
                         List<CachedGroup> serverGroups = localGroups.get(row.getString("server"));
-                        serverGroups.add(new CachedGroup(group, (row.getInt("negated") == 1 ? true : false)));
+                        serverGroups.add(new CachedGroup(group, row.getBoolean("negated")));
                         localGroups.put(row.getString("server"), serverGroups);
                     }
                     resultRunnable.setResult(localGroups);
@@ -821,34 +822,22 @@ public abstract class PermissionManagerBase implements PermissionManager {
         });
     }
 
-    protected void loadGroupParents(final ResultRunnable<HashMap<Integer, List<Group>>> resultRunnable) {
+    protected void loadGroupParents(final ResultRunnable<HashMap<Integer, List<Integer>>> resultRunnable) {
         db.getGroupParents(new DBRunnable(resultRunnable.isSameThread()) {
 
             @Override
             public void run() {
                 if (result.booleanValue()) {
-                    HashMap<Integer, List<Group>> parents = new HashMap<Integer, List<Group>>();
+                    HashMap<Integer, List<Integer>> parents = new HashMap<Integer, List<Integer>>();
                     while (result.hasNext()) {
                         DBDocument row = result.next();
 
                         int groupId = row.getInt("groupid");
-                        Group group = getGroup(groupId);
-                        if (group == null) {
-                            plugin.getLogger().warning("Could not load parents, group does not exist");
-                            continue;
-                        }
-
                         int parentId = row.getInt("parentgroupid");
-                        Group parent = getGroup(parentId);
-                        if (parent == null) {
-                            plugin.getLogger().warning("Could not load parents, parent does not exist");
-                            continue;
-                        }
-
                         if (!parents.containsKey(groupId))
-                            parents.put(groupId, new ArrayList<Group>());
-                        List<Group> localParents = parents.get(groupId);
-                        localParents.add(parent);
+                            parents.put(groupId, new ArrayList<Integer>());
+                        List<Integer> localParents = parents.get(groupId);
+                        localParents.add(parentId);
                         parents.put(groupId, localParents);
                     }
                     resultRunnable.setResult(parents);
@@ -870,12 +859,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         DBDocument row = result.next();
 
                         int groupId = row.getInt("groupid");
-                        Group group = getGroup(groupId);
-                        if (group == null) {
-                            plugin.getLogger().warning("Could not load prefixes, group does not exist");
-                            continue;
-                        }
-
                         if (!prefixes.containsKey(groupId))
                             prefixes.put(groupId, new HashMap<String, String>());
                         HashMap<String, String> localPrefixes = prefixes.get(groupId);
@@ -901,12 +884,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         DBDocument row = result.next();
 
                         int groupId = row.getInt("groupid");
-                        Group group = getGroup(groupId);
-                        if (group == null) {
-                            plugin.getLogger().warning("Could not load suffixes, group does not exist");
-                            continue;
-                        }
-
                         if (!suffixes.containsKey(groupId))
                             suffixes.put(groupId, new HashMap<String, String>());
                         HashMap<String, String> localSuffixes = suffixes.get(groupId);
@@ -932,12 +909,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         DBDocument row = result.next();
 
                         int groupId = row.getInt("groupid");
-                        Group group = getGroup(groupId);
-                        if (group == null) {
-                            plugin.getLogger().warning("Could not load permission, group does not exist");
-                            continue;
-                        }
-
                         if (!permissions.containsKey(groupId))
                             permissions.put(groupId, new ArrayList<PowerfulPermission>());
                         List<PowerfulPermission> localPermissions = permissions.get(groupId);

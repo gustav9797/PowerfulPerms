@@ -99,25 +99,18 @@ public class MySQLDatabase extends Database {
 
     @Override
     public void createTables() {
-        try {
-            List<String> in = Files.readAllLines(Paths.get(this.getClass().getResource("tables.sql").toURI()), Charset.defaultCharset());
-            String oneString = "";
-            for (String s : in)
-                oneString += s + System.lineSeparator();
+        List<String> tables = new ArrayList<String>();
+        tables.add("");
 
+        for (String table : tables) {
             try {
-                PreparedStatement s = sql.getConnection().prepareStatement(oneString);
+                PreparedStatement s = sql.getConnection().prepareStatement(table);
                 s.execute();
                 s.close();
 
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        } catch (URISyntaxException e1) {
-            e1.printStackTrace();
         }
     }
 

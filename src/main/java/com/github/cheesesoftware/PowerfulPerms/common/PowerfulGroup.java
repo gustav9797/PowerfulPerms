@@ -3,30 +3,35 @@ package com.github.cheesesoftware.PowerfulPerms.common;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 
 public class PowerfulGroup implements Group {
+
     private int id;
     private String name;
     private List<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
-    private List<Group> parents;
+    private List<Integer> parents;
     private String ladder;
     private int rank;
+
+    private PermissionManager permissionManager;
 
     private HashMap<String, String> serverPrefix = new HashMap<String, String>();
     private HashMap<String, String> serverSuffix = new HashMap<String, String>();
 
-    public PowerfulGroup(int id, String name, List<PowerfulPermission> permissions, HashMap<String, String> prefixes, HashMap<String, String> suffixes, String ladder, int rank) {
+    public PowerfulGroup(int id, String name, List<PowerfulPermission> permissions, HashMap<String, String> prefixes, HashMap<String, String> suffixes, String ladder, int rank,
+            PermissionManager permissionManager) {
         this.id = id;
         this.name = name;
-        this.permissions = permissions;
-        this.serverPrefix = prefixes;
-        this.serverSuffix = suffixes;
+        this.permissions = (permissions != null ? permissions : new ArrayList<PowerfulPermission>());
+        this.serverPrefix = (prefixes != null ? prefixes : new HashMap<String, String>());
+        this.serverSuffix = (suffixes != null ? suffixes : new HashMap<String, String>());
         this.ladder = ladder;
         this.rank = rank;
+        this.permissionManager = permissionManager;
     }
 
     @Override
@@ -41,7 +46,11 @@ public class PowerfulGroup implements Group {
 
     @Override
     public List<Group> getParents() {
-        return this.parents;
+        List<Group> out = new ArrayList<Group>();
+        for (int groupId : parents) {
+            out.add(permissionManager.getGroup(groupId));
+        }
+        return out;
     }
 
     @Override
@@ -80,8 +89,9 @@ public class PowerfulGroup implements Group {
     @Override
     public ArrayList<Permission> getPermissions() {
         ArrayList<Permission> temp = new ArrayList<Permission>();
-        for (Group parent : this.parents) {
-            temp.addAll(parent.getPermissions());
+        for (Integer parent : this.parents) {
+            Group parentGroup = permissionManager.getGroup(parent);
+            temp.addAll(parentGroup.getPermissions());
         }
         temp.addAll(permissions);
         return temp;
@@ -98,8 +108,8 @@ public class PowerfulGroup implements Group {
     }
 
     @Override
-    public void setParents(List<Group> parents) {
-        this.parents = parents;
+    public void setParents(List<Integer> parents) {
+        this.parents = (parents != null ? parents : new ArrayList<Integer>());
     }
 
 }
