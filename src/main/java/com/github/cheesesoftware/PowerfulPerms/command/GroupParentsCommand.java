@@ -22,6 +22,12 @@ public class GroupParentsCommand extends SubCommand {
                     return CommandResult.success;
                 }
                 final String groupName = args[0];
+                final Group group = permissionManager.getGroup(groupName);
+                if (group == null) {
+                    sendSender(invoker, sender, "Group does not exist.");
+                    return CommandResult.success;
+                }
+                int groupId = group.getId();
 
                 final ResponseRunnable response = new ResponseRunnable() {
                     @Override
@@ -32,23 +38,31 @@ public class GroupParentsCommand extends SubCommand {
 
                 if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
                     String parent = args[3];
-                    permissionManager.addGroupParent(groupName, parent, response);
+                    final Group parentGroup = permissionManager.getGroup(parent);
+                    if (parentGroup == null) {
+                        sendSender(invoker, sender, "Parent group does not exist.");
+                        return CommandResult.success;
+                    }
+                    int parentId = parentGroup.getId();
+                    permissionManager.addGroupParent(groupId, parentId, response);
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("remove")) {
                     String parent = args[3];
-                    permissionManager.removeGroupParent(groupName, parent, response);
+                    final Group parentGroup = permissionManager.getGroup(parent);
+                    if (parentGroup == null) {
+                        sendSender(invoker, sender, "Parent group does not exist.");
+                        return CommandResult.success;
+                    }
+                    int parentId = parentGroup.getId();
+                    permissionManager.removeGroupParent(groupId, parentId, response);
                 } else {
                     // List parents
-                    Group group = permissionManager.getGroup(groupName);
-                    if (group != null) {
-                        sendSender(invoker, sender, "Listing parents for group " + groupName + ":");
+                    sendSender(invoker, sender, "Listing parents for group " + groupName + ":");
 
-                        if (group.getParents() != null && group.getParents().size() > 0) {
-                            for (Group g : group.getParents())
-                                sendSender(invoker, sender, g.getName());
-                        } else
-                            sendSender(invoker, sender, "Group has no parents.");
+                    if (group.getParents() != null && group.getParents().size() > 0) {
+                        for (Group g : group.getParents())
+                            sendSender(invoker, sender, g.getName());
                     } else
-                        sendSender(invoker, sender, "Group does not exist.");
+                        sendSender(invoker, sender, "Group has no parents.");
                 }
                 return CommandResult.success;
             } else

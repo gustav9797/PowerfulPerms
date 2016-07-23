@@ -3,6 +3,7 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 import java.util.UUID;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
@@ -25,6 +26,12 @@ public class UserSetRankCommand extends SubCommand {
                 }
                 final String playerName = args[0];
                 final String groupName = args[2];
+                final Group group = permissionManager.getGroup(groupName);
+                if (group == null) {
+                    sendSender(invoker, sender, "Group does not exist.");
+                    return CommandResult.success;
+                }
+                final int groupId = group.getId();
 
                 final ResponseRunnable response = new ResponseRunnable() {
                     @Override
@@ -42,7 +49,7 @@ public class UserSetRankCommand extends SubCommand {
                             response.setResponse(false, "Could not find player UUID.");
                             permissionManager.getScheduler().runSync(response, response.isSameThread());
                         } else {
-                            permissionManager.setPlayerRank(uuid, groupName, response);
+                            permissionManager.setPlayerRank(uuid, groupId, response);
                         }
                     }
                 });

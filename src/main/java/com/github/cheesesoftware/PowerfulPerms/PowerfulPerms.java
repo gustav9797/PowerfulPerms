@@ -3,13 +3,10 @@ package com.github.cheesesoftware.PowerfulPerms;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -25,10 +22,8 @@ import com.github.cheesesoftware.PowerfulPerms.common.Versioner;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
 import com.github.cheesesoftware.PowerfulPerms.database.SQL;
-import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
-import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
 
@@ -94,7 +89,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         }
 
         IScheduler scheduler = new BukkitScheduler(this);
-        Database db = new MySQLDatabase(scheduler, sql);
+        Database db = new MySQLDatabase(scheduler, sql, this);
         String tablePrefix = getConfig().getString("prefix");
         if (tablePrefix != null && !tablePrefix.isEmpty())
             db.setTablePrefix(tablePrefix);

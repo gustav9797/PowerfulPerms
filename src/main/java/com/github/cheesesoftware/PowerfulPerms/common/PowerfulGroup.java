@@ -19,44 +19,14 @@ public class PowerfulGroup implements Group {
     private HashMap<String, String> serverPrefix = new HashMap<String, String>();
     private HashMap<String, String> serverSuffix = new HashMap<String, String>();
 
-    public PowerfulGroup(int id, String name, List<PowerfulPermission> permissions, String prefixRaw, String suffixRaw, String ladder, int rank) {
+    public PowerfulGroup(int id, String name, List<PowerfulPermission> permissions, HashMap<String, String> prefixes, HashMap<String, String> suffixes, String ladder, int rank) {
         this.id = id;
         this.name = name;
         this.permissions = permissions;
-        this.serverPrefix = getPrefixSuffix(prefixRaw);
-        this.serverSuffix = getPrefixSuffix(suffixRaw);
+        this.serverPrefix = prefixes;
+        this.serverSuffix = suffixes;
         this.ladder = ladder;
         this.rank = rank;
-    }
-
-    public static HashMap<String, String> getPrefixSuffix(String input) {
-        HashMap<String, String> output = new HashMap<String, String>();
-        String[] splitted = input.split(";;;;;;;;");
-        for (String one : splitted) {
-            String[] server_prefixSuffix = one.split("::::::::");
-            if (server_prefixSuffix.length >= 2) {
-                String server = server_prefixSuffix[0];
-                String prefixSuffix = server_prefixSuffix[1];
-                output.put(server, prefixSuffix);
-            } else if (server_prefixSuffix.length >= 1)
-                output.put("", server_prefixSuffix[0]);
-        }
-        return output;
-    }
-
-    public static String encodePrefixSuffix(HashMap<String, String> input) {
-        String output = "";
-        for (Entry<String, String> entry : input.entrySet()) {
-            output += entry.getKey() + "::::::::" + entry.getValue() + ";;;;;;;;";
-        }
-        return output;
-    }
-
-    public static String encodeParents(List<Group> parents) {
-        String raw = "";
-        for (Group g : parents)
-            raw += g.getId() + ";";
-        return raw;
     }
 
     @Override

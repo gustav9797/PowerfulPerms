@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
@@ -18,6 +19,12 @@ public class GroupDeleteCommand extends SubCommand {
             if (args != null && args.length >= 2 && args[1].equalsIgnoreCase("delete")) {
 
                 final String groupName = args[0];
+                final Group group = permissionManager.getGroup(groupName);
+                if (group == null) {
+                    sendSender(invoker, sender, "Group does not exist.");
+                    return CommandResult.success;
+                }
+                int groupId = group.getId();
 
                 if (args.length < 3 || !args[2].equalsIgnoreCase("confirm")) {
                     sendSender(invoker, sender, "You are about to delete a group. Confirm with \"/pp group " + groupName + " delete confirm\"");
@@ -31,7 +38,7 @@ public class GroupDeleteCommand extends SubCommand {
                         }
                     };
 
-                    permissionManager.deleteGroup(groupName, response);
+                    permissionManager.deleteGroup(groupId, response);
                 }
                 return CommandResult.success;
             } else

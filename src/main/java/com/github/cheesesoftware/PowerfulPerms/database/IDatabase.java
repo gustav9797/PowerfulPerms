@@ -25,6 +25,8 @@ public interface IDatabase {
     public void getGroupsNew(DBRunnable done);
 
     public void getGroupPermissions(int groupId, DBRunnable done);
+    
+    public void getGroupPermissions(DBRunnable done);
 
     public void getPlayerPermissions(UUID uuid, DBRunnable done);
 
@@ -61,6 +63,8 @@ public interface IDatabase {
     public void deleteGroupParents(int groupId, DBRunnable done);
 
     public void getGroupParents(int groupId, DBRunnable done);
+    
+    public void getGroupParents(DBRunnable done);
 
     public void addGroupPrefix(int groupId, String prefix, String server, DBRunnable done);
 
@@ -69,6 +73,8 @@ public interface IDatabase {
     public void deleteGroupPrefixes(int groupId, DBRunnable done);
 
     public void getGroupPrefixes(int groupId, DBRunnable done);
+    
+    public void getGroupPrefixes(DBRunnable done);
 
     public void addGroupSuffix(int groupId, String suffix, String server, DBRunnable done);
 
@@ -77,6 +83,8 @@ public interface IDatabase {
     public void deleteGroupSuffixes(int groupId, DBRunnable done);
 
     public void getGroupSuffixes(int groupId, DBRunnable done);
+    
+    public void getGroupSuffixes(DBRunnable done);
 
     public void setGroupLadder(int groupId, String ladder, DBRunnable done);
 

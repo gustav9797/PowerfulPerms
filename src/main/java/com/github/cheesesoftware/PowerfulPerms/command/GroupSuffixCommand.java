@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
@@ -26,6 +27,12 @@ public class GroupSuffixCommand extends SubCommand {
                     return CommandResult.success;
                 }
                 final String groupName = args[0];
+                final Group group = permissionManager.getGroup(groupName);
+                if (group == null) {
+                    sendSender(invoker, sender, "Group does not exist.");
+                    return CommandResult.success;
+                }
+                int groupId = group.getId();
 
                 final ResponseRunnable response = new ResponseRunnable() {
                     @Override
@@ -72,11 +79,11 @@ public class GroupSuffixCommand extends SubCommand {
                     } else
                         suffix = args[3];
 
-                    permissionManager.setGroupSuffix(groupName, suffix, server, response);
+                    permissionManager.setGroupSuffix(groupId, suffix, server, response);
                 } else if (args.length >= 3 && args[2].equalsIgnoreCase("remove")) {
-                    permissionManager.setGroupSuffix(groupName, "", (args.length >= 4 ? args[3] : ""), response);
+                    permissionManager.setGroupSuffix(groupId, "", (args.length >= 4 ? args[3] : ""), response);
                 } else {
-                    HashMap<String, String> prefix = permissionManager.getGroupServerSuffix(groupName);
+                    HashMap<String, String> prefix = permissionManager.getGroupServerSuffix(groupId);
                     if (prefix != null) {
                         String output = "";
                         Iterator<Entry<String, String>> it = prefix.entrySet().iterator();

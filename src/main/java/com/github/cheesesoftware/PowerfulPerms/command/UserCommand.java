@@ -86,7 +86,7 @@ public class UserCommand extends SubCommand {
                                             if (result)
                                                 rows.add("This player has no groups and is using [default] groups.");
 
-                                            permissionManager.getPlayerCurrentGroups(uuid, new ResultRunnable<Map<String, List<CachedGroup>>>() {
+                                            permissionManager.getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>() {
 
                                                 @Override
                                                 public void run() {

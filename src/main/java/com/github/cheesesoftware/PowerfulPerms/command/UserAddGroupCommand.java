@@ -3,6 +3,7 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 import java.util.UUID;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
@@ -25,6 +26,12 @@ public class UserAddGroupCommand extends SubCommand {
                 }
                 final String playerName = args[0];
                 final String groupName = args[2];
+                final Group group = permissionManager.getGroup(groupName);
+                if (group == null) {
+                    sendSender(invoker, sender, "Group does not exist.");
+                    return CommandResult.success;
+                }
+                final int groupId = group.getId();
 
                 final ResponseRunnable response = new ResponseRunnable() {
                     @Override
@@ -49,7 +56,7 @@ public class UserAddGroupCommand extends SubCommand {
                             boolean negated = group.startsWith("-");
                             if (negated)
                                 group = group.substring(1);
-                            permissionManager.addPlayerGroup(uuid, group, server, negated, response);
+                            permissionManager.addPlayerGroup(uuid, groupId, server, negated, response);
                         }
                     }
                 });

@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
@@ -21,6 +22,12 @@ public class GroupRemovePermissionCommand extends SubCommand {
                     return CommandResult.success;
                 }
                 final String groupName = args[0];
+                final Group group = permissionManager.getGroup(groupName);
+                if (group == null) {
+                    sendSender(invoker, sender, "Group does not exist.");
+                    return CommandResult.success;
+                }
+                int groupId = group.getId();
 
                 final ResponseRunnable response = new ResponseRunnable() {
                     @Override
@@ -40,7 +47,7 @@ public class GroupRemovePermissionCommand extends SubCommand {
                     server = "";
                 if (world.equalsIgnoreCase("all"))
                     world = "";
-                permissionManager.removeGroupPermission(groupName, permission, world, server, response);
+                permissionManager.removeGroupPermission(groupId, permission, world, server, response);
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

@@ -328,6 +328,31 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public void getGroupPermissions(final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                DBResult result;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPermissions);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    result = fromResultSet(r);
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    result = new DBResult(false);
+                }
+
+                done.setResult(result);
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
     public void getPlayerPermissions(final UUID uuid, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
@@ -846,6 +871,31 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public void getGroupParents(final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                DBResult result;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupParents);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    result = fromResultSet(r);
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    result = new DBResult(false);
+                }
+
+                done.setResult(result);
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
     public void addGroupPrefix(final int groupId, final String prefix, final String server, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
@@ -948,6 +998,31 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public void getGroupPrefixes(final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                DBResult result;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPrefixes);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    result = fromResultSet(r);
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    result = new DBResult(false);
+                }
+
+                done.setResult(result);
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
     public void addGroupSuffix(final int groupId, final String suffix, final String server, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
@@ -1034,6 +1109,31 @@ public class MySQLDatabase extends Database {
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupSuffixes + " WHERE `groupid`=?");
                     s.setInt(1, groupId);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    result = fromResultSet(r);
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    result = new DBResult(false);
+                }
+
+                done.setResult(result);
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
+    public void getGroupSuffixes(final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                DBResult result;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupSuffixes);
                     s.execute();
                     ResultSet r = s.getResultSet();
                     result = fromResultSet(r);

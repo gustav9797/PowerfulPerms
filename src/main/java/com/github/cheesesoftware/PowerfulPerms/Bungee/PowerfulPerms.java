@@ -91,7 +91,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
             e2.printStackTrace();
         }
 
-        Database db = new MySQLDatabase(new BungeeScheduler(this), sql);
+        Database db = new MySQLDatabase(new BungeeScheduler(this), sql, this);
         String tablePrefix = config.getString("prefix");
         if (tablePrefix != null && !tablePrefix.isEmpty())
             db.setTablePrefix(tablePrefix);

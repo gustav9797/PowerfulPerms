@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
@@ -21,6 +22,12 @@ public class GroupAddPermissionCommand extends SubCommand {
                     return CommandResult.success;
                 }
                 final String groupName = args[0];
+                final Group group = permissionManager.getGroup(groupName);
+                if (group == null) {
+                    sendSender(invoker, sender, "Group does not exist.");
+                    return CommandResult.success;
+                }
+                int groupId = group.getId();
 
                 final ResponseRunnable response = new ResponseRunnable() {
                     @Override
@@ -41,7 +48,7 @@ public class GroupAddPermissionCommand extends SubCommand {
                 if (world.equalsIgnoreCase("all"))
                     world = "";
                 // permissionManager.addGroupPermission(groupName, permission, world, server, response);
-                parsePermission(permissionManager, groupName, permission, world, server, response);
+                parsePermission(permissionManager, groupId, permission, world, server, response);
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;
@@ -49,7 +56,7 @@ public class GroupAddPermissionCommand extends SubCommand {
             return CommandResult.noPermission;
     }
 
-    private static void parsePermission(PermissionManager permissionManager, String groupName, String permission, String world, String server, ResponseRunnable response) {
+    private static void parsePermission(PermissionManager permissionManager, int groupId, String permission, String world, String server, ResponseRunnable response) {
         int beginIndex = -1;
         int endIndex = -1;
 
@@ -65,7 +72,7 @@ public class GroupAddPermissionCommand extends SubCommand {
                 for (String s : sequenceList) {
                     StringBuilder builder = new StringBuilder(permission);
                     builder.replace(beginIndex, endIndex + 1, s);
-                    parsePermission(permissionManager, groupName, builder.toString(), world, server, response);
+                    parsePermission(permissionManager, groupId, builder.toString(), world, server, response);
                 }
             }
 
@@ -73,7 +80,7 @@ public class GroupAddPermissionCommand extends SubCommand {
 
         if (beginIndex == -1 && endIndex == -1) {
             // Didn't find any more sequence
-            permissionManager.addGroupPermission(groupName, permission, world, server, response);
+            permissionManager.addGroupPermission(groupId, permission, world, server, response);
         }
     }
 }
