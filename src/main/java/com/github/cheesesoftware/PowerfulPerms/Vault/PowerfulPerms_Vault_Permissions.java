@@ -71,15 +71,20 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     }
 
     @Override
-    public boolean groupAdd(String world, String group, String permission) {
-        permissionManager.addGroupPermission(group, permission, (world != null ? world : ""), server, new ResponseRunnable() {
+    public boolean groupAdd(String world, String groupName, String permission) {
+        final Group group = permissionManager.getGroup(groupName);
+        if (group != null) {
+            int groupId = group.getId();
+            permissionManager.addGroupPermission(groupId, permission, (world != null ? world : ""), server, new ResponseRunnable() {
 
-            @Override
-            public void run() {
+                @Override
+                public void run() {
 
-            }
-        });
-        return true;
+                }
+            });
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -89,15 +94,20 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     }
 
     @Override
-    public boolean groupRemove(String world, String group, String permission) {
-        permissionManager.removeGroupPermission(group, permission, (world != null ? world : ""), server, new ResponseRunnable() {
+    public boolean groupRemove(String world, String groupName, String permission) {
+        final Group group = permissionManager.getGroup(groupName);
+        if (group != null) {
+            int groupId = group.getId();
+            permissionManager.removeGroupPermission(groupId, permission, (world != null ? world : ""), server, new ResponseRunnable() {
 
-            @Override
-            public void run() {
+                @Override
+                public void run() {
 
-            }
-        });
-        return true;
+                }
+            });
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -128,15 +138,20 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     }
 
     @Override
-    public boolean playerAddGroup(String world, String player, String group) {
-        permissionManager.addPlayerGroup(plugin.getPlayerUUID(player), group, server, false, new ResponseRunnable() {
+    public boolean playerAddGroup(String world, String player, String groupName) {
+        final Group group = permissionManager.getGroup(groupName);
+        if (group != null) {
+            int groupId = group.getId();
+            permissionManager.addPlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, new ResponseRunnable() {
 
-            @Override
-            public void run() {
+                @Override
+                public void run() {
 
-            }
-        });
-        return true;
+                }
+            });
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -165,15 +180,20 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     }
 
     @Override
-    public boolean playerRemoveGroup(String world, String player, String group) {
-        permissionManager.removePlayerGroup(plugin.getPlayerUUID(player), group, server, false, new ResponseRunnable() {
+    public boolean playerRemoveGroup(String world, String player, String groupName) {
+        final Group group = permissionManager.getGroup(groupName);
+        if (group != null) {
+            int groupId = group.getId();
+            permissionManager.removePlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, new ResponseRunnable() {
 
-            @Override
-            public void run() {
+                @Override
+                public void run() {
 
-            }
-        });
-        return true;
+                }
+            });
+            return true;
+        }
+        return false;
     }
 
     @Override

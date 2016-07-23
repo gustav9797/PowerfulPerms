@@ -175,7 +175,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void getPlayerNew(final UUID uuid, final DBRunnable done) {
+    public void getPlayer(final UUID uuid, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -201,7 +201,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void getPlayersNew(final String name, final DBRunnable done) {
+    public void getPlayers(final String name, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -277,7 +277,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void getGroupsNew(final DBRunnable done) {
+    public void getGroups(final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override

@@ -45,7 +45,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
 
             @Override
             public void run() {
-                
+
             }
         });
     }
@@ -78,14 +78,18 @@ public class PowerfulPerms_Vault_Chat extends Chat {
     }
 
     @Override
-    public void setGroupPrefix(String world, String group, String prefix) {
-        permissionManager.setGroupPrefix(group, prefix, new ResponseRunnable() {
+    public void setGroupPrefix(String world, String groupName, String prefix) {
+        final Group group = permissionManager.getGroup(groupName);
+        if (group != null) {
+            int groupId = group.getId();
+            permissionManager.setGroupPrefix(groupId, prefix, new ResponseRunnable() {
 
-            @Override
-            public void run() {
+                @Override
+                public void run() {
 
-            }
-        });
+                }
+            });
+        }
     }
 
     @Override
@@ -97,14 +101,18 @@ public class PowerfulPerms_Vault_Chat extends Chat {
     }
 
     @Override
-    public void setGroupSuffix(String world, String group, String suffix) {
-        permissionManager.setGroupSuffix(group, suffix, new ResponseRunnable() {
+    public void setGroupSuffix(String world, String groupName, String suffix) {
+        final Group group = permissionManager.getGroup(groupName);
+        if (group != null) {
+            int groupId = group.getId();
+            permissionManager.setGroupSuffix(groupId, suffix, new ResponseRunnable() {
 
-            @Override
-            public void run() {
+                @Override
+                public void run() {
 
-            }
-        });
+                }
+            });
+        }
     }
 
     @Override

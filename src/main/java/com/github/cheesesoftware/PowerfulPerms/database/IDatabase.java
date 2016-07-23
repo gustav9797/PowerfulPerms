@@ -14,15 +14,15 @@ public interface IDatabase {
 
     public void insertPlayer(UUID uuid, String name, String prefix, String suffix, DBRunnable done);
     
-    public void getPlayerNew(UUID uuid, DBRunnable done);
+    public void getPlayer(UUID uuid, DBRunnable done);
 
-    public void getPlayersNew(String name, DBRunnable done);
+    public void getPlayers(String name, DBRunnable done);
 
     public void setPlayerName(UUID uuid, String name, DBRunnable done);
 
     public void setPlayerUUID(String name, UUID uuid, DBRunnable done);
 
-    public void getGroupsNew(DBRunnable done);
+    public void getGroups(DBRunnable done);
 
     public void getGroupPermissions(int groupId, DBRunnable done);
     

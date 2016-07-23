@@ -162,7 +162,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             debug("Retrieved UUID " + onlineuuid);
                             // Check if database contains online UUID.
 
-                            db.getPlayerNew(onlineuuid, new DBRunnable() {
+                            db.getPlayer(onlineuuid, new DBRunnable() {
                                 @Override
                                 public void run() {
                                     if (result.hasNext()) {
@@ -174,7 +174,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         // Could not find online UUID in database.
                                         // Check if offline UUID exists.
                                         debug("online UUID not found in DB");
-                                        db.getPlayerNew(offlineuuid, new DBRunnable() {
+                                        db.getPlayer(offlineuuid, new DBRunnable() {
 
                                             @Override
                                             public void run() {
@@ -403,7 +403,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
         debug("loadPlayer begin");
 
-        db.getPlayerNew(uuid, new DBRunnable(login) {
+        db.getPlayer(uuid, new DBRunnable(login) {
 
             @Override
             public void run() {
@@ -562,7 +562,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         debug("loadGroups begin");
         groups.clear();
 
-        db.getGroupsNew(new DBRunnable(beginSameThread) {
+        db.getGroups(new DBRunnable(beginSameThread) {
 
             @Override
             public void run() {
@@ -731,11 +731,20 @@ public abstract class PermissionManagerBase implements PermissionManager {
         });
     }
 
-    /*
-     * @Override public void getPlayerData(UUID uuid, final ResultRunnable<DBDocument> resultRunnable) { db.getPlayer(uuid, new DBRunnable() {
-     * 
-     * @Override public void run() { if (result.hasNext()) { DBDocument row = result.next(); resultRunnable.setResult(row); } db.scheduler.runSync(resultRunnable); } }); }
-     */
+    @Override
+    public void getPlayerData(UUID uuid, final ResultRunnable<DBDocument> resultRunnable) {
+        db.getPlayer(uuid, new DBRunnable() {
+
+            @Override
+            public void run() {
+                if (result.hasNext()) {
+                    DBDocument row = result.next();
+                    resultRunnable.setResult(row);
+                }
+                db.scheduler.runSync(resultRunnable);
+            }
+        });
+    }
 
     @Override
     public void getPlayerOwnPermissions(final UUID uuid, final ResultRunnable<List<Permission>> resultRunnable) {
@@ -1035,7 +1044,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         }
 
         // TODO: this is player own prefix...
-        db.getPlayerNew(uuid, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1059,7 +1068,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         }
 
         // TODO: this is player own suffix...
-        db.getPlayerNew(uuid, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1081,7 +1090,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             db.scheduler.runSync(resultRunnable);
             return;
         }
-        db.getPlayerNew(uuid, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1104,7 +1113,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
-        db.getPlayerNew(uuid, new DBRunnable() {
+        db.getPlayer(uuid, new DBRunnable() {
 
             @Override
             public void run() {
@@ -1176,7 +1185,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     response.setResponse(false, "Player already has the specified permission.");
                     db.scheduler.runSync(response, response.isSameThread());
                 } else {
-                    db.getPlayerNew(uuid, new DBRunnable(response.isSameThread()) {
+                    db.getPlayer(uuid, new DBRunnable(response.isSameThread()) {
 
                         @Override
                         public void run() {
