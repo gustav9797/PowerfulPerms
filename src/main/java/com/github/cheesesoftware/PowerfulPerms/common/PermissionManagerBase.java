@@ -2,6 +2,7 @@ package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -633,16 +634,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
         });
     }
 
-    protected ArrayList<PowerfulPermission> loadGroupPermissions(DBResult result) {
-        ArrayList<PowerfulPermission> perms = new ArrayList<PowerfulPermission>();
-        while (result.hasNext()) {
-            DBDocument row = result.next();
-            PowerfulPermission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"));
-            perms.add(tempPerm);
-        }
-        return perms;
-    }
-
     protected ArrayList<String> getGroupParents(String parentsString) {
         ArrayList<String> parents = new ArrayList<String>();
         if (parentsString.contains(";")) {
@@ -781,7 +772,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     ArrayList<Permission> perms = new ArrayList<Permission>();
                     while (result.hasNext()) {
                         DBDocument row = result.next();
-                        Permission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"));
+                        Permission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"), row.getDate("expires"));
                         perms.add(tempPerm);
                     }
                     resultRunnable.setResult(perms);
@@ -811,7 +802,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (!localGroups.containsKey(row.getString("server")))
                             localGroups.put(row.getString("server"), new ArrayList<CachedGroup>());
                         List<CachedGroup> serverGroups = localGroups.get(row.getString("server"));
-                        serverGroups.add(new CachedGroup(group, row.getBoolean("negated")));
+                        serverGroups.add(new CachedGroup(group, row.getBoolean("negated"), row.getDate("expires")));
                         localGroups.put(row.getString("server"), serverGroups);
                     }
                     resultRunnable.setResult(localGroups);
@@ -912,7 +903,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (!permissions.containsKey(groupId))
                             permissions.put(groupId, new ArrayList<PowerfulPermission>());
                         List<PowerfulPermission> localPermissions = permissions.get(groupId);
-                        localPermissions.add(new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server")));
+                        localPermissions.add(new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"), row.getDate("expires")));
                         permissions.put(groupId, localPermissions);
                     }
                     resultRunnable.setResult(permissions);
@@ -942,7 +933,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             for (final CachedGroup newGroup : e.getValue()) {
                                 boolean found = false;
                                 for (CachedGroup currentGroup : currentServerGroups) {
-                                    if (newGroup.getGroup().getId() == currentGroup.getGroup().getId() && newGroup.isNegated() == currentGroup.isNegated()) {
+                                    if (CachedGroup.isSimilar(newGroup, currentGroup)) {
                                         found = true;
                                         break;
                                     }
@@ -950,7 +941,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 if (!found) {
                                     // Couldn't find group, add it
                                     debug("adding group " + newGroup.getGroup().getId());
-                                    db.addPlayerGroup(uuid, newGroup.getGroup().getId(), server, newGroup.isNegated(), new DBRunnable(true) {
+                                    db.addPlayerGroup(uuid, newGroup.getGroup().getId(), server, newGroup.isNegated(), newGroup.getExpirationDate(), new DBRunnable(true) {
 
                                         @Override
                                         public void run() {
@@ -972,7 +963,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             for (final CachedGroup oldGroup : e.getValue()) {
                                 boolean found = false;
                                 for (CachedGroup newGroup : newServerGroups) {
-                                    if (newGroup.getGroup().getId() == oldGroup.getGroup().getId() && newGroup.isNegated() == oldGroup.isNegated()) {
+                                    if (CachedGroup.isSimilar(newGroup, oldGroup)) {
                                         found = true;
                                         break;
                                     }
@@ -981,7 +972,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     // Couldn't find the old group in new groups, remove it
 
                                     debug("deleting group " + oldGroup.getGroup().getId());
-                                    db.deletePlayerGroup(uuid, oldGroup.getGroup().getId(), server, oldGroup.isNegated(), new DBRunnable(true) {
+                                    db.deletePlayerGroup(uuid, oldGroup.getGroup().getId(), server, oldGroup.isNegated(), oldGroup.getExpirationDate(), new DBRunnable(true) {
 
                                         @Override
                                         public void run() {
@@ -1137,18 +1128,18 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void addPlayerPermission(UUID uuid, final String playerName, String permission, ResponseRunnable response) {
-        addPlayerPermission(uuid, permission, playerName, "", "", response);
+        addPlayerPermission(uuid, permission, playerName, "", "", null, response);
     }
 
     @Override
-    public void addPlayerPermission(final UUID uuid, final String playerName, final String permission, final String world, final String server, final ResponseRunnable response) {
+    public void addPlayerPermission(final UUID uuid, final String playerName, final String permission, final String world, final String server, final Date expires, final ResponseRunnable response) {
         if (playerName.equalsIgnoreCase("[default]")) {
             response.setResponse(false, "You can not add permissions to the default player. Add them to a group instead and add the group to the default player.");
             db.scheduler.runSync(response, response.isSameThread());
             return;
         }
         // Check if the same permission already exists.
-        db.playerHasPermission(uuid, permission, world, server, new DBRunnable(response.isSameThread()) {
+        db.playerHasPermission(uuid, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
@@ -1163,7 +1154,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             if (result.hasNext()) {
                                 final UUID uuid = UUID.fromString(result.next().getString("uuid"));
                                 if (uuid != null) {
-                                    db.insertPlayerPermission(uuid, permission, world, server, new DBRunnable(response.isSameThread()) {
+                                    db.insertPlayerPermission(uuid, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
 
                                         @Override
                                         public void run() {
@@ -1193,12 +1184,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void removePlayerPermission(UUID uuid, String permission, ResponseRunnable response) {
-        removePlayerPermission(uuid, permission, "", "", response);
+        removePlayerPermission(uuid, permission, "", "", null, response);
     }
 
     @Override
-    public void removePlayerPermission(final UUID uuid, String permission, String world, String server, final ResponseRunnable response) {
-        db.deletePlayerPermission(uuid, permission, world, server, new DBRunnable(response.isSameThread()) {
+    public void removePlayerPermission(final UUID uuid, String permission, String world, String server, Date expires, final ResponseRunnable response) {
+        db.deletePlayerPermission(uuid, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
@@ -1281,16 +1272,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void removePlayerGroup(UUID uuid, int groupId, ResponseRunnable response) {
-        removePlayerGroup(uuid, groupId, "", false, response);
+        removePlayerGroup(uuid, groupId, "", false, null, response);
     }
 
     @Override
     public void removePlayerGroup(UUID uuid, int groupId, boolean negated, ResponseRunnable response) {
-        removePlayerGroup(uuid, groupId, "", negated, response);
+        removePlayerGroup(uuid, groupId, "", negated, null, response);
     }
 
     @Override
-    public void removePlayerGroup(final UUID uuid, int groupId, String server, final boolean negated, final ResponseRunnable resp) {
+    public void removePlayerGroup(final UUID uuid, final int groupId, String server, final boolean negated, final Date expires, final ResponseRunnable resp) {
         if (server.equalsIgnoreCase("all"))
             server = "";
 
@@ -1317,7 +1308,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     Iterator<CachedGroup> it = groupList.iterator();
                     while (it.hasNext()) {
                         CachedGroup cachedGroup = it.next();
-                        if (cachedGroup.getGroup().getId() == group.getId() && cachedGroup.isNegated() == negated) {
+                        if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
                             it.remove();
                             removed = true;
                         }
@@ -1360,11 +1351,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void addPlayerGroup(UUID uuid, int groupId, final boolean negated, ResponseRunnable response) {
-        addPlayerGroup(uuid, groupId, "", negated, response);
+        addPlayerGroup(uuid, groupId, "", negated, null, response);
     }
 
     @Override
-    public void addPlayerGroup(final UUID uuid, int groupId, String server, final boolean negated, final ResponseRunnable resp) {
+    public void addPlayerGroup(final UUID uuid, final int groupId, String server, final boolean negated, final Date expires, final ResponseRunnable resp) {
         if (server.equalsIgnoreCase("all"))
             server = "";
 
@@ -1390,14 +1381,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     Iterator<CachedGroup> it = groupList.iterator();
                     while (it.hasNext()) {
                         CachedGroup cachedGroup = it.next();
-                        if (cachedGroup.getGroup().getId() == group.getId() && cachedGroup.isNegated() == negated) {
+                        if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
                             resp.setResponse(false, "Player already has this group.");
                             db.scheduler.runSync(resp, resp.isSameThread());
                             return;
                         }
                     }
 
-                    groupList.add(new CachedGroup(group, negated));
+                    groupList.add(new CachedGroup(group, negated, expires));
                     playerGroups.put(serv, groupList);
 
                     setPlayerGroups(uuid, playerGroups, new ResponseRunnable(resp.isSameThread()) {
@@ -1457,12 +1448,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
                             while (it2.hasNext()) {
                                 CachedGroup current = it2.next();
-                                if (current.getGroup().getLadder().equals(group.getLadder())) {
+                                if (current.getGroup().getLadder().equals(group.getLadder()) && current.getExpirationDate() == null) {
                                     if (toUse == null)
                                         toUse = current.getGroup();
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
                                     if (toUse.getId() == current.getGroup().getId()) {
-                                        clone.set(clone.indexOf(current), new CachedGroup(group, current.isNegated()));
+                                        clone.set(clone.indexOf(current), new CachedGroup(group, current.isNegated(), null));
                                         changed = true;
                                     }
                                 }
@@ -1575,7 +1566,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                             while (it2.hasNext()) {
                                 CachedGroup current = it2.next();
-                                if (current.getGroup().getLadder().equals(ladder)) {
+                                if (current.getGroup().getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
                                     if (toUse == null) {
                                         toUse = current.getGroup();
                                         toPromoteTo = getHigherGroup(toUse, groupsClone);
@@ -1588,7 +1579,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
                                     if (toUse.getId() == current.getGroup().getId()) {
                                         // This is the group to promote from
-                                        clone.set(clone.indexOf(current), new CachedGroup(toPromoteTo, current.isNegated()));
+                                        clone.set(clone.indexOf(current), new CachedGroup(toPromoteTo, current.isNegated(), null));
                                         changed = true;
                                     }
                                 }
@@ -1655,7 +1646,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                             while (it2.hasNext()) {
                                 CachedGroup current = it2.next();
-                                if (current.getGroup().getLadder().equals(ladder)) {
+                                if (current.getGroup().getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
                                     if (toUse == null) {
                                         toUse = current.getGroup();
                                         toDemoteTo = getLowerGroup(toUse, groupsClone);
@@ -1668,7 +1659,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
                                     if (toUse.getId() == current.getGroup().getId()) {
                                         // This is the group to promote from
-                                        clone.set(clone.indexOf(current), new CachedGroup(toDemoteTo, current.isNegated()));
+                                        clone.set(clone.indexOf(current), new CachedGroup(toDemoteTo, current.isNegated(), null));
                                         changed = true;
                                     }
                                 }
@@ -1762,19 +1753,20 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void addGroupPermission(int groupId, String permission, ResponseRunnable response) {
-        addGroupPermission(groupId, permission, "", "", response);
+        addGroupPermission(groupId, permission, "", "", null, response);
     }
 
     @Override
-    public void addGroupPermission(int groupId, String permission, String world, String server, final ResponseRunnable response) {
+    public void addGroupPermission(int groupId, String permission, String world, String server, final Date expires, final ResponseRunnable response) {
         Group group = getGroup(groupId);
         if (group != null) {
             List<Permission> groupPermissions = group.getOwnPermissions();
 
-            PowerfulPermission sp = new PowerfulPermission(permission, world, server);
+            PowerfulPermission sp = new PowerfulPermission(permission, world, server, expires);
 
             for (Permission temp : groupPermissions) {
-                if (temp.getPermissionString().equals(permission) && temp.getServer().equals(server) && temp.getWorld().equals(world)) {
+                if (temp.getPermissionString().equals(permission) && temp.getServer().equals(server) && temp.getWorld().equals(world)
+                        && (expires == null ? true : (expires.equals(temp.getExpirationDate())))) {
                     response.setResponse(false, "Group already has the specified permission.");
                     db.scheduler.runSync(response, response.isSameThread());
                     return;
@@ -1783,7 +1775,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
             groupPermissions.add(sp);
 
-            db.insertGroupPermission(groupId, permission, world, server, new DBRunnable(response.isSameThread()) {
+            db.insertGroupPermission(groupId, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
 
                 @Override
                 public void run() {
@@ -1804,14 +1796,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void removeGroupPermission(int groupId, String permission, ResponseRunnable response) {
-        removeGroupPermission(groupId, permission, "", "", response);
+        removeGroupPermission(groupId, permission, "", "", null, response);
     }
 
     @Override
-    public void removeGroupPermission(int groupId, String permission, String world, String server, final ResponseRunnable response) {
+    public void removeGroupPermission(int groupId, String permission, String world, String server, Date expires, final ResponseRunnable response) {
         Group group = getGroup(groupId);
         if (group != null) {
-            db.deleteGroupPermission(groupId, permission, world, server, new DBRunnable(response.isSameThread()) {
+            db.deleteGroupPermission(groupId, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
 
                 @Override
                 public void run() {

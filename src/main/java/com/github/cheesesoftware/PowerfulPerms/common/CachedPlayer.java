@@ -39,4 +39,5 @@ public class CachedPlayer {
     public List<Permission> getPermissions() {
         return perms;
     }
+   
 }

@@ -1,5 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.Date;
+
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
@@ -39,15 +41,23 @@ public class GroupRemovePermissionCommand extends SubCommand {
                 String permission = args[2];
                 String world = "";
                 String server = "";
+                Date expires = null;
                 if (args.length >= 4)
                     server = args[3];
                 if (args.length >= 5)
                     world = args[4];
+                if (args.length >= 6) {
+                    expires = Utils.getDate(args[5]);
+                    if (expires == null) {
+                        sendSender(invoker, sender, "Invalid expiration format.");
+                        return CommandResult.success;
+                    }
+                }
                 if (server.equalsIgnoreCase("all"))
                     server = "";
                 if (world.equalsIgnoreCase("all"))
                     world = "";
-                permissionManager.removeGroupPermission(groupId, permission, world, server, response);
+                permissionManager.removeGroupPermission(groupId, permission, world, server, expires, response);
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

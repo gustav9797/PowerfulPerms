@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.database;
 
+import java.util.Date;
 import java.util.UUID;
 
 public interface IDatabase {
@@ -30,17 +31,17 @@ public interface IDatabase {
 
     public void getPlayerPermissions(UUID uuid, DBRunnable done);
 
-    public void playerHasPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
+    public void playerHasPermission(UUID uuid, String permission, String world, String server, Date expires, DBRunnable done);
 
-    public void insertPlayerPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
+    public void insertPlayerPermission(UUID uuid, String permission, String world, String server, Date expires, DBRunnable done);
 
-    public void insertGroupPermission(int groupId, String permission, String world, String server, DBRunnable done);
+    public void insertGroupPermission(int groupId, String permission, String world, String server, Date expires, DBRunnable done);
 
-    public void deletePlayerPermission(UUID uuid, String permission, String world, String server, DBRunnable done);
+    public void deletePlayerPermission(UUID uuid, String permission, String world, String server, Date expires, DBRunnable done);
 
     public void deletePlayerPermissions(UUID uuid, DBRunnable done);
 
-    public void deleteGroupPermission(int groupId, String permission, String world, String server, DBRunnable done);
+    public void deleteGroupPermission(int groupId, String permission, String world, String server, Date expires, DBRunnable done);
 
     public void deleteGroupPermissions(int groupId, DBRunnable done);
 
@@ -48,9 +49,9 @@ public interface IDatabase {
 
     public void setPlayerSuffix(UUID uuid, String suffix, DBRunnable done);
 
-    public void addPlayerGroup(UUID uuid, int groupId, String server, boolean negated, DBRunnable done);
+    public void addPlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires, DBRunnable done);
 
-    public void deletePlayerGroup(UUID uuid, int groupId, String server, boolean negated, DBRunnable done);
+    public void deletePlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires, DBRunnable done);
     
     public void getPlayerGroups(UUID uuid, DBRunnable done);
 

@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.Date;
 import java.util.UUID;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
@@ -44,15 +45,23 @@ public class UserAddPermissionCommand extends SubCommand {
                         } else {
                             String world = "";
                             String server = "";
+                            Date expires = null;
                             if (args.length >= 4)
                                 server = args[3];
                             if (args.length >= 5)
                                 world = args[4];
+                            if (args.length >= 6) {
+                                expires = Utils.getDate(args[5]);
+                                if (expires == null) {
+                                    sendSender(invoker, sender, "Invalid expiration format.");
+                                    return;
+                                }
+                            }
                             if (server.equalsIgnoreCase("all"))
                                 server = "";
                             if (world.equalsIgnoreCase("all"))
                                 world = "";
-                            parsePermission(permissionManager, uuid, playerName, permission, world, server, response);
+                            parsePermission(permissionManager, uuid, playerName, permission, world, server, expires, response);
                         }
                     }
                 });
@@ -63,7 +72,7 @@ public class UserAddPermissionCommand extends SubCommand {
             return CommandResult.noPermission;
     }
 
-    private static void parsePermission(PermissionManager permissionManager, UUID uuid, String playerName, String permission, String world, String server, ResponseRunnable response) {
+    private static void parsePermission(PermissionManager permissionManager, UUID uuid, String playerName, String permission, String world, String server, Date expires, ResponseRunnable response) {
         int beginIndex = -1;
         int endIndex = -1;
 
@@ -79,7 +88,7 @@ public class UserAddPermissionCommand extends SubCommand {
                 for (String s : sequenceList) {
                     StringBuilder builder = new StringBuilder(permission);
                     builder.replace(beginIndex, endIndex + 1, s);
-                    parsePermission(permissionManager, uuid, playerName, builder.toString(), world, server, response);
+                    parsePermission(permissionManager, uuid, playerName, builder.toString(), world, server, expires, response);
                 }
             }
 
@@ -87,7 +96,7 @@ public class UserAddPermissionCommand extends SubCommand {
 
         if (beginIndex == -1 && endIndex == -1) {
             // Didn't find any more sequence
-            permissionManager.addPlayerPermission(uuid, playerName, permission, world, server, response);
+            permissionManager.addPlayerPermission(uuid, playerName, permission, world, server, expires, response);
         }
     }
 }

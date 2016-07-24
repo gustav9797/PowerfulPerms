@@ -1,16 +1,12 @@
 package com.github.cheesesoftware.PowerfulPerms.database;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +40,13 @@ public class MySQLDatabase extends Database {
             rows.add(new DBDocument(row));
         }
         return new DBResult(rows);
+    }
+
+    private String getExpirationDateString(Date expires) {
+        if (expires == null)
+            return null;
+        java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(expires);
     }
 
     @Override
@@ -372,7 +375,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void playerHasPermission(final UUID uuid, final String permission, final String world, final String server, final DBRunnable done) {
+    public void playerHasPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -380,11 +383,13 @@ public class MySQLDatabase extends Database {
                 boolean success = false;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=? AND `permission`=? AND `world`=? AND `server`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement(
+                            "SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=? AND `permission`=? AND `world`=? AND `server`=? AND `expires`=?");
                     s.setString(1, uuid.toString());
                     s.setString(2, permission);
                     s.setString(3, world);
                     s.setString(4, server);
+                    s.setString(5, getExpirationDateString(expires));
                     s.execute();
                     ResultSet result = s.getResultSet();
                     if (result.next()) {
@@ -402,7 +407,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void insertPlayerPermission(final UUID uuid, final String permission, final String world, final String server, final DBRunnable done) {
+    public void insertPlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -410,11 +415,12 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayerPermissions + " SET `playeruuid`=?, `permission`=?, `world`=?, `server`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayerPermissions + " SET `playeruuid`=?, `permission`=?, `world`=?, `server`=?, `expires`=?");
                     s.setString(1, uuid.toString());
                     s.setString(2, permission);
                     s.setString(3, world);
                     s.setString(4, server);
+                    s.setString(5, getExpirationDateString(expires));
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -429,7 +435,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void deletePlayerPermission(final UUID uuid, final String permission, final String world, final String server, final DBRunnable done) {
+    public void deletePlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -438,12 +444,14 @@ public class MySQLDatabase extends Database {
                 int amount = 0;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=? AND `permission`=? AND `server`=? AND `world`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement(
+                            "DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=? AND `permission`=? AND `server`=? AND `world`=? AND `expires`=?");
 
                     s.setString(1, uuid.toString());
                     s.setString(2, permission);
                     s.setString(3, server);
                     s.setString(4, world);
+                    s.setString(5, getExpirationDateString(expires));
 
                     amount = s.executeUpdate();
                     if (amount <= 0)
@@ -490,7 +498,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void insertGroupPermission(final int groupId, final String permission, final String world, final String server, final DBRunnable done) {
+    public void insertGroupPermission(final int groupId, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -498,11 +506,12 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroupPermissions + " SET `groupid`=?, `permission`=?, `world`=?, `server`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroupPermissions + " SET `groupid`=?, `permission`=?, `world`=?, `server`=?, `expires`=?");
                     s.setInt(1, groupId);
                     s.setString(2, permission);
                     s.setString(3, world);
                     s.setString(4, server);
+                    s.setString(5, getExpirationDateString(expires));
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -517,7 +526,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void deleteGroupPermission(final int groupId, final String permission, final String world, final String server, final DBRunnable done) {
+    public void deleteGroupPermission(final int groupId, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -526,11 +535,13 @@ public class MySQLDatabase extends Database {
                 int amount = 0;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupPermissions + " WHERE `groupid`=? AND `permission`=? AND `world`=? AND `server`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement(
+                            "DELETE FROM " + tblGroupPermissions + " WHERE `groupid`=? AND `permission`=? AND `world`=? AND `server`=? AND `expires`=?");
                     s.setInt(1, groupId);
                     s.setString(2, permission);
                     s.setString(3, world);
                     s.setString(4, server);
+                    s.setString(5, getExpirationDateString(expires));
                     amount = s.executeUpdate();
                     if (amount <= 0)
                         success = false;
@@ -624,7 +635,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void addPlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final DBRunnable done) {
+    public void addPlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final Date expires, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -632,11 +643,12 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?, `negated`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?, `negated`=?, `expires`=?");
                     s.setString(1, uuid.toString());
                     s.setInt(2, groupId);
                     s.setString(3, server);
-                    s.setInt(4, (negated ? 1 : 0));
+                    s.setBoolean(4, negated);
+                    s.setString(5, getExpirationDateString(expires));
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -651,7 +663,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void deletePlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final DBRunnable done) {
+    public void deletePlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final Date expires, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -659,11 +671,13 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblPlayerGroups + " WHERE `playeruuid`=? AND `groupid`=? AND `server`=? AND `negated`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement(
+                            "DELETE FROM " + tblPlayerGroups + " WHERE `playeruuid`=? AND `groupid`=? AND `server`=? AND `negated`=? AND `expires`=?");
                     s.setString(1, uuid.toString());
                     s.setInt(2, groupId);
                     s.setString(3, server);
-                    s.setInt(4, (negated ? 1 : 0));
+                    s.setBoolean(4, negated);
+                    s.setString(5, getExpirationDateString(expires));
                     s.execute();
                     s.close();
                 } catch (SQLException e) {

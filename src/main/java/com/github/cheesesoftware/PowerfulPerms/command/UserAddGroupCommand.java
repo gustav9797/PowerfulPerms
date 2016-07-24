@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.Date;
 import java.util.UUID;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
@@ -50,13 +51,21 @@ public class UserAddGroupCommand extends SubCommand {
                             permissionManager.getScheduler().runSync(response, response.isSameThread());
                         } else {
                             String server = "";
+                            Date expires = null;
                             if (args.length >= 4)
                                 server = args[3];
+                            if (args.length >= 5) {
+                                expires = Utils.getDate(args[4]);
+                                if (expires == null) {
+                                    sendSender(invoker, sender, "Invalid expiration format.");
+                                    return;
+                                }
+                            }
                             String group = groupName;
                             boolean negated = group.startsWith("-");
                             if (negated)
                                 group = group.substring(1);
-                            permissionManager.addPlayerGroup(uuid, groupId, server, negated, response);
+                            permissionManager.addPlayerGroup(uuid, groupId, server, negated, expires, response);
                         }
                     }
                 });

@@ -1,5 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.Date;
+
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
@@ -39,16 +41,24 @@ public class GroupAddPermissionCommand extends SubCommand {
                 String permission = args[2];
                 String world = "";
                 String server = "";
+                Date expires = null;
                 if (args.length >= 4)
                     server = args[3];
                 if (args.length >= 5)
                     world = args[4];
+                if (args.length >= 6) {
+                    expires = Utils.getDate(args[5]);
+                    if (expires == null) {
+                        sendSender(invoker, sender, "Invalid expiration format.");
+                        return CommandResult.success;
+                    }
+                }
                 if (server.equalsIgnoreCase("all"))
                     server = "";
                 if (world.equalsIgnoreCase("all"))
                     world = "";
                 // permissionManager.addGroupPermission(groupName, permission, world, server, response);
-                parsePermission(permissionManager, groupId, permission, world, server, response);
+                parsePermission(permissionManager, groupId, permission, world, server, expires, response);
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;
@@ -56,7 +66,7 @@ public class GroupAddPermissionCommand extends SubCommand {
             return CommandResult.noPermission;
     }
 
-    private static void parsePermission(PermissionManager permissionManager, int groupId, String permission, String world, String server, ResponseRunnable response) {
+    private static void parsePermission(PermissionManager permissionManager, int groupId, String permission, String world, String server, Date expires, ResponseRunnable response) {
         int beginIndex = -1;
         int endIndex = -1;
 
@@ -72,7 +82,7 @@ public class GroupAddPermissionCommand extends SubCommand {
                 for (String s : sequenceList) {
                     StringBuilder builder = new StringBuilder(permission);
                     builder.replace(beginIndex, endIndex + 1, s);
-                    parsePermission(permissionManager, groupId, builder.toString(), world, server, response);
+                    parsePermission(permissionManager, groupId, builder.toString(), world, server, expires, response);
                 }
             }
 
@@ -80,7 +90,7 @@ public class GroupAddPermissionCommand extends SubCommand {
 
         if (beginIndex == -1 && endIndex == -1) {
             // Didn't find any more sequence
-            permissionManager.addGroupPermission(groupId, permission, world, server, response);
+            permissionManager.addGroupPermission(groupId, permission, world, server, expires, response);
         }
     }
 }

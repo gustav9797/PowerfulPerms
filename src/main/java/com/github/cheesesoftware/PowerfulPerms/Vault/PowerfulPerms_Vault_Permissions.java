@@ -75,7 +75,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            permissionManager.addGroupPermission(groupId, permission, (world != null ? world : ""), server, new ResponseRunnable() {
+            permissionManager.addGroupPermission(groupId, permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
 
                 @Override
                 public void run() {
@@ -98,7 +98,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            permissionManager.removeGroupPermission(groupId, permission, (world != null ? world : ""), server, new ResponseRunnable() {
+            permissionManager.removeGroupPermission(groupId, permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
 
                 @Override
                 public void run() {
@@ -127,7 +127,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerAdd(String world, String player, String permission) {
-        permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), player, permission, (world != null ? world : ""), server, new ResponseRunnable() {
+        permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), player, permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
 
             @Override
             public void run() {
@@ -142,7 +142,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            permissionManager.addPlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, new ResponseRunnable() {
+            permissionManager.addPlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, null, new ResponseRunnable() {
 
                 @Override
                 public void run() {
@@ -169,7 +169,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerRemove(String world, String player, String permission) {
-        permissionManager.removePlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, new ResponseRunnable() {
+        permissionManager.removePlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
 
             @Override
             public void run() {
@@ -184,7 +184,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            permissionManager.removePlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, new ResponseRunnable() {
+            permissionManager.removePlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, null, new ResponseRunnable() {
 
                 @Override
                 public void run() {

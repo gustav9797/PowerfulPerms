@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.Date;
 import java.util.UUID;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
@@ -44,15 +45,23 @@ public class UserRemovePermissionCommand extends SubCommand {
                         } else {
                             String world = "";
                             String server = "";
+                            Date expires = null;
                             if (args.length >= 4)
                                 server = args[3];
                             if (args.length >= 5)
                                 world = args[4];
+                            if (args.length >= 6) {
+                                expires = Utils.getDate(args[5]);
+                                if (expires == null) {
+                                    sendSender(invoker, sender, "Invalid expiration format.");
+                                    return;
+                                }
+                            }
                             if (server.equalsIgnoreCase("all"))
                                 server = "";
                             if (world.equalsIgnoreCase("all"))
                                 world = "";
-                            permissionManager.removePlayerPermission(uuid, permission, world, server, response);
+                            permissionManager.removePlayerPermission(uuid, permission, world, server, expires, response);
                         }
                     }
                 });
