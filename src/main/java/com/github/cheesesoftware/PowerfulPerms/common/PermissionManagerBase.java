@@ -45,6 +45,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     private final Database db;
     protected PowerfulPermsPlugin plugin;
+    protected int checkTimedTaskId = -1;
 
     protected LinkedHashMap<String, List<CachedGroup>> defaultGroups;
 
@@ -55,7 +56,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     public static String serverName;
     public static String consolePrefix = "[PowerfulPerms] ";
-    public static String pluginPrefixShort = ChatColor.WHITE + "[" + ChatColor.BLUE + "PP" + ChatColor.WHITE + "] ";
+    public static String pluginPrefixShort = ChatColor.BLUE + "PP" + ChatColor.WHITE + "> ";
     public static String redisMessage = "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.";
 
     public PermissionManagerBase(Database database, PowerfulPermsPlugin plugin, String serverName) {
@@ -94,6 +95,87 @@ public abstract class PermissionManagerBase implements PermissionManager {
             pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0);
         else
             pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0, redis_password);
+
+        checkTimedTaskId = this.getScheduler().runRepeating(new Runnable() {
+
+            @Override
+            public void run() {
+                final List<Group> tempGroups = new ArrayList<Group>(groups.values());
+                final HashMap<UUID, PermissionPlayer> tempPlayers = new HashMap<UUID, PermissionPlayer>(players);
+
+                getScheduler().runAsync(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        for (Entry<UUID, PermissionPlayer> e : tempPlayers.entrySet())
+                            checkPlayerTimedGroupsAndPermissions(e.getKey(), e.getValue());
+                        for (Group group : tempGroups)
+                            checkGroupTimedPermissions(group);
+                    }
+                }, false);
+
+            }
+        }, 60);
+    }
+
+    protected void checkPlayerTimedGroupsAndPermissions(final UUID uuid, PermissionPlayer player) {
+        LinkedHashMap<String, List<CachedGroup>> playerGroups = player.getCachedGroups();
+        for (Entry<String, List<CachedGroup>> e : playerGroups.entrySet()) {
+            for (final CachedGroup cachedGroup : e.getValue()) {
+                if (cachedGroup.willExpire() && cachedGroup.getExpirationDate().before(new Date())) {
+                    // Date passed
+                    debug("CachedGroup " + cachedGroup.getId() + " in player " + uuid.toString() + " expired.");
+                    this.removePlayerGroup(uuid, cachedGroup.getId(), e.getKey(), cachedGroup.isNegated(), cachedGroup.getExpirationDate(), new ResponseRunnable() {
+
+                        @Override
+                        public void run() {
+                            if (success)
+                                debug("Group " + cachedGroup.getId() + " in player " + uuid.toString() + " expired, now removed.");
+                            else
+                                plugin.getLogger().warning("Could not remove expired player group. " + response);
+                        }
+                    });
+                }
+            }
+        }
+
+        List<Permission> permissions = player.getPermissions();
+        for (final Permission p : permissions) {
+            if (p.willExpire() && p.getExpirationDate().before(new Date())) {
+                // Permission expired
+                debug("Permission " + p.getId() + " in player " + uuid.toString() + " expired.");
+                this.removePlayerPermission(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new ResponseRunnable() {
+
+                    @Override
+                    public void run() {
+                        if (success)
+                            debug("Permission with DB ID " + p.getId() + " in player " + uuid.toString() + " expired, now removed.");
+                        else
+                            plugin.getLogger().warning("Could not remove expired player permission. " + response);
+                    }
+                });
+            }
+        }
+    }
+
+    protected void checkGroupTimedPermissions(final Group group) {
+        List<Permission> permissions = group.getOwnPermissions();
+        for (final Permission p : permissions) {
+            if (p.willExpire() && p.getExpirationDate().before(new Date())) {
+                // Permission expired
+                debug("Permission " + p.getId() + " in group " + group.getId() + " expired.");
+                this.removeGroupPermission(group.getId(), p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new ResponseRunnable() {
+
+                    @Override
+                    public void run() {
+                        if (success)
+                            debug("Permission " + p.getId() + " in group " + group.getId() + " expired, now removed.");
+                        else
+                            plugin.getLogger().warning("Could not remove expired group permission. " + response);
+                    }
+                });
+            }
+        }
     }
 
     protected void debug(String msg) {
@@ -488,6 +570,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 } else
                                     base = new PermissionPlayerBase(tempGroups, perms, prefix_loaded, suffix_loaded, plugin, false);
                                 toUpdate.update(base);
+                                checkPlayerTimedGroupsAndPermissions(uuid, toUpdate);
 
                                 if (cachedPlayers.get(uuid) != null)
                                     cachedPlayers.remove(uuid);
@@ -525,6 +608,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     public void onDisable() {
+        if (checkTimedTaskId != -1)
+            this.getScheduler().stopRepeating(checkTimedTaskId);
         if (subscriber != null)
             subscriber.unsubscribe();
         if (pool != null)
@@ -609,7 +694,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                                 final int rank = row.getInt("rank");
 
                                                                 PowerfulGroup group = new PowerfulGroup(groupId, name, permissions.get(groupId), prefixes.get(groupId), suffixes.get(groupId), ladder,
-                                                                        rank, plugin.getPermissionManager());
+                                                                        rank, plugin);
                                                                 group.setParents(parents.get(groupId));
                                                                 groups.put(groupId, group);
                                                             }
@@ -632,17 +717,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 }
             }
         });
-    }
-
-    protected ArrayList<String> getGroupParents(String parentsString) {
-        ArrayList<String> parents = new ArrayList<String>();
-        if (parentsString.contains(";")) {
-            for (String s : parentsString.split(";")) {
-                parents.add(s);
-            }
-        } else
-            parents.add(parentsString);
-        return parents;
     }
 
     @Override
@@ -772,7 +846,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     ArrayList<Permission> perms = new ArrayList<Permission>();
                     while (result.hasNext()) {
                         DBDocument row = result.next();
-                        Permission tempPerm = new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"), row.getDate("expires"));
+                        Permission tempPerm = new PowerfulPermission(row.getInt("id"), row.getString("permission"), row.getString("world"), row.getString("server"), row.getDate("expires"));
                         perms.add(tempPerm);
                     }
                     resultRunnable.setResult(perms);
@@ -802,7 +876,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (!localGroups.containsKey(row.getString("server")))
                             localGroups.put(row.getString("server"), new ArrayList<CachedGroup>());
                         List<CachedGroup> serverGroups = localGroups.get(row.getString("server"));
-                        serverGroups.add(new CachedGroup(group, row.getBoolean("negated"), row.getDate("expires")));
+                        serverGroups.add(new CachedGroup(row.getInt("id"), group, row.getBoolean("negated"), row.getDate("expires")));
                         localGroups.put(row.getString("server"), serverGroups);
                     }
                     resultRunnable.setResult(localGroups);
@@ -903,7 +977,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (!permissions.containsKey(groupId))
                             permissions.put(groupId, new ArrayList<PowerfulPermission>());
                         List<PowerfulPermission> localPermissions = permissions.get(groupId);
-                        localPermissions.add(new PowerfulPermission(row.getString("permission"), row.getString("world"), row.getString("server"), row.getDate("expires")));
+                        localPermissions.add(new PowerfulPermission(row.getInt("id"), row.getString("permission"), row.getString("world"), row.getString("server"), row.getDate("expires")));
                         permissions.put(groupId, localPermissions);
                     }
                     resultRunnable.setResult(permissions);
@@ -933,7 +1007,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             for (final CachedGroup newGroup : e.getValue()) {
                                 boolean found = false;
                                 for (CachedGroup currentGroup : currentServerGroups) {
-                                    if (CachedGroup.isSimilar(newGroup, currentGroup)) {
+                                    if (newGroup.getId() == currentGroup.getId()) {
                                         found = true;
                                         break;
                                     }
@@ -955,15 +1029,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         }
 
                         // Check for groups that should be removed
-                        for (Entry<String, List<CachedGroup>> e : currentGroups.entrySet()) {
-                            String server = e.getKey();
+                        for (Entry<String, List<CachedGroup>> oldEntrySet : currentGroups.entrySet()) {
+                            String server = oldEntrySet.getKey();
                             List<CachedGroup> newServerGroups = newGroups.get(server);
                             if (newServerGroups == null)
                                 newServerGroups = new ArrayList<CachedGroup>();
-                            for (final CachedGroup oldGroup : e.getValue()) {
+                            for (final CachedGroup oldGroup : oldEntrySet.getValue()) {
                                 boolean found = false;
                                 for (CachedGroup newGroup : newServerGroups) {
-                                    if (CachedGroup.isSimilar(newGroup, oldGroup)) {
+                                    if (newGroup.getId() == oldGroup.getId()) {
                                         found = true;
                                         break;
                                     }
@@ -1294,7 +1368,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
-        getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>() {
+        getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(resp.isSameThread()) {
 
             @Override
             public void run() {
@@ -1308,6 +1382,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     Iterator<CachedGroup> it = groupList.iterator();
                     while (it.hasNext()) {
                         CachedGroup cachedGroup = it.next();
+                        debug("Check " + cachedGroup.getGroup().getId());
+                        debug("plus " + (expires == null) + " - " + (cachedGroup.getExpirationDate() == null));
+                        debug("plus " + negated + " - " + cachedGroup.isNegated());
+                        debug("plus " + groupId + " - " + cachedGroup.getGroup().getId());
                         if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
                             it.remove();
                             removed = true;
@@ -1368,7 +1446,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
-        getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>() {
+        getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(resp.isSameThread()) {
 
             @Override
             public void run() {
@@ -1388,7 +1466,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         }
                     }
 
-                    groupList.add(new CachedGroup(group, negated, expires));
+                    groupList.add(new CachedGroup(-1, group, negated, expires));
                     playerGroups.put(serv, groupList);
 
                     setPlayerGroups(uuid, playerGroups, new ResponseRunnable(resp.isSameThread()) {
@@ -1453,7 +1531,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         toUse = current.getGroup();
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
                                     if (toUse.getId() == current.getGroup().getId()) {
-                                        clone.set(clone.indexOf(current), new CachedGroup(group, current.isNegated(), null));
+                                        clone.set(clone.indexOf(current), new CachedGroup(-1, group, current.isNegated(), null));
                                         changed = true;
                                     }
                                 }
@@ -1579,7 +1657,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
                                     if (toUse.getId() == current.getGroup().getId()) {
                                         // This is the group to promote from
-                                        clone.set(clone.indexOf(current), new CachedGroup(toPromoteTo, current.isNegated(), null));
+                                        clone.set(clone.indexOf(current), new CachedGroup(-1, toPromoteTo, current.isNegated(), null));
                                         changed = true;
                                     }
                                 }
@@ -1659,7 +1737,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
                                     if (toUse.getId() == current.getGroup().getId()) {
                                         // This is the group to promote from
-                                        clone.set(clone.indexOf(current), new CachedGroup(toDemoteTo, current.isNegated(), null));
+                                        clone.set(clone.indexOf(current), new CachedGroup(-1, toDemoteTo, current.isNegated(), null));
                                         changed = true;
                                     }
                                 }
@@ -1762,8 +1840,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
         if (group != null) {
             List<Permission> groupPermissions = group.getOwnPermissions();
 
-            PowerfulPermission sp = new PowerfulPermission(permission, world, server, expires);
-
             for (Permission temp : groupPermissions) {
                 if (temp.getPermissionString().equals(permission) && temp.getServer().equals(server) && temp.getWorld().equals(world)
                         && (expires == null ? true : (expires.equals(temp.getExpirationDate())))) {
@@ -1772,8 +1848,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     return;
                 }
             }
-
-            groupPermissions.add(sp);
 
             db.insertGroupPermission(groupId, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
 
@@ -1935,6 +2009,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void setGroupPrefix(final int groupId, final String prefix, String server, final ResponseRunnable response) {
         if (server.equalsIgnoreCase("all"))
             server = "";
+        server = server.toLowerCase();
         final String finalServer = server;
 
         final Group group = getGroup(groupId);
@@ -1952,7 +2027,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 HashMap<String, String> currentPrefix = group.getPrefixes();
                 if (prefix.isEmpty() || currentPrefix.containsKey(finalServer)) {
                     currentPrefix.remove(finalServer);
-                    db.deleteGroupPrefix(groupId, prefix, finalServer, new DBRunnable(true) {
+                    db.deleteGroupPrefix(groupId, currentPrefix.get(finalServer), finalServer, new DBRunnable(true) {
 
                         @Override
                         public void run() {
@@ -1993,6 +2068,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void setGroupSuffix(final int groupId, final String suffix, String server, final ResponseRunnable response) {
         if (server.equalsIgnoreCase("all"))
             server = "";
+        server = server.toLowerCase();
         final String finalServer = server;
 
         final Group group = getGroup(groupId);
@@ -2010,7 +2086,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 HashMap<String, String> currentSuffix = group.getPrefixes();
                 if (suffix.isEmpty() || currentSuffix.containsKey(finalServer)) {
                     currentSuffix.remove(finalServer);
-                    db.deleteGroupSuffix(groupId, suffix, finalServer, new DBRunnable(true) {
+                    db.deleteGroupSuffix(groupId, currentSuffix.get(finalServer), finalServer, new DBRunnable(true) {
 
                         @Override
                         public void run() {

@@ -46,7 +46,10 @@ public class MySQLDatabase extends Database {
         if (expires == null)
             return null;
         java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        return dateFormat.format(expires);
+        String format = dateFormat.format(expires);
+        if (format == null || format.equals("null"))
+            return null;
+        return format;
     }
 
     @Override
@@ -384,12 +387,14 @@ public class MySQLDatabase extends Database {
 
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement(
-                            "SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=? AND `permission`=? AND `world`=? AND `server`=? AND `expires`=?");
+                            "SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=? AND `permission`=? AND `world`=? AND `server`=? AND "
+                                    + (expires == null ? "`expires` is NULL" : "`expires`=?"));
                     s.setString(1, uuid.toString());
                     s.setString(2, permission);
                     s.setString(3, world);
                     s.setString(4, server);
-                    s.setString(5, getExpirationDateString(expires));
+                    if (expires != null)
+                        s.setString(5, getExpirationDateString(expires));
                     s.execute();
                     ResultSet result = s.getResultSet();
                     if (result.next()) {
@@ -415,12 +420,14 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayerPermissions + " SET `playeruuid`=?, `permission`=?, `world`=?, `server`=?, `expires`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement(
+                            "INSERT INTO " + tblPlayerPermissions + " SET `playeruuid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
                     s.setString(1, uuid.toString());
                     s.setString(2, permission);
                     s.setString(3, world);
                     s.setString(4, server);
-                    s.setString(5, getExpirationDateString(expires));
+                    if (expires != null)
+                        s.setString(5, getExpirationDateString(expires));
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -445,13 +452,15 @@ public class MySQLDatabase extends Database {
 
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement(
-                            "DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=? AND `permission`=? AND `server`=? AND `world`=? AND `expires`=?");
+                            "DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=? AND `permission`=? AND `server`=? AND `world`=? AND "
+                                    + (expires == null ? "`expires` is NULL" : "`expires`=?"));
 
                     s.setString(1, uuid.toString());
                     s.setString(2, permission);
                     s.setString(3, server);
                     s.setString(4, world);
-                    s.setString(5, getExpirationDateString(expires));
+                    if (expires != null)
+                        s.setString(5, getExpirationDateString(expires));
 
                     amount = s.executeUpdate();
                     if (amount <= 0)
@@ -506,12 +515,14 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroupPermissions + " SET `groupid`=?, `permission`=?, `world`=?, `server`=?, `expires`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement(
+                            "INSERT INTO " + tblGroupPermissions + " SET `groupid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
                     s.setInt(1, groupId);
                     s.setString(2, permission);
                     s.setString(3, world);
                     s.setString(4, server);
-                    s.setString(5, getExpirationDateString(expires));
+                    if (expires != null)
+                        s.setString(5, getExpirationDateString(expires));
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -536,12 +547,13 @@ public class MySQLDatabase extends Database {
 
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement(
-                            "DELETE FROM " + tblGroupPermissions + " WHERE `groupid`=? AND `permission`=? AND `world`=? AND `server`=? AND `expires`=?");
+                            "DELETE FROM " + tblGroupPermissions + " WHERE `groupid`=? AND `permission`=? AND `world`=? AND `server`=? AND " + (expires == null ? "`expires` is NULL" : "`expires`=?"));
                     s.setInt(1, groupId);
                     s.setString(2, permission);
                     s.setString(3, world);
                     s.setString(4, server);
-                    s.setString(5, getExpirationDateString(expires));
+                    if (expires != null)
+                        s.setString(5, getExpirationDateString(expires));
                     amount = s.executeUpdate();
                     if (amount <= 0)
                         success = false;
@@ -643,12 +655,14 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?, `negated`=?, `expires`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement(
+                            "INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?, `negated`=?" + (expires != null ? ", `expires`=?" : ""));
                     s.setString(1, uuid.toString());
                     s.setInt(2, groupId);
                     s.setString(3, server);
                     s.setBoolean(4, negated);
-                    s.setString(5, getExpirationDateString(expires));
+                    if (expires != null)
+                        s.setString(5, getExpirationDateString(expires));
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -672,12 +686,14 @@ public class MySQLDatabase extends Database {
 
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement(
-                            "DELETE FROM " + tblPlayerGroups + " WHERE `playeruuid`=? AND `groupid`=? AND `server`=? AND `negated`=? AND `expires`=?");
+                            "DELETE FROM " + tblPlayerGroups + " WHERE `playeruuid`=? AND `groupid`=? AND `server`=? AND `negated`=? AND " + (expires == null ? "`expires` is NULL" : "`expires`=?"));
                     s.setString(1, uuid.toString());
                     s.setInt(2, groupId);
                     s.setString(3, server);
                     s.setBoolean(4, negated);
-                    s.setString(5, getExpirationDateString(expires));
+                    if (expires != null)
+                        s.setString(5, getExpirationDateString(expires));
+                    plugin.debug(s.toString());
                     s.execute();
                     s.close();
                 } catch (SQLException e) {

@@ -14,7 +14,7 @@ public class UserRemoveGroupCommand extends SubCommand {
 
     public UserRemoveGroupCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         super(plugin, permissionManager);
-        usage.add("/pp user <user> removegroup <group> (server)");
+        usage.add("/pp user <user> removegroup <group> (server) (expires)");
     }
 
     @Override

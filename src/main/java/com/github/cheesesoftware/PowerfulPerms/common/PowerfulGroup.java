@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
-import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
+import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
 public class PowerfulGroup implements Group {
 
@@ -17,13 +17,13 @@ public class PowerfulGroup implements Group {
     private String ladder;
     private int rank;
 
-    private PermissionManager permissionManager;
+    private PowerfulPermsPlugin plugin;
 
     private HashMap<String, String> serverPrefix = new HashMap<String, String>();
     private HashMap<String, String> serverSuffix = new HashMap<String, String>();
 
     public PowerfulGroup(int id, String name, List<PowerfulPermission> permissions, HashMap<String, String> prefixes, HashMap<String, String> suffixes, String ladder, int rank,
-            PermissionManager permissionManager) {
+            PowerfulPermsPlugin plugin) {
         this.id = id;
         this.name = name;
         this.permissions = (permissions != null ? permissions : new ArrayList<PowerfulPermission>());
@@ -31,7 +31,7 @@ public class PowerfulGroup implements Group {
         this.serverSuffix = (suffixes != null ? suffixes : new HashMap<String, String>());
         this.ladder = ladder;
         this.rank = rank;
-        this.permissionManager = permissionManager;
+        this.plugin = plugin;
     }
 
     @Override
@@ -48,7 +48,11 @@ public class PowerfulGroup implements Group {
     public List<Group> getParents() {
         List<Group> out = new ArrayList<Group>();
         for (int groupId : parents) {
-            out.add(permissionManager.getGroup(groupId));
+            Group group = plugin.getPermissionManager().getGroup(groupId);
+            if (group != null)
+                out.add(group);
+            else
+                plugin.debug("Could not add parent group " + groupId + " to group " + this.id);
         }
         return out;
     }
@@ -90,8 +94,11 @@ public class PowerfulGroup implements Group {
     public ArrayList<Permission> getPermissions() {
         ArrayList<Permission> temp = new ArrayList<Permission>();
         for (Integer parent : this.parents) {
-            Group parentGroup = permissionManager.getGroup(parent);
-            temp.addAll(parentGroup.getPermissions());
+            Group parentGroup = plugin.getPermissionManager().getGroup(parent);
+            if (parentGroup != null)
+                temp.addAll(parentGroup.getPermissions());
+            else
+                plugin.debug("Could not use parent group " + parent + " to group " + this.id);
         }
         temp.addAll(permissions);
         return temp;

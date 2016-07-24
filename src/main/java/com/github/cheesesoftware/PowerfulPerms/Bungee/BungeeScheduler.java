@@ -3,6 +3,7 @@ package com.github.cheesesoftware.PowerfulPerms.Bungee;
 import java.util.concurrent.TimeUnit;
 
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.scheduler.ScheduledTask;
 
 import com.github.cheesesoftware.PowerfulPerms.common.SchedulerBase;
 
@@ -24,6 +25,7 @@ public class BungeeScheduler extends SchedulerBase {
         super.runAsync(runnable, sameThread);
     }
 
+    // Bungee can't run sync tasks, only async tasks
     @Override
     public void runSync(Runnable runnable, boolean sameThread) {
         if (sameThread)
@@ -36,6 +38,17 @@ public class BungeeScheduler extends SchedulerBase {
     @Override
     public void runSync(Runnable runnable) {
         runSync(runnable, false);
+    }
+
+    @Override
+    public int runRepeating(Runnable runnable, int seconds) {
+        ScheduledTask task = ProxyServer.getInstance().getScheduler().schedule(plugin, runnable, 0, seconds, TimeUnit.SECONDS);
+        return task.getId();
+    }
+
+    @Override
+    public void stopRepeating(int taskId) {
+        ProxyServer.getInstance().getScheduler().cancel(taskId);
     }
 
 }

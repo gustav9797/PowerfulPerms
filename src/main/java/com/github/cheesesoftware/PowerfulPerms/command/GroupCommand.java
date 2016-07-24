@@ -45,10 +45,15 @@ public class GroupCommand extends SubCommand {
                     rows.add(ChatColor.GREEN + "Rank" + ChatColor.WHITE + ": " + group.getRank());
                     List<Permission> permissions = group.getOwnPermissions();
                     if (permissions.size() > 0) {
-                        for (Permission e : permissions)
-                            rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
-                                    + (e.getServer() == null || e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
-                                    + (e.getServer() == null || e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
+                        for (Permission e : permissions) {
+                            boolean s = !e.getServer().isEmpty();
+                            boolean w = !e.getWorld().isEmpty();
+                            boolean p = s || w || e.willExpire();
+                            rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + (p ? " (" : "")
+                                    + (e.getServer().isEmpty() ? "" : "Server:" + ChatColor.RED + e.getServer() + ChatColor.WHITE)
+                                    + (e.getWorld().isEmpty() ? "" : (s ? " " : "") + "World:" + ChatColor.RED + e.getWorld() + ChatColor.WHITE)
+                                    + (e.willExpire() ? ((s || w ? " " : "") + ChatColor.YELLOW + Utils.getExpirationDateString(e.getExpirationDate())) : "") + ChatColor.WHITE + (p ? ")" : ""));
+                        }
                     } else
                         rows.add("Group has no permissions.");
 

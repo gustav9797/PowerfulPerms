@@ -12,7 +12,7 @@ public class GroupAddPermissionCommand extends SubCommand {
 
     public GroupAddPermissionCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         super(plugin, permissionManager);
-        usage.add("/pp group <group> add <permission> (server) (world)");
+        usage.add("/pp group <group> add <permission> (server) (world) (expires)");
     }
 
     @Override

@@ -15,14 +15,14 @@ public class GroupSuffixCommand extends SubCommand {
 
     public GroupSuffixCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         super(plugin, permissionManager);
-        usage.add("/pp group <group> suffix set/remove <suffix> (server)");
+        usage.add("/pp group <group> suffix set <suffix> (server) | ... suffix remove (server)");
     }
 
     @Override
     public CommandResult execute(final ICommand invoker, final String sender, String[] args) {
         if (hasBasicPerms(invoker, sender, "powerfulperms.group.suffix")) {
             if (args != null && args.length >= 2 && args[1].equalsIgnoreCase("suffix")) {
-                if (args.length == 3) {
+                if (args.length == 3 && !args[2].equalsIgnoreCase("remove")) {
                     sendSender(invoker, sender, getUsage());
                     return CommandResult.success;
                 }

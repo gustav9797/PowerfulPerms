@@ -19,7 +19,7 @@ public class UserPrefixCommand extends SubCommand {
     public CommandResult execute(final ICommand invoker, final String sender, final String[] args) {
         if (hasBasicPerms(invoker, sender, "powerfulperms.user.prefix")) {
             if (args != null && args.length >= 2 && args[1].equalsIgnoreCase("prefix")) {
-                if (args.length == 3) {
+                if (args.length == 3 && !args[2].equalsIgnoreCase("remove")) {
                     sendSender(invoker, sender, getUsage());
                     return CommandResult.success;
                 }

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.TreeMap;
 
-import com.github.cheesesoftware.PowerfulPerms.command.Utils;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;

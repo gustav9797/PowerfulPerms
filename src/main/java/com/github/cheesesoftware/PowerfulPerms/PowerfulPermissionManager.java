@@ -226,6 +226,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                 e.printStackTrace();
             }
             players.put(p.getUniqueId(), permissionsPlayer);
+            checkPlayerTimedGroupsAndPermissions(p.getUniqueId(), permissionsPlayer);
         }
         debug("loadCachedPlayer end");
     }

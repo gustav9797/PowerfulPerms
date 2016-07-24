@@ -12,7 +12,7 @@ public class GroupRemovePermissionCommand extends SubCommand {
 
     public GroupRemovePermissionCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         super(plugin, permissionManager);
-        usage.add("/pp group <group> remove <permission> (server) (world)");
+        usage.add("/pp group <group> remove <permission> (server) (world) (expires)");
     }
 
     @Override

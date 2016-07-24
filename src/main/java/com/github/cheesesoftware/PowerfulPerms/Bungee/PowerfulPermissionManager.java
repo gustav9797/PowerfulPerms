@@ -149,8 +149,9 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     private void loadCachedPlayer(ProxiedPlayer player) {
         PermissionPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
         if (base != null && player != null) {
-            PowerfulPermissionPlayer permissionsPlayer = new PowerfulPermissionPlayer(player, base, plugin);
-            players.put(player.getUniqueId(), permissionsPlayer);
+            PowerfulPermissionPlayer permissionPlayer = new PowerfulPermissionPlayer(player, base, plugin);
+            players.put(player.getUniqueId(), permissionPlayer);
+            checkPlayerTimedGroupsAndPermissions(player.getUniqueId(), permissionPlayer);
         } else
             debug("loadCachedPlayer: ProxiedPlayer or PermissionPlayerBase is null");
         debug("loadCachedPlayer finish");

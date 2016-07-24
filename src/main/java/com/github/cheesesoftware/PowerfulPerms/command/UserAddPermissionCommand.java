@@ -13,7 +13,7 @@ public class UserAddPermissionCommand extends SubCommand {
 
     public UserAddPermissionCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         super(plugin, permissionManager);
-        usage.add("/pp user <user> add <permission> (server) (world)");
+        usage.add("/pp user <user> add <permission> (server) (world) (expires)");
     }
 
     @Override

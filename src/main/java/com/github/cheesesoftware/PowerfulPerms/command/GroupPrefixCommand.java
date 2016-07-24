@@ -15,14 +15,14 @@ public class GroupPrefixCommand extends SubCommand {
 
     public GroupPrefixCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         super(plugin, permissionManager);
-        usage.add("/pp group <group> prefix set/remove <prefix> (server)");
+        usage.add("/pp group <group> prefix set/remove <prefix> (server) | ... prefix remove (server)");
     }
 
     @Override
     public CommandResult execute(final ICommand invoker, final String sender, String[] args) {
         if (hasBasicPerms(invoker, sender, "powerfulperms.group.prefix")) {
             if (args != null && args.length >= 2 && args[1].equalsIgnoreCase("prefix")) {
-                if (args.length == 3) {
+                if (args.length == 3 && !args[2].equalsIgnoreCase("remove")) {
                     sendSender(invoker, sender, getUsage());
                     return CommandResult.success;
                 }

@@ -128,8 +128,13 @@ public class UserCommand extends SubCommand {
                                                                 Pair<String, CachedGroup> cachedGroup = it4.next();
                                                                 Group group = cachedGroup.getSecond().getGroup();
                                                                 if (group != null) {
-                                                                    otherGroups += (cachedGroup.getSecond().isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName() + ":"
-                                                                            + ChatColor.RED + (cachedGroup.getFirst() == null || cachedGroup.getFirst().isEmpty() ? "ALL" : cachedGroup.getFirst());
+                                                                    otherGroups += (cachedGroup.getSecond().isNegated() ? (ChatColor.RED + "-") : "")
+                                                                            + ChatColor.WHITE
+                                                                            + group.getName()
+                                                                            + (cachedGroup.getFirst() == null || cachedGroup.getFirst().isEmpty() ? "" : ChatColor.WHITE + ":" + ChatColor.RED
+                                                                                    + cachedGroup.getFirst())
+                                                                            + (cachedGroup.getSecond().willExpire() ? ChatColor.WHITE + ":" + ChatColor.YELLOW
+                                                                                    + Utils.getExpirationDateString(cachedGroup.getSecond().getExpirationDate()) : "");
                                                                     otherGroups += ", ";
                                                                 }
                                                             }
@@ -148,9 +153,14 @@ public class UserCommand extends SubCommand {
                                                             List<Permission> playerPerms = result;
                                                             if (playerPerms != null && playerPerms.size() > 0)
                                                                 for (Permission e : playerPerms) {
-                                                                    rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + " (Server:"
-                                                                            + (e.getServer().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getServer()) + " World:"
-                                                                            + (e.getWorld().isEmpty() ? ChatColor.RED + "ALL" + ChatColor.WHITE : e.getWorld()) + ")");
+                                                                    boolean s = !e.getServer().isEmpty();
+                                                                    boolean w = !e.getWorld().isEmpty();
+                                                                    boolean p = s || w || e.willExpire();
+                                                                    rows.add(ChatColor.DARK_GREEN + e.getPermissionString() + ChatColor.WHITE + (p ? " (" : "")
+                                                                            + (e.getServer().isEmpty() ? "" : "Server:" + ChatColor.RED + e.getServer() + ChatColor.WHITE)
+                                                                            + (e.getWorld().isEmpty() ? "" : (s ? " " : "") + "World:" + ChatColor.RED + e.getWorld() + ChatColor.WHITE)
+                                                                            + (e.willExpire() ? ((s || w ? " " : "") + ChatColor.YELLOW + Utils.getExpirationDateString(e.getExpirationDate())) : "")
+                                                                            + ChatColor.WHITE + (p ? ")" : ""));
                                                                 }
                                                             else
                                                                 rows.add("Player has no permissions.");
@@ -183,5 +193,4 @@ public class UserCommand extends SubCommand {
         } else
             return CommandResult.noPermission;
     }
-
 }

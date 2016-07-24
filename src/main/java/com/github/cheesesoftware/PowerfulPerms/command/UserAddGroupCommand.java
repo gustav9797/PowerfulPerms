@@ -14,7 +14,7 @@ public class UserAddGroupCommand extends SubCommand {
 
     public UserAddGroupCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         super(plugin, permissionManager);
-        usage.add("/pp user <user> addgroup <group> (server)");
+        usage.add("/pp user <user> addgroup <group> (server) (expires)");
     }
 
     @Override

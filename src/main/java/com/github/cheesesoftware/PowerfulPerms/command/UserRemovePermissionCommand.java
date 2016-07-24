@@ -13,7 +13,7 @@ public class UserRemovePermissionCommand extends SubCommand {
 
     public UserRemovePermissionCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         super(plugin, permissionManager);
-        usage.add("/pp user <user> remove <permission> (server) (world)");
+        usage.add("/pp user <user> remove <permission> (server) (world) (expires)");
     }
 
     @Override

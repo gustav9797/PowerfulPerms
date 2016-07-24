@@ -5,16 +5,19 @@ import java.util.Date;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 
 public class PowerfulPermission implements Permission {
+    private int id;
     private String permission;
     private String world = "";
     private String server = "";
     private Date expires = null;
 
-    public PowerfulPermission(String permission) {
+    public PowerfulPermission(int id, String permission) {
+        this.id = id;
         this.permission = permission;
     }
 
-    public PowerfulPermission(String permission, String world, String server, Date expires) {
+    public PowerfulPermission(int id, String permission, String world, String server, Date expires) {
+        this.id = id;
         this.permission = permission;
 
         if (world != null && !world.isEmpty() && !world.equalsIgnoreCase("ALL"))
@@ -22,6 +25,11 @@ public class PowerfulPermission implements Permission {
         if (server != null && !server.isEmpty() && !server.equalsIgnoreCase("ALL"))
             this.server = server;
         this.expires = expires;
+    }
+
+    @Override
+    public int getId() {
+        return this.id;
     }
 
     @Override
@@ -42,5 +50,10 @@ public class PowerfulPermission implements Permission {
     @Override
     public Date getExpirationDate() {
         return expires;
+    }
+
+    @Override
+    public boolean willExpire() {
+        return expires != null;
     }
 }
