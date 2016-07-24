@@ -54,7 +54,7 @@ public class BaseCommand extends SubCommand {
         return usage;
     }
 
-    public String[] resolveArgs(String[] args) {
+    public static String[] resolveArgs(String[] args) {
         List<String> output = new ArrayList<String>();
         String current = "";
         boolean adding = false;
@@ -64,11 +64,11 @@ public class BaseCommand extends SubCommand {
 
             if (!adding) {
                 current = "";
-            }
 
-            if (!s.contains("\"")) {
-                output.add(s);
-                continue;
+                if (!s.contains("\"")) {
+                    output.add(s);
+                    continue;
+                }
             }
 
             for (char c : s.toCharArray()) {

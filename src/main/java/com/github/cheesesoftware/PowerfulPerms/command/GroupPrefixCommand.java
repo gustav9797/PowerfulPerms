@@ -15,7 +15,7 @@ public class GroupPrefixCommand extends SubCommand {
 
     public GroupPrefixCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         super(plugin, permissionManager);
-        usage.add("/pp group <group> prefix set/remove <prefix> (server) | ... prefix remove (server)");
+        usage.add("/pp group <group> prefix set <prefix> (server) | ... prefix remove (server)");
     }
 
     @Override

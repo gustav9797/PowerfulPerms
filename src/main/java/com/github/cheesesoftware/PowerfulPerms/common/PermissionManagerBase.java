@@ -2026,7 +2026,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 // Run async while editing db
                 HashMap<String, String> currentPrefix = group.getPrefixes();
                 if (prefix.isEmpty() || currentPrefix.containsKey(finalServer)) {
-                    currentPrefix.remove(finalServer);
                     db.deleteGroupPrefix(groupId, currentPrefix.get(finalServer), finalServer, new DBRunnable(true) {
 
                         @Override
@@ -2037,7 +2036,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     });
                 }
                 if (!prefix.isEmpty()) {
-                    currentPrefix.put(finalServer, prefix);
                     db.addGroupPrefix(groupId, prefix, finalServer, new DBRunnable(true) {
 
                         @Override
@@ -2085,7 +2083,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 // Run async while editing db
                 HashMap<String, String> currentSuffix = group.getPrefixes();
                 if (suffix.isEmpty() || currentSuffix.containsKey(finalServer)) {
-                    currentSuffix.remove(finalServer);
                     db.deleteGroupSuffix(groupId, currentSuffix.get(finalServer), finalServer, new DBRunnable(true) {
 
                         @Override
@@ -2096,7 +2093,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     });
                 }
                 if (!suffix.isEmpty()) {
-                    currentSuffix.put(finalServer, suffix);
                     db.addGroupSuffix(groupId, suffix, finalServer, new DBRunnable(true) {
 
                         @Override
