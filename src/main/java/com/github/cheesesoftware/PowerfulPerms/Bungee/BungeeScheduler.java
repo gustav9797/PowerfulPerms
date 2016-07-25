@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import net.md_5.bungee.api.ProxyServer;
@@ -43,12 +44,24 @@ public class BungeeScheduler extends SchedulerBase {
     @Override
     public int runRepeating(Runnable runnable, int seconds) {
         ScheduledTask task = ProxyServer.getInstance().getScheduler().schedule(plugin, runnable, 0, seconds, TimeUnit.SECONDS);
+        super.runRepeating(runnable, seconds);
         return task.getId();
     }
 
     @Override
     public void stopRepeating(int taskId) {
         ProxyServer.getInstance().getScheduler().cancel(taskId);
+        super.stopRepeating(taskId);
+    }
+
+    @Override
+    public int runDelayed(Runnable runnable, Date when) {
+        return runDelayed(runnable, TimeUnit.MILLISECONDS.toSeconds(when.getTime() - (new Date()).getTime()));
+    }
+
+    @Override
+    public int runDelayed(Runnable runnable, long seconds) {
+        return ProxyServer.getInstance().getScheduler().schedule(plugin, runnable, seconds, TimeUnit.SECONDS).getId();
     }
 
 }

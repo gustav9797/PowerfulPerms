@@ -1,5 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -48,6 +51,16 @@ public class BukkitScheduler extends SchedulerBase {
     @Override
     public void stopRepeating(int taskId) {
         Bukkit.getScheduler().cancelTask(taskId);
+    }
+
+    @Override
+    public int runDelayed(Runnable runnable, Date when) {
+        return runDelayed(runnable, TimeUnit.MILLISECONDS.toSeconds(when.getTime() - (new Date()).getTime()));
+    }
+
+    @Override
+    public int runDelayed(Runnable runnable, long seconds) {
+        return Bukkit.getScheduler().runTaskLater(plugin, runnable, seconds * 20).getTaskId();
     }
 
 }

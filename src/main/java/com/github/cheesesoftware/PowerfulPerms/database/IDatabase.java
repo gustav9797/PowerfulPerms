@@ -9,7 +9,7 @@ public interface IDatabase {
 
     public boolean tableExists(String table);
 
-    public void createTables();
+    public void createTable(String tableName);
 
     public void insertGroup(String group, String ladder, int rank, DBRunnable done);
 

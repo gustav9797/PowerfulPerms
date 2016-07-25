@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -21,11 +20,88 @@ public class MySQLDatabase extends Database {
 
     private SQL sql;
     private PowerfulPermsPlugin plugin;
+    private Map<String, String> tables = new HashMap<String, String>();
 
     public MySQLDatabase(IScheduler scheduler, SQL sql, PowerfulPermsPlugin plugin) {
         super(scheduler);
         this.sql = sql;
         this.plugin = plugin;
+        
+        tables.put(tblGroupParents, "CREATE TABLE `" + tblGroupParents + "` (\r\n" + 
+                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
+                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
+                "  `parentgroupid` int(10) unsigned NOT NULL,\r\n" + 
+                "  PRIMARY KEY (`id`),\r\n" + 
+                "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + 
+                ") ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;");
+        
+        tables.put(tblGroupPermissions, "CREATE TABLE `" + tblGroupPermissions + "` (\r\n" + 
+                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
+                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
+                "  `permission` varchar(128) NOT NULL,\r\n" + 
+                "  `world` varchar(128) NOT NULL,\r\n" + 
+                "  `server` varchar(128) NOT NULL,\r\n" + 
+                "  `expires` datetime DEFAULT NULL,\r\n" + 
+                "  PRIMARY KEY (`id`)\r\n" + 
+                ") ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;\r\n");
+        
+        tables.put(tblGroupPrefixes, "CREATE TABLE `" + tblGroupPrefixes + "` (\r\n" + 
+                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
+                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
+                "  `prefix` text NOT NULL,\r\n" + 
+                "  `server` text NOT NULL,\r\n" + 
+                "  PRIMARY KEY (`id`),\r\n" + 
+                "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + 
+                ") ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8;\r\n");
+        
+        tables.put(tblGroups, "CREATE TABLE `" + tblGroups + "` (\r\n" + 
+                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
+                "  `name` varchar(255) NOT NULL,\r\n" + 
+                "  `ladder` varchar(64) NOT NULL,\r\n" + 
+                "  `rank` int(11) NOT NULL,\r\n" + 
+                "  PRIMARY KEY (`id`),\r\n" + 
+                "  UNIQUE KEY `id_UNIQUE` (`id`),\r\n" + 
+                "  UNIQUE KEY `name_UNIQUE` (`name`)\r\n" + 
+                ") ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;\r\n");
+        
+        tables.put(tblGroupSuffixes, "CREATE TABLE `" + tblGroupSuffixes + "` (\r\n" + 
+                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
+                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
+                "  `suffix` text NOT NULL,\r\n" + 
+                "  `server` text NOT NULL,\r\n" + 
+                "  PRIMARY KEY (`id`),\r\n" + 
+                "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + 
+                ") ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;\r\n");
+        
+        tables.put(tblPlayerGroups, "CREATE TABLE `" + tblPlayerGroups + "` (\r\n" + 
+                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
+                "  `playeruuid` varchar(36) NOT NULL,\r\n" + 
+                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
+                "  `server` text NOT NULL,\r\n" + 
+                "  `negated` tinyint(1) NOT NULL DEFAULT '0',\r\n" + 
+                "  `expires` datetime DEFAULT NULL,\r\n" + 
+                "  PRIMARY KEY (`id`),\r\n" + 
+                "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + 
+                ") ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8;\r\n");
+        
+        tables.put(tblPlayerPermissions, "CREATE TABLE `" + tblPlayerPermissions + "` (\r\n" + 
+                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
+                "  `playeruuid` varchar(36) NOT NULL,\r\n" + 
+                "  `permission` varchar(128) NOT NULL,\r\n" + 
+                "  `world` varchar(128) NOT NULL,\r\n" + 
+                "  `server` varchar(128) NOT NULL,\r\n" + 
+                "  `expires` datetime DEFAULT NULL,\r\n" + 
+                "  PRIMARY KEY (`id`)\r\n" + 
+                ") ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;\r\n");
+        
+        tables.put(tblPlayers, "CREATE TABLE `" + tblPlayers + "` (\r\n" + 
+                "  `uuid` varchar(36) NOT NULL DEFAULT '',\r\n" + 
+                "  `name` varchar(32) NOT NULL,\r\n" + 
+                "  `prefix` text NOT NULL,\r\n" + 
+                "  `suffix` text NOT NULL,\r\n" + 
+                "  PRIMARY KEY (`uuid`,`name`),\r\n" + 
+                "  UNIQUE KEY `uuid_UNIQUE` (`uuid`)\r\n" + 
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8;\r\n");
     }
 
     private DBResult fromResultSet(ResultSet r) throws SQLException {
@@ -104,19 +180,15 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void createTables() {
-        List<String> tables = new ArrayList<String>();
-        tables.add("");
-
-        for (String table : tables) {
-            try {
-                PreparedStatement s = sql.getConnection().prepareStatement(table);
-                s.execute();
-                s.close();
-
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+    public void createTable(String tableName) {
+        String table = tables.get(tableName);
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement(table);
+            s.execute();
+            s.close();
+            plugin.getLogger().info("Created table " + tableName);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 

@@ -69,25 +69,71 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
         db.applyPatches();
 
-        if (!db.tableExists(Database.tblGroupSuffixes)) {
-            db.createTables();
+        if (!db.tableExists(Database.tblGroupParents))
+            db.createTable(Database.tblGroupParents);
 
-            this.createGroup("Guest", "default", 100, new ResponseRunnable() {
+        if (!db.tableExists(Database.tblGroupPermissions))
+            db.createTable(Database.tblGroupPermissions);
+
+        if (!db.tableExists(Database.tblGroupPrefixes))
+            db.createTable(Database.tblGroupPrefixes);
+
+        if (!db.tableExists(Database.tblGroupSuffixes))
+            db.createTable(Database.tblGroupSuffixes);
+
+        if (!db.tableExists(Database.tblPlayerGroups))
+            db.createTable(Database.tblPlayerGroups);
+
+        if (!db.tableExists(Database.tblPlayerPermissions))
+            db.createTable(Database.tblPlayerPermissions);
+
+        if (!db.tableExists(Database.tblGroups)) {
+            db.createTable(Database.tblGroups);
+
+            this.createGroup("Guest", "default", 100, new ResponseRunnable(true) {
 
                 @Override
                 public void run() {
+                    tempPlugin.getLogger().info("Created group Guest");
+                    setGroupPrefix(getGroup("Guest").getId(), "[Guest] ", new ResponseRunnable(true) {
 
+                        @Override
+                        public void run() {
+                            tempPlugin.getLogger().info("Set group Guest prefix to \"[Guest] \"");
+                        }
+                    });
+                    setGroupSuffix(getGroup("Guest").getId(), ": ", new ResponseRunnable(true) {
+
+                        @Override
+                        public void run() {
+                            tempPlugin.getLogger().info("Set group Guest suffix to \": \"");
+                        }
+                    });
                 }
             });
-            this.createPlayer("[default]", DefaultPermissionPlayer.getUUID(), new ResponseRunnable() {
+        }
+
+        if (!db.tableExists(Database.tblPlayers)) {
+            db.createTable(Database.tblPlayers);
+
+            this.createPlayer("[default]", DefaultPermissionPlayer.getUUID(), new ResponseRunnable(true) {
 
                 @Override
                 public void run() {
+                    tempPlugin.getLogger().info("Inserted player [default]");
+                    Group guest = getGroup("Guest");
+                    if (guest != null) {
+                        addPlayerGroup(DefaultPermissionPlayer.getUUID(), guest.getId(), new ResponseRunnable(true) {
 
+                            @Override
+                            public void run() {
+                                tempPlugin.getLogger().info("Added group Guest to player [default]");
+                            }
+                        });
+                    }
                 }
             });
 
-            tempPlugin.getLogger().info("Created tables.");
         }
 
         // Initialize Redis
