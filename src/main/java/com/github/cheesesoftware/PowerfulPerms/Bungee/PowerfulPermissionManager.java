@@ -89,8 +89,8 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerDisconnect(PlayerDisconnectEvent e) {
         debug("PlayerQuitEvent " + e.getPlayer().getName());
-        if (players.containsKey(e.getPlayer().getUniqueId()))
-            players.remove(e.getPlayer().getUniqueId());
+        if (containsPermissionPlayer(e.getPlayer().getUniqueId()))
+            removePermissionPlayer(e.getPlayer().getUniqueId());
         if (cachedPlayers.containsKey(e.getPlayer().getUniqueId()))
             cachedPlayers.remove(e.getPlayer().getUniqueId());
     }
@@ -130,8 +130,8 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     @EventHandler(priority = EventPriority.LOW)
     public void onServerConnected(final ServerConnectedEvent e) {
         debug("serverconnected event " + e.getServer().getInfo().getName());
-        if (players.containsKey(e.getPlayer().getUniqueId())) {
-            PowerfulPermissionPlayer player = (PowerfulPermissionPlayer) players.get(e.getPlayer().getUniqueId());
+        if (containsPermissionPlayer(e.getPlayer().getUniqueId())) {
+            PowerfulPermissionPlayer player = (PowerfulPermissionPlayer) getPermissionPlayer(e.getPlayer().getUniqueId());
             player.updatePermissions(e.getServer().getInfo());
         }
     }
@@ -150,7 +150,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         PermissionPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
         if (base != null && player != null) {
             PowerfulPermissionPlayer permissionPlayer = new PowerfulPermissionPlayer(player, base, plugin);
-            players.put(player.getUniqueId(), permissionPlayer);
+            setPermissionPlayer(player.getUniqueId(), permissionPlayer);
             checkPlayerTimedGroupsAndPermissions(player.getUniqueId(), permissionPlayer);
         } else
             debug("loadCachedPlayer: ProxiedPlayer or PermissionPlayerBase is null");

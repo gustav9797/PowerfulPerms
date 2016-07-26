@@ -93,7 +93,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     public void onPlayerQuit(PlayerQuitEvent e) {
         debug("PlayerQuitEvent " + e.getPlayer().getName());
 
-        players.remove(e.getPlayer().getUniqueId());
+        removePermissionPlayer(e.getPlayer().getUniqueId());
         cachedPlayers.remove(e.getPlayer().getUniqueId());
     }
 
@@ -131,7 +131,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         if (e.getResult() != PlayerLoginEvent.Result.ALLOWED) {
             debug("onPlayerLoginMonitor player not allowed, removing cached");
             cachedPlayers.remove(e.getPlayer().getUniqueId());
-            players.remove(e.getPlayer().getUniqueId());
+            removePermissionPlayer(e.getPlayer().getUniqueId());
         }
     }
 
@@ -140,15 +140,15 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         debug("PlayerJoinEvent " + e.getPlayer().getName());
         Player p = e.getPlayer();
         
-        if (!players.containsKey(p.getUniqueId())) {
+        if (!containsPermissionPlayer(p.getUniqueId())) {
             // Player is not cached, Load directly on Bukkit main thread.
             debug("onPlayerJoin player isn't loaded, loading directly");
             loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
             loadCachedPlayer(e.getPlayer());
         }
         
-        if (players.containsKey(p.getUniqueId())) {
-            PowerfulPermissionPlayer permissionsPlayer = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
+        if (containsPermissionPlayer(p.getUniqueId())) {
+            PowerfulPermissionPlayer permissionsPlayer = (PowerfulPermissionPlayer) getPermissionPlayer(p.getUniqueId());
             permissionsPlayer.updatePermissions();
         }
     }
@@ -156,7 +156,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerChat(AsyncPlayerChatEvent e) {
         if (!PowerfulPerms.disableChatFormat) {
-            PermissionPlayer gp = this.getPermissionsPlayer(e.getPlayer());
+            PermissionPlayer gp = this.getPermissionPlayer(e.getPlayer().getUniqueId());
             if (PowerfulPerms.useChatFormat && PowerfulPerms.placeholderAPIEnabled) {
                 String output = me.clip.placeholderapi.PlaceholderAPI.setBracketPlaceholders(e.getPlayer(), PowerfulPerms.chatFormat);
                 e.setFormat(ChatColor.translateAlternateColorCodes('&', output.replace("{message}", "%2$s")));
@@ -169,39 +169,22 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     public void onWorldChange(PlayerChangedWorldEvent e) {
         Player p = e.getPlayer();
         debug("Player " + p.getName() + " changed world from " + e.getFrom().getName() + " to " + p.getWorld().getName());
-        if (players.containsKey(p.getUniqueId())) {
-            PowerfulPermissionPlayer permissionsPlayer = (PowerfulPermissionPlayer) players.get(p.getUniqueId());
-            permissionsPlayer.updatePermissions();
+        if (containsPermissionPlayer(p.getUniqueId())) {
+            PowerfulPermissionPlayer permissionPlayer = (PowerfulPermissionPlayer) getPermissionPlayer(p.getUniqueId());
+            permissionPlayer.updatePermissions();
         }
     }
 
     @Override
     public void reloadPlayers() {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (players.containsKey(p.getUniqueId())) {
+            if (containsPermissionPlayer(p.getUniqueId())) {
                 loadPlayer(p);
             } else {
                 loadPlayer(p.getUniqueId(), p.getName(), true);
                 loadCachedPlayer(p);
             }
         }
-    }
-
-    /**
-     * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
-     */
-    public PermissionPlayer getPermissionsPlayer(Player p) {
-        return players.get(p.getUniqueId());
-    }
-
-    /**
-     * Returns the PermissionsPlayer-object for the specified player, used for getting permissions information about the player. Player has to be online.
-     */
-    public PermissionPlayer getPermissionsPlayer(String playerName) {
-        UUID uuid = plugin.getPlayerUUID(playerName);
-        if (uuid != null)
-            return players.get(uuid);
-        return null;
     }
 
     private void loadPlayer(Player player) {
@@ -212,8 +195,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         debug("loadCachedPlayer begin");
         PermissionPlayerBase base = super.loadCachedPlayer(p.getUniqueId());
         if (base != null) {
-            if (players.containsKey(p.getUniqueId()))
-                players.remove(p.getUniqueId());
+            removePermissionPlayer(p.getUniqueId());
 
             PowerfulPermissionPlayer permissionsPlayer = new PowerfulPermissionPlayer(p, base, plugin);
             try {
@@ -225,7 +207,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                 Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not inject permissible. Using default Bukkit permissions.");
                 e.printStackTrace();
             }
-            players.put(p.getUniqueId(), permissionsPlayer);
+            setPermissionPlayer(p.getUniqueId(), permissionsPlayer);
             checkPlayerTimedGroupsAndPermissions(p.getUniqueId(), permissionsPlayer);
         }
         debug("loadCachedPlayer end");

@@ -13,6 +13,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
@@ -37,9 +38,14 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 
 public abstract class PermissionManagerBase implements PermissionManager {
+
     protected HashMap<UUID, PermissionPlayer> players = new HashMap<UUID, PermissionPlayer>();
+    protected ReentrantLock playersLock = new ReentrantLock();
+
     protected ConcurrentHashMap<UUID, CachedPlayer> cachedPlayers = new ConcurrentHashMap<UUID, CachedPlayer>();
+
     protected HashMap<Integer, Group> groups = new HashMap<Integer, Group>();
+    protected ReentrantLock groupsLock = new ReentrantLock();
 
     protected JedisPool pool;
     protected JedisPubSub subscriber;
@@ -147,8 +153,23 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
             @Override
             public void run() {
-                final List<Group> tempGroups = new ArrayList<Group>(groups.values());
-                final HashMap<UUID, PermissionPlayer> tempPlayers = new HashMap<UUID, PermissionPlayer>(players);
+                List<Group> tempTempGroups;
+                groupsLock.lock();
+                try {
+                    tempTempGroups = new ArrayList<Group>(groups.values());
+                } finally {
+                    groupsLock.unlock();
+                }
+                final List<Group> tempGroups = tempTempGroups;
+
+                HashMap<UUID, PermissionPlayer> tempTempPlayers;
+                playersLock.lock();
+                try {
+                    tempTempPlayers = new HashMap<UUID, PermissionPlayer>(players);
+                } finally {
+                    playersLock.unlock();
+                }
+                final HashMap<UUID, PermissionPlayer> tempPlayers = tempTempPlayers;
 
                 getScheduler().runAsync(new Runnable() {
 
@@ -522,13 +543,18 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void reloadPlayers() {
-        ArrayList<UUID> uuids = new ArrayList<UUID>(players.keySet());
-        for (UUID uuid : uuids) {
-            if (!plugin.isPlayerOnline(uuid)) {
-                players.remove(uuid);
+        playersLock.lock();
+        try {
+            ArrayList<UUID> uuids = new ArrayList<UUID>(players.keySet());
+            for (UUID uuid : uuids) {
+                if (!plugin.isPlayerOnline(uuid)) {
+                    players.remove(uuid);
+                }
+                debug("Reloading player " + uuid.toString());
+                loadPlayer(uuid, null, false);
             }
-            debug("Reloading player " + uuid.toString());
-            loadPlayer(uuid, null, false);
+        } finally {
+            playersLock.unlock();
         }
     }
 
@@ -575,7 +601,39 @@ public abstract class PermissionManagerBase implements PermissionManager {
      */
     @Override
     public PermissionPlayer getPermissionPlayer(UUID uuid) {
-        return players.get(uuid);
+        playersLock.lock();
+        try {
+            return players.get(uuid);
+        } finally {
+            playersLock.unlock();
+        }
+    }
+
+    protected void setPermissionPlayer(UUID uuid, PermissionPlayer permissionPlayer) {
+        playersLock.lock();
+        try {
+            players.put(uuid, permissionPlayer);
+        } finally {
+            playersLock.unlock();
+        }
+    }
+
+    protected void removePermissionPlayer(UUID uuid) {
+        playersLock.lock();
+        try {
+            players.remove(uuid);
+        } finally {
+            playersLock.unlock();
+        }
+    }
+
+    protected boolean containsPermissionPlayer(UUID uuid) {
+        playersLock.lock();
+        try {
+            return players.containsKey(uuid);
+        } finally {
+            playersLock.unlock();
+        }
     }
 
     /**
@@ -584,7 +642,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public PermissionPlayer getPermissionPlayer(String name) {
         UUID uuid = plugin.getPlayerUUID(name);
-        return players.get(uuid);
+        return getPermissionPlayer(uuid);
     }
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
@@ -662,8 +720,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             cachedPlayers.put(uuid, new CachedPlayer(tempGroups, prefix_loaded, suffix_loaded, perms));
                         } else {
                             // Player should be reloaded if "login" is false. Reload already loaded player.
-                            if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
-                                PermissionPlayerBase toUpdate = (PermissionPlayerBase) players.get(uuid);
+
+                            PermissionPlayerBase toUpdate = (PermissionPlayerBase) getPermissionPlayer(uuid);
+                            if (plugin.isPlayerOnline(uuid) && toUpdate != null) {
                                 debug("Player instance " + toUpdate.toString());
                                 PermissionPlayerBase base;
                                 debug("loadPlayerFinished reload group count:" + tempGroups.size());
@@ -696,8 +755,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return null;
         }
 
-        if (players.containsKey(uuid)) {
-            players.remove(uuid);
+        playersLock.lock();
+        try {
+            if (players.containsKey(uuid)) {
+                players.remove(uuid);
+            }
+        } finally {
+            playersLock.unlock();
         }
 
         PermissionPlayerBase base;
@@ -717,17 +781,26 @@ public abstract class PermissionManagerBase implements PermissionManager {
             subscriber.unsubscribe();
         if (pool != null)
             pool.destroy();
-        if (groups != null)
-            groups.clear();
-        if (players != null)
-            players.clear();
+        groupsLock.lock();
+        try {
+            if (groups != null)
+                groups.clear();
+        } finally {
+            groupsLock.unlock();
+        }
+        playersLock.lock();
+        try {
+            if (players != null)
+                players.clear();
+        } finally {
+            playersLock.unlock();
+        }
         if (cachedPlayers != null)
             cachedPlayers.clear();
     }
 
     @Override
     public void reloadGroups() {
-        groups.clear();
         loadGroups();
     }
 
@@ -787,26 +860,32 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                                                         @Override
                                                         public void run() {
-                                                            groups.clear();
-                                                            while (groupResult.hasNext()) {
-                                                                DBDocument row = groupResult.next();
-                                                                final int groupId = row.getInt("id");
-                                                                final String name = row.getString("name");
-                                                                String ladder1 = row.getString("ladder");
-                                                                final String ladder = (ladder1 == null || ladder1.isEmpty() ? "default" : ladder1);
-                                                                final int rank = row.getInt("rank");
+                                                            groupsLock.lock();
+                                                            try {
+                                                                groups.clear();
+                                                                while (groupResult.hasNext()) {
+                                                                    DBDocument row = groupResult.next();
+                                                                    final int groupId = row.getInt("id");
+                                                                    final String name = row.getString("name");
+                                                                    String ladder1 = row.getString("ladder");
+                                                                    final String ladder = (ladder1 == null || ladder1.isEmpty() ? "default" : ladder1);
+                                                                    final int rank = row.getInt("rank");
 
-                                                                PowerfulGroup group = new PowerfulGroup(groupId, name, permissions.get(groupId), prefixes.get(groupId), suffixes.get(groupId), ladder,
-                                                                        rank, plugin);
-                                                                group.setParents(parents.get(groupId));
-                                                                groups.put(groupId, group);
+                                                                    PowerfulGroup group = new PowerfulGroup(groupId, name, permissions.get(groupId), prefixes.get(groupId), suffixes.get(groupId),
+                                                                            ladder, rank, plugin);
+                                                                    group.setParents(parents.get(groupId));
+                                                                    groups.put(groupId, group);
 
-                                                                checkGroupTimedPermissions(group);
+                                                                    checkGroupTimedPermissions(group);
+                                                                }
+
+                                                                // Reload players too.
+                                                                reloadDefaultPlayers(beginSameThread);
+                                                                debug("loadGroups end");
+                                                            } finally {
+                                                                groupsLock.unlock();
                                                             }
 
-                                                            // Reload players too.
-                                                            reloadDefaultPlayers(beginSameThread);
-                                                            debug("loadGroups end");
                                                         }
                                                     }, endSameThread);
 
@@ -826,26 +905,41 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public Group getGroup(String groupName) {
-        for (Map.Entry<Integer, Group> e : groups.entrySet())
-            if (e.getValue().getName().equalsIgnoreCase(groupName))
-                return e.getValue();
+        groupsLock.lock();
+        try {
+            for (Map.Entry<Integer, Group> e : groups.entrySet())
+                if (e.getValue().getName().equalsIgnoreCase(groupName))
+                    return e.getValue();
+        } finally {
+            groupsLock.unlock();
+        }
         return null;
     }
 
     @Override
     public Group getGroup(int id) {
-        return groups.get(id);
+        groupsLock.lock();
+        try {
+            return groups.get(id);
+        } finally {
+            groupsLock.unlock();
+        }
     }
 
     @Override
     public Map<Integer, Group> getGroups() {
-        return new HashMap<Integer, Group>(this.groups);
+        groupsLock.lock();
+        try {
+            return new HashMap<Integer, Group>(this.groups);
+        } finally {
+            groupsLock.unlock();
+        }
     }
 
     @Override
     public void getPlayerOwnGroups(UUID uuid, final ResultRunnable<LinkedHashMap<String, List<CachedGroup>>> resultRunnable) {
         // If player is online, get data directly from player
-        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        PermissionPlayer gp = getPermissionPlayer(uuid);
         if (gp != null && !gp.isDefault()) {
             resultRunnable.setResult(gp.getCachedGroups());
             db.scheduler.runSync(resultRunnable);
@@ -858,7 +952,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public void getPlayerCurrentGroups(UUID uuid, final ResultRunnable<LinkedHashMap<String, List<CachedGroup>>> resultRunnable) {
         // If player is online, get data directly from player
-        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        PermissionPlayer gp = getPermissionPlayer(uuid);
         if (gp != null) {
             resultRunnable.setResult(gp.getCachedGroups());
             db.scheduler.runSync(resultRunnable);
@@ -882,7 +976,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void isPlayerDefault(UUID uuid, final ResultRunnable<Boolean> resultRunnable) {
-        PermissionPlayer permissionPlayer = (PermissionPlayer) players.get(uuid);
+        PermissionPlayer permissionPlayer = getPermissionPlayer(uuid);
         if (permissionPlayer != null) {
             resultRunnable.setResult(permissionPlayer.isDefault());
             db.scheduler.runSync(resultRunnable);
@@ -920,7 +1014,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public void getPlayerOwnPermissions(final UUID uuid, final ResultRunnable<List<Permission>> resultRunnable) {
         // If player is online, get data directly from player
-        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        PermissionPlayer gp = getPermissionPlayer(uuid);
         if (gp != null) {
             resultRunnable.setResult(gp.getPermissions());
             db.scheduler.runSync(resultRunnable);
@@ -1177,7 +1271,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public void getPlayerPrefix(UUID uuid, final ResultRunnable<String> resultRunnable) {
         // If player is online, get data directly from player
-        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        PermissionPlayer gp = getPermissionPlayer(uuid);
         if (gp != null) {
             resultRunnable.setResult(gp.getPrefix());
             db.scheduler.runSync(resultRunnable);
@@ -1201,7 +1295,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public void getPlayerSuffix(UUID uuid, final ResultRunnable<String> resultRunnable) {
         // If player is online, get data directly from player
-        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        PermissionPlayer gp = getPermissionPlayer(uuid);
         if (gp != null) {
             resultRunnable.setResult(gp.getSuffix());
             db.scheduler.runSync(resultRunnable);
@@ -1225,7 +1319,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public void getPlayerOwnPrefix(UUID uuid, final ResultRunnable<String> resultRunnable) {
         // If player is online, get data directly from player
-        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        PermissionPlayer gp = getPermissionPlayer(uuid);
         if (gp != null) {
             resultRunnable.setResult(gp.getOwnPrefix());
             db.scheduler.runSync(resultRunnable);
@@ -1247,7 +1341,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     @Override
     public void getPlayerOwnSuffix(UUID uuid, final ResultRunnable<String> resultRunnable) {
         // If player is online, get data directly from player
-        PermissionPlayer gp = (PermissionPlayer) players.get(uuid);
+        PermissionPlayer gp = getPermissionPlayer(uuid);
         if (gp != null) {
             resultRunnable.setResult(gp.getOwnSuffix());
             db.scheduler.runSync(resultRunnable);
@@ -1726,7 +1820,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void promotePlayer(final UUID uuid, final String ladder, final ResponseRunnable resp) {
-        final List<Group> groupsClone = new ArrayList<Group>(groups.values());
+        List<Group> tempGroupsClone;
+        groupsLock.lock();
+        try {
+            tempGroupsClone = new ArrayList<Group>(groups.values());
+        } finally {
+            groupsLock.unlock();
+        }
+        final List<Group> groupsClone = tempGroupsClone;
         getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>() {
 
             @Override
@@ -1807,7 +1908,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void demotePlayer(final UUID uuid, final String ladder, final ResponseRunnable resp) {
-        final List<Group> groupsClone = new ArrayList<Group>(groups.values());
+        List<Group> tempGroupsClone;
+        groupsLock.lock();
+        try {
+            tempGroupsClone = new ArrayList<Group>(groups.values());
+        } finally {
+            groupsLock.unlock();
+        }
+        final List<Group> groupsClone = tempGroupsClone;
         getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>() {
 
             @Override
@@ -1894,7 +2002,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void createGroup(String name, String ladder, int rank, final ResponseRunnable response) {
-        Iterator<Entry<Integer, Group>> it = this.groups.entrySet().iterator();
+        Map<Integer, Group> groupsClone;
+        groupsLock.lock();
+        try {
+            groupsClone = new HashMap<Integer, Group>(groups);
+        } finally {
+            groupsLock.unlock();
+        }
+        Iterator<Entry<Integer, Group>> it = groupsClone.entrySet().iterator();
         while (it.hasNext()) {
             Entry<Integer, Group> e = it.next();
             if (e.getValue().getName().equalsIgnoreCase(name)) {
