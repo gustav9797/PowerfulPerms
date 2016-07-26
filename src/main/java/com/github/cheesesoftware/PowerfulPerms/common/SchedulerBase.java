@@ -16,7 +16,7 @@ public abstract class SchedulerBase implements IScheduler {
     @Override
     public void runAsync(Runnable runnable, boolean sameThread) {
         if (sameThread)
-            plugin.debug("Running async task on CURRENT thread");
+            plugin.debug("Running async task on CURRENT thread (" + Thread.currentThread() + ")");
         else
             plugin.debug("Running async task on NEW thread");
     }
@@ -24,7 +24,7 @@ public abstract class SchedulerBase implements IScheduler {
     @Override
     public void runSync(Runnable runnable, boolean sameThread) {
         if (sameThread)
-            plugin.debug("Running sync task on CURRENT thread");
+            plugin.debug("Running sync task on CURRENT thread (" + Thread.currentThread() + ")");
         else
             plugin.debug("Running sync task on MAIN thread");
     }

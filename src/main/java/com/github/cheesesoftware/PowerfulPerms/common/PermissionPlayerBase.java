@@ -106,8 +106,11 @@ public class PermissionPlayerBase implements PermissionPlayer {
         while (it1.hasNext()) {
             CachedGroup cachedGroup = it1.next();
             if (!cachedGroup.isNegated()) {
-                output.add(cachedGroup.getGroup());
-                it1.remove();
+                Group group = plugin.getPermissionManager().getGroup(cachedGroup.getGroupId());
+                if (group != null) {
+                    output.add(group);
+                    it1.remove();
+                }
             }
         }
 
@@ -116,7 +119,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
             Iterator<Group> it2 = output.iterator();
             while (it2.hasNext()) {
                 Group temp = it2.next();
-                if (temp.getId() == cachedGroup.getGroup().getId()) {
+                if (temp.getId() == cachedGroup.getGroupId()) {
                     it2.remove();
                     plugin.debug("Removed negated group " + temp.getId());
                 }

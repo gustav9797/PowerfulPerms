@@ -38,6 +38,7 @@ class Utils {
             if (!finish(calendar, currentNumber, currentWord))
                 return null;
 
+            calendar.add(Calendar.SECOND, 1);
             calendar.set(Calendar.MILLISECOND, 0);
             return calendar.getTime();
         }
@@ -46,7 +47,9 @@ class Utils {
     private static boolean finish(Calendar calendar, String currentNumber, String currentWord) {
         int number = Integer.parseInt(currentNumber);
 
-        if (currentWord.equals("mi") || currentWord.equals("min") || currentWord.equals("mins") || currentWord.equals("minutes"))
+        if (currentWord.equals("s") || currentWord.equals("sec") || currentWord.equals("second") || currentWord.equals("seconds"))
+            calendar.add(Calendar.SECOND, number);
+        else if (currentWord.equals("mi") || currentWord.equals("min") || currentWord.equals("mins") || currentWord.equals("minutes"))
             calendar.add(Calendar.MINUTE, number);
         else if (currentWord.equals("h") || currentWord.equals("hour") || currentWord.equals("hours"))
             calendar.add(Calendar.HOUR, number);

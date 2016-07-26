@@ -56,11 +56,14 @@ public class BungeeScheduler extends SchedulerBase {
 
     @Override
     public int runDelayed(Runnable runnable, Date when) {
-        return runDelayed(runnable, TimeUnit.MILLISECONDS.toSeconds(when.getTime() - (new Date()).getTime()));
+        super.runDelayed(runnable, when);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(when.getTime() - (new Date()).getTime());
+        return runDelayed(runnable, (seconds < 0 ? 0 : seconds));
     }
 
     @Override
     public int runDelayed(Runnable runnable, long seconds) {
+        super.runDelayed(runnable, seconds);
         return ProxyServer.getInstance().getScheduler().schedule(plugin, runnable, seconds, TimeUnit.SECONDS).getId();
     }
 

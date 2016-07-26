@@ -10,6 +10,7 @@ public class PowerfulPermission implements Permission {
     private String world = "";
     private String server = "";
     private Date expires = null;
+    private int expireTaskId = -1;
 
     public PowerfulPermission(int id, String permission) {
         this.id = id;
@@ -55,5 +56,18 @@ public class PowerfulPermission implements Permission {
     @Override
     public boolean willExpire() {
         return expires != null;
+    }
+
+    @Override
+    public boolean hasExpired() {
+        return willExpire() && getExpirationDate().before(new Date());
+    }
+
+    public int getExpireTaskId() {
+        return expireTaskId;
+    }
+
+    public void setExpireTaskId(int taskId) {
+        this.expireTaskId = taskId;
     }
 }

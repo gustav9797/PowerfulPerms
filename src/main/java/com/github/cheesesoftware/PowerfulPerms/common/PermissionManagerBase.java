@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -168,58 +169,115 @@ public abstract class PermissionManagerBase implements PermissionManager {
         LinkedHashMap<String, List<CachedGroup>> playerGroups = player.getCachedGroups();
         for (Entry<String, List<CachedGroup>> e : playerGroups.entrySet()) {
             for (final CachedGroup cachedGroup : e.getValue()) {
-                if (cachedGroup.willExpire() && cachedGroup.getExpirationDate().before(new Date())) {
-                    // Date passed
-                    debug("CachedGroup " + cachedGroup.getId() + " in player " + uuid.toString() + " expired.");
-                    this.removePlayerGroup(uuid, cachedGroup.getId(), e.getKey(), cachedGroup.isNegated(), cachedGroup.getExpirationDate(), new ResponseRunnable() {
+                if (cachedGroup.getExpireTaskId() == -1 && cachedGroup.willExpire()) {
+                    final String server = e.getKey();
+                    Runnable removePlayerGroupRunnable = new Runnable() {
 
                         @Override
                         public void run() {
-                            if (success)
-                                debug("Group " + cachedGroup.getId() + " in player " + uuid.toString() + " expired, now removed.");
-                            else
-                                plugin.getLogger().warning("Could not remove expired player group. " + response);
+                            debug("CachedGroup " + cachedGroup.getId() + " in player " + uuid.toString() + " expired.");
+                            removePlayerGroup(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), cachedGroup.getExpirationDate(), new ResponseRunnable() {
+
+                                @Override
+                                public void run() {
+                                    if (success)
+                                        plugin.getLogger().info("Group " + cachedGroup.getGroupId() + " in player " + uuid.toString() + " expired and was removed.");
+                                    else
+                                        debug("Could not remove expired player group. " + response);
+                                }
+                            });
                         }
-                    });
+
+                    };
+
+                    if (cachedGroup.hasExpired())
+                        removePlayerGroupRunnable.run();
+                    else {
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.add(Calendar.MINUTE, 5);
+                        if (cachedGroup.getExpirationDate().before(calendar.getTime())) {
+                            // CachedGroup will expire within 5 minutes
+                            int taskId = getScheduler().runDelayed(removePlayerGroupRunnable, cachedGroup.getExpirationDate());
+                            cachedGroup.setExpireTaskId(taskId);
+                        }
+                    }
                 }
             }
         }
 
         List<Permission> permissions = player.getPermissions();
-        for (final Permission p : permissions) {
-            if (p.willExpire() && p.getExpirationDate().before(new Date())) {
-                // Permission expired
-                debug("Permission " + p.getId() + " in player " + uuid.toString() + " expired.");
-                this.removePlayerPermission(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new ResponseRunnable() {
+        for (final Permission ap : permissions) {
+            final PowerfulPermission p = (PowerfulPermission) ap;
+            if (p.getExpireTaskId() == -1 && p.willExpire()) {
+                Runnable removePlayerPermissionRunnable = new Runnable() {
 
                     @Override
                     public void run() {
-                        if (success)
-                            debug("Permission with DB ID " + p.getId() + " in player " + uuid.toString() + " expired, now removed.");
-                        else
-                            plugin.getLogger().warning("Could not remove expired player permission. " + response);
+                        debug("Permission " + p.getId() + " in player " + uuid.toString() + " expired.");
+                        removePlayerPermission(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new ResponseRunnable() {
+
+                            @Override
+                            public void run() {
+                                if (success)
+                                    plugin.getLogger().info("Permission " + p.getId() + " in player " + uuid.toString() + " expired and was removed.");
+                                else
+                                    debug("Could not remove expired player permission. " + response);
+                            }
+                        });
                     }
-                });
+
+                };
+
+                if (p.hasExpired())
+                    removePlayerPermissionRunnable.run();
+                else {
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.add(Calendar.MINUTE, 5);
+                    if (p.getExpirationDate().before(calendar.getTime())) {
+                        // CachedGroup will expire within 5 minutes
+                        int taskId = getScheduler().runDelayed(removePlayerPermissionRunnable, p.getExpirationDate());
+                        p.setExpireTaskId(taskId);
+                    }
+                }
             }
         }
     }
 
     protected void checkGroupTimedPermissions(final Group group) {
         List<Permission> permissions = group.getOwnPermissions();
-        for (final Permission p : permissions) {
-            if (p.willExpire() && p.getExpirationDate().before(new Date())) {
-                // Permission expired
-                debug("Permission " + p.getId() + " in group " + group.getId() + " expired.");
-                this.removeGroupPermission(group.getId(), p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new ResponseRunnable() {
+        for (final Permission ap : permissions) {
+            final PowerfulPermission p = (PowerfulPermission) ap;
+            if (p.getExpireTaskId() == -1 && p.willExpire()) {
+                Runnable removeGroupPermissionRunnable = new Runnable() {
 
                     @Override
                     public void run() {
-                        if (success)
-                            debug("Permission " + p.getId() + " in group " + group.getId() + " expired, now removed.");
-                        else
-                            plugin.getLogger().warning("Could not remove expired group permission. " + response);
+                        debug("Permission " + p.getId() + " in group " + group.getId() + " expired.");
+                        removeGroupPermission(group.getId(), p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new ResponseRunnable() {
+
+                            @Override
+                            public void run() {
+                                if (success)
+                                    plugin.getLogger().info("Permission " + p.getId() + " in group " + group.getId() + " expired and was removed.");
+                                else
+                                    debug("Could not remove expired group permission. " + response);
+                            }
+                        });
                     }
-                });
+
+                };
+
+                if (p.hasExpired())
+                    removeGroupPermissionRunnable.run();
+                else {
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.add(Calendar.MINUTE, 5);
+                    if (p.getExpirationDate().before(calendar.getTime())) {
+                        // CachedGroup will expire within 5 minutes
+                        int taskId = getScheduler().runDelayed(removeGroupPermissionRunnable, p.getExpirationDate());
+                        p.setExpireTaskId(taskId);
+                    }
+                }
             }
         }
     }
@@ -602,7 +660,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (login) {
                             debug("Inserted into cachedPlayers allowing playerjoin to finish");
                             cachedPlayers.put(uuid, new CachedPlayer(tempGroups, prefix_loaded, suffix_loaded, perms));
-
                         } else {
                             // Player should be reloaded if "login" is false. Reload already loaded player.
                             if (plugin.isPlayerOnline(uuid) && players.containsKey(uuid)) {
@@ -692,7 +749,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
      */
     protected void loadGroups(final boolean beginSameThread, final boolean endSameThread) {
         debug("loadGroups begin");
-        groups.clear();
 
         db.getGroups(new DBRunnable(beginSameThread) {
 
@@ -731,6 +787,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                                                         @Override
                                                         public void run() {
+                                                            groups.clear();
                                                             while (groupResult.hasNext()) {
                                                                 DBDocument row = groupResult.next();
                                                                 final int groupId = row.getInt("id");
@@ -743,6 +800,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                                         rank, plugin);
                                                                 group.setParents(parents.get(groupId));
                                                                 groups.put(groupId, group);
+
+                                                                checkGroupTimedPermissions(group);
                                                             }
 
                                                             // Reload players too.
@@ -922,7 +981,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (!localGroups.containsKey(row.getString("server")))
                             localGroups.put(row.getString("server"), new ArrayList<CachedGroup>());
                         List<CachedGroup> serverGroups = localGroups.get(row.getString("server"));
-                        serverGroups.add(new CachedGroup(row.getInt("id"), group, row.getBoolean("negated"), row.getDate("expires")));
+                        serverGroups.add(new CachedGroup(row.getInt("id"), groupId, row.getBoolean("negated"), row.getDate("expires")));
                         localGroups.put(row.getString("server"), serverGroups);
                     }
                     resultRunnable.setResult(localGroups);
@@ -1060,14 +1119,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 }
                                 if (!found) {
                                     // Couldn't find group, add it
-                                    debug("adding group " + newGroup.getGroup().getId());
-                                    db.addPlayerGroup(uuid, newGroup.getGroup().getId(), server, newGroup.isNegated(), newGroup.getExpirationDate(), new DBRunnable(true) {
+                                    debug("adding group " + newGroup.getGroupId());
+                                    db.addPlayerGroup(uuid, newGroup.getGroupId(), server, newGroup.isNegated(), newGroup.getExpirationDate(), new DBRunnable(true) {
 
                                         @Override
                                         public void run() {
-                                            debug("added group " + newGroup.getGroup().getId());
+                                            debug("added group " + newGroup.getGroupId());
                                             if (!result.booleanValue())
-                                                response.setResponse(false, response.getResponse() + " Could not add group with ID " + newGroup.getGroup().getId() + ".");
+                                                response.setResponse(false, response.getResponse() + " Could not add group with ID " + newGroup.getGroupId() + ".");
                                         }
                                     });
                                 }
@@ -1091,14 +1150,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 if (!found) {
                                     // Couldn't find the old group in new groups, remove it
 
-                                    debug("deleting group " + oldGroup.getGroup().getId());
-                                    db.deletePlayerGroup(uuid, oldGroup.getGroup().getId(), server, oldGroup.isNegated(), oldGroup.getExpirationDate(), new DBRunnable(true) {
+                                    debug("deleting group " + oldGroup.getGroupId());
+                                    db.deletePlayerGroup(uuid, oldGroup.getGroupId(), server, oldGroup.isNegated(), oldGroup.getExpirationDate(), new DBRunnable(true) {
 
                                         @Override
                                         public void run() {
-                                            debug("deleted group " + oldGroup.getGroup().getId());
+                                            debug("deleted group " + oldGroup.getGroupId());
                                             if (!result.booleanValue())
-                                                response.setResponse(false, response.getResponse() + " Could not delete group with ID " + oldGroup.getGroup().getId() + ".");
+                                                response.setResponse(false, response.getResponse() + " Could not delete group with ID " + oldGroup.getGroupId() + ".");
                                         }
                                     });
                                 }
@@ -1428,10 +1487,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     Iterator<CachedGroup> it = groupList.iterator();
                     while (it.hasNext()) {
                         CachedGroup cachedGroup = it.next();
-                        debug("Check " + cachedGroup.getGroup().getId());
+                        debug("Check " + cachedGroup.getGroupId());
                         debug("plus " + (expires == null) + " - " + (cachedGroup.getExpirationDate() == null));
                         debug("plus " + negated + " - " + cachedGroup.isNegated());
-                        debug("plus " + groupId + " - " + cachedGroup.getGroup().getId());
+                        debug("plus " + groupId + " - " + cachedGroup.getGroupId());
                         if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
                             it.remove();
                             removed = true;
@@ -1512,7 +1571,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         }
                     }
 
-                    groupList.add(new CachedGroup(-1, group, negated, expires));
+                    groupList.add(new CachedGroup(-1, group.getId(), negated, expires));
                     playerGroups.put(serv, groupList);
 
                     setPlayerGroups(uuid, playerGroups, new ResponseRunnable(resp.isSameThread()) {
@@ -1539,7 +1598,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void setPlayerRank(final UUID uuid, int groupId, final ResponseRunnable resp) {
+    public void setPlayerRank(final UUID uuid, final int groupId, final ResponseRunnable resp) {
         // Get player groups on specified ladder
         // Use the group type of the first one of those groups
         // replace old group with group "groupname"
@@ -1572,12 +1631,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
                             while (it2.hasNext()) {
                                 CachedGroup current = it2.next();
-                                if (current.getGroup().getLadder().equals(group.getLadder()) && current.getExpirationDate() == null) {
+                                Group currentGroup = getGroup(current.getGroupId());
+                                if (currentGroup.getLadder().equals(group.getLadder()) && current.getExpirationDate() == null) {
                                     if (toUse == null)
-                                        toUse = current.getGroup();
+                                        toUse = currentGroup;
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
-                                    if (toUse.getId() == current.getGroup().getId()) {
-                                        clone.set(clone.indexOf(current), new CachedGroup(-1, group, current.isNegated(), null));
+                                    if (toUse.getId() == currentGroup.getId()) {
+                                        clone.set(clone.indexOf(current), new CachedGroup(-1, groupId, current.isNegated(), null));
                                         changed = true;
                                     }
                                 }
@@ -1690,9 +1750,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                             while (it2.hasNext()) {
                                 CachedGroup current = it2.next();
-                                if (current.getGroup().getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
+                                Group currentGroup = getGroup(current.getGroupId());
+                                if (currentGroup.getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
                                     if (toUse == null) {
-                                        toUse = current.getGroup();
+                                        toUse = currentGroup;
                                         toPromoteTo = getHigherGroup(toUse, groupsClone);
                                         if (toPromoteTo == null) {
                                             resp.setResponse(false, "There is no group on this ladder with a higher rank.");
@@ -1701,9 +1762,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         }
                                     }
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
-                                    if (toUse.getId() == current.getGroup().getId()) {
+                                    if (toUse.getId() == currentGroup.getId()) {
                                         // This is the group to promote from
-                                        clone.set(clone.indexOf(current), new CachedGroup(-1, toPromoteTo, current.isNegated(), null));
+                                        clone.set(clone.indexOf(current), new CachedGroup(-1, toPromoteTo.getId(), current.isNegated(), null));
                                         changed = true;
                                     }
                                 }
@@ -1770,9 +1831,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                             while (it2.hasNext()) {
                                 CachedGroup current = it2.next();
-                                if (current.getGroup().getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
+                                Group currentGroup = getGroup(current.getGroupId());
+                                if (currentGroup.getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
                                     if (toUse == null) {
-                                        toUse = current.getGroup();
+                                        toUse = currentGroup;
                                         toDemoteTo = getLowerGroup(toUse, groupsClone);
                                         if (toDemoteTo == null) {
                                             resp.setResponse(false, "There is no group on this ladder with a lower rank.");
@@ -1781,9 +1843,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         }
                                     }
                                     // Replace with new group if they are on the same ladder and if toUse and current is the same group
-                                    if (toUse.getId() == current.getGroup().getId()) {
+                                    if (toUse.getId() == currentGroup.getId()) {
                                         // This is the group to promote from
-                                        clone.set(clone.indexOf(current), new CachedGroup(-1, toDemoteTo, current.isNegated(), null));
+                                        clone.set(clone.indexOf(current), new CachedGroup(-1, toDemoteTo.getId(), current.isNegated(), null));
                                         changed = true;
                                     }
                                 }

@@ -104,7 +104,8 @@ public class UserCommand extends SubCommand {
                                                             Iterator<CachedGroup> it2 = currentGroups.getValue().iterator();
                                                             while (it2.hasNext()) {
                                                                 CachedGroup currentGroup = it2.next();
-                                                                String ladder = currentGroup.getGroup().getLadder();
+                                                                Group group = plugin.getPermissionManager().getGroup(currentGroup.getGroupId());
+                                                                String ladder = (group != null ? group.getLadder() : "NULL");
 
                                                                 List<Pair<String, CachedGroup>> out = ladderGroups.get(ladder);
                                                                 if (out == null)
@@ -126,13 +127,11 @@ public class UserCommand extends SubCommand {
                                                             String otherGroups = ChatColor.GREEN + "On ladder " + ChatColor.WHITE + "\"" + current.getKey() + "\": ";
                                                             while (it4.hasNext()) {
                                                                 Pair<String, CachedGroup> cachedGroup = it4.next();
-                                                                Group group = cachedGroup.getSecond().getGroup();
+                                                                Group group = plugin.getPermissionManager().getGroup(cachedGroup.getSecond().getGroupId());
                                                                 if (group != null) {
-                                                                    otherGroups += (cachedGroup.getSecond().isNegated() ? (ChatColor.RED + "-") : "")
-                                                                            + ChatColor.WHITE
-                                                                            + group.getName()
-                                                                            + (cachedGroup.getFirst() == null || cachedGroup.getFirst().isEmpty() ? "" : ChatColor.WHITE + ":" + ChatColor.RED
-                                                                                    + cachedGroup.getFirst())
+                                                                    otherGroups += (cachedGroup.getSecond().isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName()
+                                                                            + (cachedGroup.getFirst() == null || cachedGroup.getFirst().isEmpty() ? ""
+                                                                                    : ChatColor.WHITE + ":" + ChatColor.RED + cachedGroup.getFirst())
                                                                             + (cachedGroup.getSecond().willExpire() ? ChatColor.WHITE + ":" + ChatColor.YELLOW
                                                                                     + Utils.getExpirationDateString(cachedGroup.getSecond().getExpirationDate()) : "");
                                                                     otherGroups += ", ";
