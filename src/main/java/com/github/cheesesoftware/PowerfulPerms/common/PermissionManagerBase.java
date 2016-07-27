@@ -17,16 +17,21 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
+import com.github.cheesesoftware.PowerfulPerms.common.event.PowerfulEventHandler;
 import com.github.cheesesoftware.PowerfulPerms.database.DBResult;
 import com.github.cheesesoftware.PowerfulPerms.database.DBRunnable;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
+import com.github.cheesesoftware.PowerfulPermsAPI.EventHandler;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.GroupPermissionExpiredEvent;
 import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.PlayerGroupExpiredEvent;
+import com.github.cheesesoftware.PowerfulPermsAPI.PlayerPermissionExpiredEvent;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
 import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
@@ -56,6 +61,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     protected LinkedHashMap<String, List<CachedGroup>> defaultGroups;
 
+    protected EventHandler eventHandler;
+
     public static boolean redis;
     public static String redis_ip;
     public static int redis_port;
@@ -71,6 +78,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
         this.plugin = plugin;
 
         PermissionManagerBase.serverName = serverName;
+
+        eventHandler = new PowerfulEventHandler();
 
         final PowerfulPermsPlugin tempPlugin = plugin;
 
@@ -201,9 +210,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                                 @Override
                                 public void run() {
-                                    if (success)
+                                    if (success) {
                                         plugin.getLogger().info("Group " + cachedGroup.getGroupId() + " in player " + uuid.toString() + " expired and was removed.");
-                                    else
+                                        getEventHandler().fireEvent(new PlayerGroupExpiredEvent(uuid, cachedGroup));
+                                    } else
                                         debug("Could not remove expired player group. " + response);
                                 }
                             });
@@ -239,9 +249,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                             @Override
                             public void run() {
-                                if (success)
+                                if (success) {
                                     plugin.getLogger().info("Permission " + p.getId() + " in player " + uuid.toString() + " expired and was removed.");
-                                else
+                                    getEventHandler().fireEvent(new PlayerPermissionExpiredEvent(uuid, p));
+                                } else
                                     debug("Could not remove expired player permission. " + response);
                             }
                         });
@@ -278,9 +289,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                             @Override
                             public void run() {
-                                if (success)
+                                if (success) {
                                     plugin.getLogger().info("Permission " + p.getId() + " in group " + group.getId() + " expired and was removed.");
-                                else
+                                    getEventHandler().fireEvent(new GroupPermissionExpiredEvent(group, p));
+                                } else
                                     debug("Could not remove expired group permission. " + response);
                             }
                         });
@@ -319,6 +331,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return output;
         }
         return null;
+    }
+
+    @Override
+    public EventHandler getEventHandler() {
+        return eventHandler;
     }
 
     @Override
