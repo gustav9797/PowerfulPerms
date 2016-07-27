@@ -12,10 +12,11 @@ public abstract class Database implements IDatabase {
     public static String tblPlayerGroups = "playergroups";
     public static String tblPlayerPermissions = "playerpermissions";
     public static String tblPlayers = "players";
-    
+    public static String prefix = "";
+
     public Database(IScheduler scheduler) {
         this.scheduler = scheduler;
-        
+
         tblGroupParents = "groupparents";
         tblGroupPermissions = "grouppermissions";
         tblGroupPrefixes = "groupprefixes";
@@ -27,13 +28,14 @@ public abstract class Database implements IDatabase {
     }
 
     public void setTablePrefix(String prefix) {
+        Database.prefix = prefix;
         tblGroupParents = prefix + tblGroupParents;
         tblGroupPermissions = prefix + tblGroupPermissions;
         tblGroupPrefixes = prefix + tblGroupPrefixes;
         tblGroups = prefix + tblGroups;
         tblGroupSuffixes = prefix + tblGroupSuffixes;
         tblPlayerGroups = prefix + tblPlayerGroups;
-        tblPlayerPermissions= prefix + tblPlayerPermissions;
+        tblPlayerPermissions = prefix + tblPlayerPermissions;
         tblPlayers = prefix + tblPlayers;
     }
 }

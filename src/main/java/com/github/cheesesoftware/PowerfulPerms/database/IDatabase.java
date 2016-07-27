@@ -10,8 +10,10 @@ public interface IDatabase {
     public boolean tableExists(String table);
 
     public void createTable(String tableName);
+    
+    public void renameTable(String tableName, String newTableName);
 
-    public void insertGroup(String group, String ladder, int rank, DBRunnable done);
+    public void insertGroup(int id, String group, String ladder, int rank, DBRunnable done);
 
     public void insertPlayer(UUID uuid, String name, String prefix, String suffix, DBRunnable done);
     

@@ -8,12 +8,18 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.UUID;
 
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
 import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
+import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 import com.google.common.base.Charsets;
 
 public class MySQLDatabase extends Database {
@@ -26,82 +32,42 @@ public class MySQLDatabase extends Database {
         super(scheduler);
         this.sql = sql;
         this.plugin = plugin;
-        
-        tables.put(tblGroupParents, "CREATE TABLE `" + tblGroupParents + "` (\r\n" + 
-                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
-                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
-                "  `parentgroupid` int(10) unsigned NOT NULL,\r\n" + 
-                "  PRIMARY KEY (`id`),\r\n" + 
-                "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + 
-                ") ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;");
-        
-        tables.put(tblGroupPermissions, "CREATE TABLE `" + tblGroupPermissions + "` (\r\n" + 
-                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
-                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
-                "  `permission` varchar(128) NOT NULL,\r\n" + 
-                "  `world` varchar(128) NOT NULL,\r\n" + 
-                "  `server` varchar(128) NOT NULL,\r\n" + 
-                "  `expires` datetime DEFAULT NULL,\r\n" + 
-                "  PRIMARY KEY (`id`)\r\n" + 
-                ") ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;\r\n");
-        
-        tables.put(tblGroupPrefixes, "CREATE TABLE `" + tblGroupPrefixes + "` (\r\n" + 
-                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
-                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
-                "  `prefix` text NOT NULL,\r\n" + 
-                "  `server` text NOT NULL,\r\n" + 
-                "  PRIMARY KEY (`id`),\r\n" + 
-                "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + 
-                ") ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8;\r\n");
-        
-        tables.put(tblGroups, "CREATE TABLE `" + tblGroups + "` (\r\n" + 
-                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
-                "  `name` varchar(255) NOT NULL,\r\n" + 
-                "  `ladder` varchar(64) NOT NULL,\r\n" + 
-                "  `rank` int(11) NOT NULL,\r\n" + 
-                "  PRIMARY KEY (`id`),\r\n" + 
-                "  UNIQUE KEY `id_UNIQUE` (`id`),\r\n" + 
-                "  UNIQUE KEY `name_UNIQUE` (`name`)\r\n" + 
-                ") ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;\r\n");
-        
-        tables.put(tblGroupSuffixes, "CREATE TABLE `" + tblGroupSuffixes + "` (\r\n" + 
-                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
-                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
-                "  `suffix` text NOT NULL,\r\n" + 
-                "  `server` text NOT NULL,\r\n" + 
-                "  PRIMARY KEY (`id`),\r\n" + 
-                "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + 
-                ") ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;\r\n");
-        
-        tables.put(tblPlayerGroups, "CREATE TABLE `" + tblPlayerGroups + "` (\r\n" + 
-                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
-                "  `playeruuid` varchar(36) NOT NULL,\r\n" + 
-                "  `groupid` int(10) unsigned NOT NULL,\r\n" + 
-                "  `server` text NOT NULL,\r\n" + 
-                "  `negated` tinyint(1) NOT NULL DEFAULT '0',\r\n" + 
-                "  `expires` datetime DEFAULT NULL,\r\n" + 
-                "  PRIMARY KEY (`id`),\r\n" + 
-                "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + 
-                ") ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8;\r\n");
-        
-        tables.put(tblPlayerPermissions, "CREATE TABLE `" + tblPlayerPermissions + "` (\r\n" + 
-                "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + 
-                "  `playeruuid` varchar(36) NOT NULL,\r\n" + 
-                "  `permission` varchar(128) NOT NULL,\r\n" + 
-                "  `world` varchar(128) NOT NULL,\r\n" + 
-                "  `server` varchar(128) NOT NULL,\r\n" + 
-                "  `expires` datetime DEFAULT NULL,\r\n" + 
-                "  PRIMARY KEY (`id`)\r\n" + 
-                ") ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;\r\n");
-        
-        tables.put(tblPlayers, "CREATE TABLE `" + tblPlayers + "` (\r\n" + 
-                "  `uuid` varchar(36) NOT NULL DEFAULT '',\r\n" + 
-                "  `name` varchar(32) NOT NULL,\r\n" + 
-                "  `prefix` text NOT NULL,\r\n" + 
-                "  `suffix` text NOT NULL,\r\n" + 
-                "  PRIMARY KEY (`uuid`,`name`),\r\n" + 
-                "  UNIQUE KEY `uuid_UNIQUE` (`uuid`)\r\n" + 
-                ") ENGINE=InnoDB DEFAULT CHARSET=utf8;\r\n");
+
+        tables.put(tblGroupParents, "CREATE TABLE `" + tblGroupParents + "` (\r\n" + "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + "  `groupid` int(10) unsigned NOT NULL,\r\n"
+                + "  `parentgroupid` int(10) unsigned NOT NULL,\r\n" + "  PRIMARY KEY (`id`),\r\n" + "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + ") ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;");
+
+        tables.put(tblGroupPermissions,
+                "CREATE TABLE `" + tblGroupPermissions + "` (\r\n" + "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + "  `groupid` int(10) unsigned NOT NULL,\r\n"
+                        + "  `permission` varchar(128) NOT NULL,\r\n" + "  `world` varchar(128) NOT NULL,\r\n" + "  `server` varchar(128) NOT NULL,\r\n" + "  `expires` datetime DEFAULT NULL,\r\n"
+                        + "  PRIMARY KEY (`id`)\r\n" + ") ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;\r\n");
+
+        tables.put(tblGroupPrefixes,
+                "CREATE TABLE `" + tblGroupPrefixes + "` (\r\n" + "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + "  `groupid` int(10) unsigned NOT NULL,\r\n"
+                        + "  `prefix` text NOT NULL,\r\n" + "  `server` text NOT NULL,\r\n" + "  PRIMARY KEY (`id`),\r\n" + "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n"
+                        + ") ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8;\r\n");
+
+        tables.put(tblGroups,
+                "CREATE TABLE `" + tblGroups + "` (\r\n" + "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + "  `name` varchar(255) NOT NULL,\r\n" + "  `ladder` varchar(64) NOT NULL,\r\n"
+                        + "  `rank` int(11) NOT NULL,\r\n" + "  PRIMARY KEY (`id`),\r\n" + "  UNIQUE KEY `id_UNIQUE` (`id`),\r\n" + "  UNIQUE KEY `name_UNIQUE` (`name`)\r\n"
+                        + ") ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;\r\n");
+
+        tables.put(tblGroupSuffixes,
+                "CREATE TABLE `" + tblGroupSuffixes + "` (\r\n" + "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + "  `groupid` int(10) unsigned NOT NULL,\r\n"
+                        + "  `suffix` text NOT NULL,\r\n" + "  `server` text NOT NULL,\r\n" + "  PRIMARY KEY (`id`),\r\n" + "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n"
+                        + ") ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;\r\n");
+
+        tables.put(tblPlayerGroups,
+                "CREATE TABLE `" + tblPlayerGroups + "` (\r\n" + "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + "  `playeruuid` varchar(36) NOT NULL,\r\n"
+                        + "  `groupid` int(10) unsigned NOT NULL,\r\n" + "  `server` text NOT NULL,\r\n" + "  `negated` tinyint(1) NOT NULL DEFAULT '0',\r\n" + "  `expires` datetime DEFAULT NULL,\r\n"
+                        + "  PRIMARY KEY (`id`),\r\n" + "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + ") ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8;\r\n");
+
+        tables.put(tblPlayerPermissions,
+                "CREATE TABLE `" + tblPlayerPermissions + "` (\r\n" + "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + "  `playeruuid` varchar(36) NOT NULL,\r\n"
+                        + "  `permission` varchar(128) NOT NULL,\r\n" + "  `world` varchar(128) NOT NULL,\r\n" + "  `server` varchar(128) NOT NULL,\r\n" + "  `expires` datetime DEFAULT NULL,\r\n"
+                        + "  PRIMARY KEY (`id`)\r\n" + ") ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;\r\n");
+
+        tables.put(tblPlayers, "CREATE TABLE `" + tblPlayers + "` (\r\n" + "  `uuid` varchar(36) NOT NULL DEFAULT '',\r\n" + "  `name` varchar(32) NOT NULL,\r\n" + "  `prefix` text NOT NULL,\r\n"
+                + "  `suffix` text NOT NULL,\r\n" + "  PRIMARY KEY (`uuid`,`name`),\r\n" + "  UNIQUE KEY `uuid_UNIQUE` (`uuid`)\r\n" + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;\r\n");
     }
 
     private DBResult fromResultSet(ResultSet r) throws SQLException {
@@ -162,6 +128,214 @@ public class MySQLDatabase extends Database {
                 e.printStackTrace();
             }
         }
+
+        if (plugin.getOldVersion() < 400 && !tableExists(Database.tblGroupParents) && !tableExists(Database.tblGroupPermissions) && !tableExists(Database.tblGroupPrefixes)
+                && !tableExists(Database.tblGroupSuffixes) && !tableExists(Database.tblPlayerGroups) && !tableExists(Database.tblPlayerPermissions)) {
+            plugin.getLogger().warning("PowerfulPerms has detected that you are upgrading from a version earlier than " + plugin.getVersion() + " and that your database isn't up to date.");
+            plugin.getLogger().warning("PowerfulPerms " + plugin.getVersion() + " will NOT work with a database from version 2.X.X or 3.X.X.");
+            plugin.getLogger().info("Updating your database...");
+
+            String tblPermsTemp = Database.prefix + "permissions";
+            String tblGroupsTemp = Database.prefix + "groups";
+            String tblPlayersTemp = Database.prefix + "players";
+            if (!tableExists(tblPermsTemp) | !tableExists(tblGroupsTemp) || !tableExists(tblPlayersTemp)) {
+                plugin.getLogger().severe("The required tables do not exist.");
+                plugin.getLogger().severe("Server will continue booting in 10 seconds.");
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                renameTable(tblPermsTemp, tblPermsTemp + "_old");
+                tblPermsTemp = tblPermsTemp + "_old";
+
+                renameTable(tblGroupsTemp, tblGroupsTemp + "_old");
+                tblGroupsTemp = tblGroupsTemp + "_old";
+
+                renameTable(tblPlayersTemp, tblPlayersTemp + "_old");
+                tblPlayersTemp = tblPlayersTemp + "_old";
+
+                for (String table : tables.keySet())
+                    createTable(table);
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayersTemp);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    DBResult result = fromResultSet(r);
+                    while (result.hasNext()) {
+                        DBDocument current = result.next();
+                        final UUID uuid = UUID.fromString(current.getString("uuid"));
+                        String name = current.getString("name");
+                        String groupsRaw = current.getString("groups");
+                        String prefix = current.getString("prefix");
+                        String suffix = current.getString("suffix");
+                        this.insertPlayer(uuid, name, prefix, suffix, new DBRunnable(true) {
+
+                            @Override
+                            public void run() {
+                                plugin.getLogger().info("Inserted player " + uuid.toString());
+                            }
+                        });
+
+                        LinkedHashMap<String, List<CachedGroup>> tempGroups = Util.getPlayerGroups_old(groupsRaw);
+                        for (Entry<String, List<CachedGroup>> e : tempGroups.entrySet()) {
+                            String server = e.getKey();
+                            for (final CachedGroup cachedGroup : e.getValue()) {
+                                this.addPlayerGroup(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), null, new DBRunnable(true) {
+
+                                    @Override
+                                    public void run() {
+                                        plugin.getLogger().info("Inserted player group " + cachedGroup.getGroupId() + " for player " + uuid.toString());
+                                    }
+                                });
+                            }
+                        }
+
+                    }
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+                Map<String, Integer> groupIds = new TreeMap<String, Integer>(String.CASE_INSENSITIVE_ORDER);
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupsTemp);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    DBResult result = fromResultSet(r);
+                    while (result.hasNext()) {
+                        DBDocument current = result.next();
+                        final int id = current.getInt("id");
+                        String name = current.getString("name");
+                        String parentsRaw = current.getString("parents");
+                        String prefixRaw = current.getString("prefix");
+                        String suffixRaw = current.getString("suffix");
+                        String ladder = current.getString("ladder");
+                        int rank = current.getInt("rank");
+                        groupIds.put(name, id);
+
+                        this.insertGroup(id, name, ladder, rank, new DBRunnable(true) {
+
+                            @Override
+                            public void run() {
+                                plugin.getLogger().info("Inserted group " + id);
+                            }
+                        });
+
+                        HashMap<String, String> prefixes = Util.getPrefixSuffix_old(prefixRaw);
+                        for (final Entry<String, String> e : prefixes.entrySet()) {
+                            this.addGroupPrefix(id, e.getValue(), e.getKey(), new DBRunnable(true) {
+
+                                @Override
+                                public void run() {
+                                    plugin.getLogger().info("Inserted group prefix " + e.getKey() + ":" + e.getValue() + " for group " + id);
+                                }
+                            });
+                        }
+
+                        HashMap<String, String> suffixes = Util.getPrefixSuffix_old(suffixRaw);
+                        for (final Entry<String, String> e : suffixes.entrySet()) {
+                            this.addGroupSuffix(id, e.getValue(), e.getKey(), new DBRunnable(true) {
+
+                                @Override
+                                public void run() {
+                                    plugin.getLogger().info("Inserted group suffix " + e.getKey() + ":" + e.getValue() + " for group " + id);
+                                }
+                            });
+                        }
+
+                        ArrayList<String> parents = Util.getGroupParents_old(parentsRaw);
+                        for (String parentName : parents) {
+                            try {
+                                final int parentId = Integer.parseInt(parentName);
+                                this.addGroupParent(id, parentId, new DBRunnable(true) {
+
+                                    @Override
+                                    public void run() {
+                                        plugin.getLogger().info("Inserted group parent " + parentId + " for group " + id);
+                                    }
+                                });
+                            } catch (NumberFormatException e) {
+                                plugin.getLogger().warning("Couldn't add group parent " + parentName + " to group " + id);
+                            }
+                        }
+
+                    }
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPermsTemp);
+                    s.execute();
+                    ResultSet r = s.getResultSet();
+                    DBResult result = fromResultSet(r);
+                    while (result.hasNext()) {
+                        DBDocument current = result.next();
+
+                        String uuidTemp = current.getString("playeruuid");
+                        final UUID uuid = (uuidTemp != null && !uuidTemp.isEmpty() ? UUID.fromString(uuidTemp) : null);
+                        final String playername = current.getString("playername");
+                        final String groupname = current.getString("groupname");
+                        final String permission = current.getString("permission");
+                        final String world = current.getString("world");
+                        final String server = current.getString("server");
+
+                        if (groupname != null && !groupname.isEmpty()) {
+                            Integer groupId = groupIds.get(groupname);
+                            if (groupId != null) {
+                                this.insertGroupPermission(groupId, permission, world, server, null, new DBRunnable(true) {
+
+                                    @Override
+                                    public void run() {
+                                        plugin.getLogger().info("Inserted permission " + permission + " for group " + groupname);
+                                    }
+                                });
+                            } else
+                                plugin.getLogger().warning("Couldn't add group permission " + permission + " to group " + groupname);
+                        } else if (uuid != null || playername != null) {
+                            if (uuid == null) {
+                                plugin.getPermissionManager().getConvertUUID(playername, new ResultRunnable<UUID>(true) {
+
+                                    @Override
+                                    public void run() {
+                                        if (result != null) {
+                                            insertPlayerPermission(uuid, permission, world, server, null, new DBRunnable(true) {
+
+                                                @Override
+                                                public void run() {
+                                                    plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
+                                                }
+                                            });
+                                        }
+                                    }
+
+                                });
+                            } else {
+                                this.insertPlayerPermission(uuid, permission, world, server, null, new DBRunnable(true) {
+
+                                    @Override
+                                    public void run() {
+                                        plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+                plugin.getLogger().info("Done.");
+                plugin.getLogger().info("Your database has been upgraded to PowerfulPerms 4.0.0.");
+                plugin.getLogger().info("The old tables are still there but renamed. Keep them until you are sure everything works fine!");
+
+            }
+        }
     }
 
     @Override
@@ -193,7 +367,19 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void insertGroup(final String group, final String ladder, final int rank, final DBRunnable done) {
+    public void renameTable(String tableName, String newTableName) {
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("RENAME TABLE `" + tableName + "` TO `" + newTableName + "`");
+            s.execute();
+            s.close();
+            plugin.getLogger().info("Renamed table " + tableName + " to " + newTableName);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void insertGroup(final int id, final String group, final String ladder, final int rank, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -201,10 +387,17 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroups + " SET `name`=?, `ladder`=?, `rank`=?");
-                    s.setString(1, group);
-                    s.setString(2, ladder);
-                    s.setInt(3, rank);
+                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroups + " SET " + (id != -1 ? "`id`=?, " : "") + "`name`=?, `ladder`=?, `rank`=?");
+                    if (id != -1) {
+                        s.setInt(1, id);
+                        s.setString(2, group);
+                        s.setString(3, ladder);
+                        s.setInt(4, rank);
+                    } else {
+                        s.setString(1, group);
+                        s.setString(2, ladder);
+                        s.setInt(3, rank);
+                    }
                     s.execute();
                     s.close();
                 } catch (SQLException e) {
@@ -458,9 +651,8 @@ public class MySQLDatabase extends Database {
                 boolean success = false;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement(
-                            "SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=? AND `permission`=? AND `world`=? AND `server`=? AND "
-                                    + (expires == null ? "`expires` is NULL" : "`expires`=?"));
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=? AND `permission`=? AND `world`=? AND `server`=? AND "
+                            + (expires == null ? "`expires` is NULL" : "`expires`=?"));
                     s.setString(1, uuid.toString());
                     s.setString(2, permission);
                     s.setString(3, world);
@@ -492,8 +684,8 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement(
-                            "INSERT INTO " + tblPlayerPermissions + " SET `playeruuid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
+                    PreparedStatement s = sql.getConnection()
+                            .prepareStatement("INSERT INTO " + tblPlayerPermissions + " SET `playeruuid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
                     s.setString(1, uuid.toString());
                     s.setString(2, permission);
                     s.setString(3, world);
@@ -523,9 +715,8 @@ public class MySQLDatabase extends Database {
                 int amount = 0;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement(
-                            "DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=? AND `permission`=? AND `server`=? AND `world`=? AND "
-                                    + (expires == null ? "`expires` is NULL" : "`expires`=?"));
+                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=? AND `permission`=? AND `server`=? AND `world`=? AND "
+                            + (expires == null ? "`expires` is NULL" : "`expires`=?"));
 
                     s.setString(1, uuid.toString());
                     s.setString(2, permission);
@@ -587,8 +778,8 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement(
-                            "INSERT INTO " + tblGroupPermissions + " SET `groupid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
+                    PreparedStatement s = sql.getConnection()
+                            .prepareStatement("INSERT INTO " + tblGroupPermissions + " SET `groupid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
                     s.setInt(1, groupId);
                     s.setString(2, permission);
                     s.setString(3, world);
@@ -727,8 +918,8 @@ public class MySQLDatabase extends Database {
                 boolean success = true;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement(
-                            "INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?, `negated`=?" + (expires != null ? ", `expires`=?" : ""));
+                    PreparedStatement s = sql.getConnection()
+                            .prepareStatement("INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?, `negated`=?" + (expires != null ? ", `expires`=?" : ""));
                     s.setString(1, uuid.toString());
                     s.setInt(2, groupId);
                     s.setString(3, server);

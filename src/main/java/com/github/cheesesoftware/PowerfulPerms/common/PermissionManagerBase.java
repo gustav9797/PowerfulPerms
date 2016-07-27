@@ -2020,7 +2020,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             }
         }
 
-        db.insertGroup(name, ladder, rank, new DBRunnable(response.isSameThread()) {
+        db.insertGroup(-1, name, ladder, rank, new DBRunnable(response.isSameThread()) {
 
             @Override
             public void run() {
