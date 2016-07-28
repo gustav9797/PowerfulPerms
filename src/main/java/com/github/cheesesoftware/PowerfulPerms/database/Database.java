@@ -14,7 +14,7 @@ public abstract class Database implements IDatabase {
     public static String tblPlayers = "players";
     public static String prefix = "";
 
-    public Database(IScheduler scheduler) {
+    public Database(IScheduler scheduler, String prefix) {
         this.scheduler = scheduler;
 
         tblGroupParents = "groupparents";
@@ -25,6 +25,9 @@ public abstract class Database implements IDatabase {
         tblPlayerGroups = "playergroups";
         tblPlayerPermissions = "playerpermissions";
         tblPlayers = "players";
+
+        if (prefix != null && !prefix.isEmpty())
+            setTablePrefix(prefix);
     }
 
     public void setTablePrefix(String prefix) {

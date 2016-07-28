@@ -28,8 +28,8 @@ public class MySQLDatabase extends Database {
     private PowerfulPermsPlugin plugin;
     private Map<String, String> tables = new HashMap<String, String>();
 
-    public MySQLDatabase(IScheduler scheduler, SQL sql, PowerfulPermsPlugin plugin) {
-        super(scheduler);
+    public MySQLDatabase(IScheduler scheduler, SQL sql, PowerfulPermsPlugin plugin, String tablePrefix) {
+        super(scheduler, tablePrefix);
         this.sql = sql;
         this.plugin = plugin;
 

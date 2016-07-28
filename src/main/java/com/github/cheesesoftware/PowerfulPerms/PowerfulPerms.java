@@ -89,10 +89,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         }
 
         IScheduler scheduler = new BukkitScheduler(this);
-        Database db = new MySQLDatabase(scheduler, sql, this);
-        String tablePrefix = getConfig().getString("prefix");
-        if (tablePrefix != null && !tablePrefix.isEmpty())
-            db.setTablePrefix(tablePrefix);
+        Database db = new MySQLDatabase(scheduler, sql, this, getConfig().getString("prefix"));
         String serverName = getConfig().getString("servername");
         permissionManager = new PowerfulPermissionManager(db, this, serverName);
         Bukkit.getPluginManager().registerEvents(permissionManager, this);
