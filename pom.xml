@@ -160,10 +160,6 @@
 			<url>http://repo.md-5.net/content/groups/public/</url>
 		</repository>
 		<repository>
-			<id>bukkit-repo</id>
-			<url>http://repo.bukkit.org/content/groups/public/</url>
-		</repository>
-		<repository>
 			<id>craftbukkit-repo</id>
 			<url>http://maven.sk89q.com/repo/</url>
 		</repository>
@@ -179,24 +175,22 @@
 			<id>placeholderapi</id>
 			<url>http://repo.extendedclip.com/content/repositories/placeholderapi/</url>
 		</repository>
+		<repository>
+			<id>alskebo-repo</id>
+			<url>http://repo.alskebo.com/repository/maven-releases</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
 		<dependency>
 			<groupId>com.github.cheesesoftware</groupId>
 			<artifactId>PowerfulPermsAPI</artifactId>
-			<version>1.0</version>
+			<version>1.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
-			<version>1.9-R0.1-SNAPSHOT</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.bukkit</groupId>
-			<artifactId>bukkit</artifactId>
-			<version>1.9-R0.1-SNAPSHOT</version>
+			<version>1.10.2-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -220,11 +214,6 @@
 			<artifactId>VaultAPI</artifactId>
 			<version>1.5</version>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>be.maximvdw</groupId>
-			<artifactId>MVdWUpdater</artifactId>
-			<version>1.0.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
