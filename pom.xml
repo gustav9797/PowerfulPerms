@@ -48,7 +48,7 @@
 							<outputDirectory>C:\Users\Gustav\Desktop\bungee\plugins</outputDirectory>
 							<resources>
 								<resource>
-									<directory>C:\Users\Gustav\Desktop\spigotserver1.8\plugins\</directory>
+									<directory>C:\Users\Gustav\Desktop\server\plugins\</directory>
 									<includes>
 										<include>${build.finalName}.jar</include>
 									</includes>
@@ -66,7 +66,7 @@
 							<outputDirectory>C:\Users\Gustav\Desktop\spigotother-bungee\plugins</outputDirectory>
 							<resources>
 								<resource>
-									<directory>C:\Users\Gustav\Desktop\spigotserver1.8\plugins\</directory>
+									<directory>C:\Users\Gustav\Desktop\server\plugins\</directory>
 									<includes>
 										<include>${build.finalName}.jar</include>
 									</includes>
@@ -84,7 +84,7 @@
 							<outputDirectory>C:\Users\Gustav\Desktop</outputDirectory>
 							<resources>
 								<resource>
-									<directory>C:\Users\Gustav\Desktop\spigotserver1.8\plugins\</directory>
+									<directory>C:\Users\Gustav\Desktop\server\plugins\</directory>
 									<includes>
 										<include>${build.finalName}.jar</include>
 									</includes>
@@ -223,5 +223,5 @@
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
-	<version>4.0.3</version>
+	<version>4.0.2</version>
 </project>
