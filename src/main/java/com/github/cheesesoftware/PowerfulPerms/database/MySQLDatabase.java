@@ -277,7 +277,15 @@ public class MySQLDatabase extends Database {
                         DBDocument current = result.next();
 
                         String uuidTemp = current.getString("playeruuid");
-                        final UUID uuid = (uuidTemp != null && !uuidTemp.isEmpty() ? UUID.fromString(uuidTemp) : null);
+                        UUID tempUUID = null;
+                        try {
+                            if (uuidTemp != null && !uuidTemp.isEmpty()) {
+                                tempUUID = UUID.fromString(uuidTemp);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        final UUID uuid = tempUUID;
                         final String playername = current.getString("playername");
                         final String groupname = current.getString("groupname");
                         final String permission = current.getString("permission");
@@ -473,7 +481,7 @@ public class MySQLDatabase extends Database {
                 DBResult result;
 
                 try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
+                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE BINARY `name`=?");
                     s.setString(1, name);
                     s.execute();
                     ResultSet r = s.getResultSet();
