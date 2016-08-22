@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
@@ -27,6 +28,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     protected String suffix = "";
     protected PowerfulPermsPlugin plugin;
     protected boolean isDefault = false;
+    protected ReentrantLock asyncPermLock = new ReentrantLock();
 
     public PermissionPlayerBase(LinkedHashMap<String, List<CachedGroup>> groups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin, boolean isDefault) {
         this.groups = groups;
@@ -57,11 +59,21 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     public void setTemporaryPrePermissions(List<String> permissions) {
-        this.temporaryPrePermissions = permissions;
+        asyncPermLock.lock();
+        try {
+            this.temporaryPrePermissions = permissions;
+        } finally {
+            asyncPermLock.unlock();
+        }
     }
 
     public void setTemporaryPostPermissions(List<String> permissions) {
-        this.temporaryPostPermissions = permissions;
+        asyncPermLock.lock();
+        try {
+            this.temporaryPostPermissions = permissions;
+        } finally {
+            asyncPermLock.unlock();
+        }
     }
 
     /**
@@ -149,7 +161,12 @@ public class PermissionPlayerBase implements PermissionPlayer {
      */
     @Override
     public List<String> getPermissionsInEffect() {
-        return new ArrayList<String>(this.realPermissions);
+        asyncPermLock.lock();
+        try {
+            return new ArrayList<String>(this.realPermissions);
+        } finally {
+            asyncPermLock.unlock();
+        }
     }
 
     @Override
@@ -163,26 +180,31 @@ public class PermissionPlayerBase implements PermissionPlayer {
         // List<String> lperm = Utils.toList(permission, ".");
         String[] lperm = permission.split("\\.");
 
-        if (temporaryPrePermissions != null) {
-            for (String p : temporaryPrePermissions) {
+        asyncPermLock.lock();
+        try {
+            if (temporaryPrePermissions != null) {
+                for (String p : temporaryPrePermissions) {
+                    Boolean check = internalPermissionCheck(permission, p, lperm);
+                    if (check != null)
+                        has = check;
+                }
+            }
+
+            for (String p : realPermissions) {
                 Boolean check = internalPermissionCheck(permission, p, lperm);
                 if (check != null)
                     has = check;
             }
-        }
 
-        for (String p : realPermissions) {
-            Boolean check = internalPermissionCheck(permission, p, lperm);
-            if (check != null)
-                has = check;
-        }
-
-        if (temporaryPostPermissions != null) {
-            for (String p : temporaryPostPermissions) {
-                Boolean check = internalPermissionCheck(permission, p, lperm);
-                if (check != null)
-                    has = check;
+            if (temporaryPostPermissions != null) {
+                for (String p : temporaryPostPermissions) {
+                    Boolean check = internalPermissionCheck(permission, p, lperm);
+                    if (check != null)
+                        has = check;
+                }
             }
+        } finally {
+            asyncPermLock.unlock();
         }
 
         return has;
@@ -208,13 +230,10 @@ public class PermissionPlayerBase implements PermissionPlayer {
                     break;
                 }
             }
-            /*plugin.debug("toCheckAgainst " + toCheckAgainst);
-            plugin.debug("toCheck " + toCheck);
-            plugin.debug("toCheckAgainst " + toCheckAgainst.length());
-            plugin.debug("toCheck " + toCheck.length());
-            plugin.debug("toCheckAgainstSplit " + toCheckAgainstSplit.length);
-            plugin.debug("toCheckSplit " + toCheckSplit.length);
-            plugin.debug(toCheckAgainstSplit.toString());*/
+            /*
+             * plugin.debug("toCheckAgainst " + toCheckAgainst); plugin.debug("toCheck " + toCheck); plugin.debug("toCheckAgainst " + toCheckAgainst.length()); plugin.debug("toCheck " +
+             * toCheck.length()); plugin.debug("toCheckAgainstSplit " + toCheckAgainstSplit.length); plugin.debug("toCheckSplit " + toCheckSplit.length); plugin.debug(toCheckAgainstSplit.toString());
+             */
             if (toCheckAgainstSplit[index].equalsIgnoreCase("*") || (index == 0 && toCheckAgainstSplit[0].equalsIgnoreCase("-*"))) {
                 has = !toCheckAgainstSplit[0].startsWith("-");
                 // plugin.debug("wildcard perm check: has = " + has + " toCheckAgainst = " + toCheckAgainst);

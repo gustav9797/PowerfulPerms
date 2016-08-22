@@ -78,7 +78,12 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
                 realPerms.addAll(calculateChildPermissions(perm.getChildren(), invert));
         }
 
-        this.realPermissions = realPerms;
+        asyncPermLock.lock();
+        try {
+            this.realPermissions = realPerms;
+        } finally {
+            asyncPermLock.unlock();
+        }
     }
 
     private List<String> calculateChildPermissions(Map<String, Boolean> children, boolean invert) {
