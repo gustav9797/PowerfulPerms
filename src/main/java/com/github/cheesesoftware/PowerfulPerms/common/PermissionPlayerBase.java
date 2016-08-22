@@ -160,7 +160,8 @@ public class PermissionPlayerBase implements PermissionPlayer {
     private Boolean preHasPermission(String permission) {
         Boolean has = null;
 
-        List<String> lperm = Utils.toList(permission, ".");
+        // List<String> lperm = Utils.toList(permission, ".");
+        String[] lperm = permission.split("\\.");
 
         if (temporaryPrePermissions != null) {
             for (String p : temporaryPrePermissions) {
@@ -187,29 +188,36 @@ public class PermissionPlayerBase implements PermissionPlayer {
         return has;
     }
 
-    private Boolean internalPermissionCheck(String toCheck, String toCheckAgainst, List<String> lperm) {
+    private Boolean internalPermissionCheck(String toCheck, String toCheckAgainst, String[] toCheckSplit) {
+        // toCheckAgainst is player's permission.
+
         Boolean has = null;
         if (toCheckAgainst.equalsIgnoreCase(toCheck)) {
             has = true;
         } else if (toCheckAgainst.equalsIgnoreCase("-" + toCheck)) {
             has = false;
         } else if (toCheckAgainst.endsWith("*")) {
-            List<String> lp = Utils.toList(toCheckAgainst, ".");
+
+            // List<String> lp = Utils.toList(toCheckAgainst, ".");
+            String[] toCheckAgainstSplit = toCheckAgainst.split("\\.");
             int index = 0;
-            try {
-                while (index < lp.size() && index < lperm.size()) {
-                    if (lp.get(index).equalsIgnoreCase(lperm.get(index)) || (index == 0 && lp.get(index).equalsIgnoreCase("-" + lperm.get(index)))) {
-                        index++;
-                    } else {
-                        break;
-                    }
+            while (index < toCheckAgainstSplit.length && index < toCheckSplit.length) {
+                if (toCheckAgainstSplit[index].equalsIgnoreCase(toCheckSplit[index]) || (index == 0 && toCheckAgainstSplit[index].equalsIgnoreCase("-" + toCheckSplit[index]))) {
+                    index++;
+                } else {
+                    break;
                 }
-                if (lp.get(index).equalsIgnoreCase("*") || (index == 0 && lp.get(0).equalsIgnoreCase("-*"))) {
-                    has = !lp.get(0).startsWith("-");
-                    // plugin.debug("wildcard perm check: has = " + has + " toCheckAgainst = " + toCheckAgainst);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+            }
+            /*plugin.debug("toCheckAgainst " + toCheckAgainst);
+            plugin.debug("toCheck " + toCheck);
+            plugin.debug("toCheckAgainst " + toCheckAgainst.length());
+            plugin.debug("toCheck " + toCheck.length());
+            plugin.debug("toCheckAgainstSplit " + toCheckAgainstSplit.length);
+            plugin.debug("toCheckSplit " + toCheckSplit.length);
+            plugin.debug(toCheckAgainstSplit.toString());*/
+            if (toCheckAgainstSplit[index].equalsIgnoreCase("*") || (index == 0 && toCheckAgainstSplit[0].equalsIgnoreCase("-*"))) {
+                has = !toCheckAgainstSplit[0].startsWith("-");
+                // plugin.debug("wildcard perm check: has = " + has + " toCheckAgainst = " + toCheckAgainst);
             }
         }
         return has;

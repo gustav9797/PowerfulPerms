@@ -153,10 +153,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
         }
 
         // Initialize Redis
-        if (redis_password == null || redis_password.isEmpty())
-            pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0);
-        else
-            pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0, redis_password);
+        if (redis) {
+            if (redis_password == null || redis_password.isEmpty())
+                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0);
+            else
+                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0, redis_password);
+        }
 
         checkTimedTaskId = this.getScheduler().runRepeating(new Runnable() {
 
