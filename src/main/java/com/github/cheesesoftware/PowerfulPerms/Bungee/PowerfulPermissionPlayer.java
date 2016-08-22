@@ -67,6 +67,11 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     public void updatePermissions(ServerInfo serverInfo) {
         String serverName = (serverInfo != null ? serverInfo.getName() : null);
         this.updateGroups(serverName);
-        this.realPermissions = super.calculatePermissions(serverName, null);
+        asyncPermLock.lock();
+        try {
+            this.realPermissions = super.calculatePermissions(serverName, null);
+        } finally {
+            asyncPermLock.unlock();
+        }
     }
 }
