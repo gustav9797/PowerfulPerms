@@ -1365,11 +1365,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void addPlayerPermission(final UUID uuid, final String playerName, final String permission, final String world, final String server, final Date expires, final ResponseRunnable response) {
+        final Date now = new Date();
         if (playerName.equalsIgnoreCase("[default]")) {
             response.setResponse(false, "You can not add permissions to the default player. Add them to a group instead and add the group to the default player.");
             db.scheduler.runSync(response, response.isSameThread());
             return;
         }
+
         // Check if the same permission already exists.
         db.playerHasPermission(uuid, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
 
@@ -1386,19 +1388,69 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             if (result.hasNext()) {
                                 final UUID uuid = UUID.fromString(result.next().getString("uuid"));
                                 if (uuid != null) {
-                                    db.insertPlayerPermission(uuid, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
+                                    getScheduler().runAsync(new Runnable() {
 
                                         @Override
                                         public void run() {
-                                            if (result.booleanValue()) {
-                                                response.setResponse(true, "Permission added to player.");
-                                                reloadPlayer(uuid);
-                                                notifyReloadPlayer(uuid);
-                                            } else
-                                                response.setResponse(false, "Could not add permission. Check console for any errors.");
-                                            db.scheduler.runSync(response, response.isSameThread());
+
+                                            if (expires != null) {
+                                                getPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>(true) {
+
+                                                    @Override
+                                                    public void run() {
+                                                        for (Permission p : result) {
+                                                            if (p.willExpire()) {
+                                                                if (p.getPermissionString().equals(permission) && p.getServer().equalsIgnoreCase(server) && p.getWorld().equalsIgnoreCase(world)) {
+                                                                    final Date newExpiry = new Date(p.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
+                                                                    db.deletePlayerPermission(uuid, permission, world, server, expires, new DBRunnable(true) {
+
+                                                                        @Override
+                                                                        public void run() {
+                                                                            if (!result.booleanValue()) {
+                                                                                response.setResponse(false, "Could not update permission expiration date. Check console for any errors.");
+                                                                                db.scheduler.runSync(response, response.isSameThread());
+                                                                            } else {
+                                                                                db.insertPlayerPermission(uuid, permission, world, server, newExpiry, new DBRunnable(true) {
+
+                                                                                    @Override
+                                                                                    public void run() {
+                                                                                        if (!result.booleanValue()) {
+                                                                                            response.setResponse(false, "Could not update permission expiration date. Check console for any errors.");
+                                                                                        } else {
+                                                                                            response.setResponse(true, "Permission expiration changed.");
+                                                                                            reloadPlayer(uuid);
+                                                                                            notifyReloadPlayer(uuid);
+                                                                                        }
+                                                                                        db.scheduler.runSync(response, response.isSameThread());
+                                                                                    }
+                                                                                });
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                            if (!response.getResponse().isEmpty())
+                                                return;
+                                            db.insertPlayerPermission(uuid, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
+
+                                                @Override
+                                                public void run() {
+                                                    if (result.booleanValue()) {
+                                                        response.setResponse(true, "Permission added to player.");
+                                                        reloadPlayer(uuid);
+                                                        notifyReloadPlayer(uuid);
+                                                    } else
+                                                        response.setResponse(false, "Could not add permission. Check console for any errors.");
+                                                    db.scheduler.runSync(response, response.isSameThread());
+                                                }
+                                            });
                                         }
-                                    });
+                                    }, response.isSameThread());
                                 } else {
                                     response.setResponse(false, "Could not add permission. Player's UUID is invalid.");
                                     db.scheduler.runSync(response, response.isSameThread());
@@ -1589,6 +1641,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void addPlayerGroup(final UUID uuid, final int groupId, String server, final boolean negated, final Date expires, final ResponseRunnable resp) {
+        final Date now = new Date();
         if (server.equalsIgnoreCase("all"))
             server = "";
 
@@ -1612,14 +1665,42 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     Iterator<CachedGroup> it = groupList.iterator();
                     while (it.hasNext()) {
                         CachedGroup cachedGroup = it.next();
-                        if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
+                        if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated && cachedGroup.willExpire()) {
+                            // Update expiration date instead
+                            final Date newExpiry = new Date(cachedGroup.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
+                            db.deletePlayerGroup(uuid, groupId, serverFinal, negated, expires, new DBRunnable(true) {
+
+                                @Override
+                                public void run() {
+                                    if (!result.booleanValue()) {
+                                        resp.setResponse(false, "Could not update player group expiration date. Check console for any errors.");
+                                        db.scheduler.runSync(resp, resp.isSameThread());
+                                    } else {
+                                        db.insertPlayerGroup(uuid, groupId, serverFinal, negated, newExpiry, new DBRunnable(true) {
+
+                                            @Override
+                                            public void run() {
+                                                if (!result.booleanValue()) {
+                                                    resp.setResponse(false, "Could not update player group expiration date. Check console for any errors.");
+                                                } else {
+                                                    resp.setResponse(true, "Group expiration changed.");
+                                                    reloadPlayer(uuid);
+                                                    notifyReloadPlayer(uuid);
+                                                }
+                                                db.scheduler.runSync(resp, resp.isSameThread());
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        } else if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
                             resp.setResponse(false, "Player already has this group.");
                             db.scheduler.runSync(resp, resp.isSameThread());
                             return;
                         }
                     }
 
-                    db.addPlayerGroup(uuid, groupId, serverFinal, negated, expires, new DBRunnable() {
+                    db.insertPlayerGroup(uuid, groupId, serverFinal, negated, expires, new DBRunnable() {
 
                         @Override
                         public void run() {
@@ -1693,7 +1774,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                             db.scheduler.runSync(resp, resp.isSameThread());
                                                             return;
                                                         } else {
-                                                            db.addPlayerGroup(uuid, groupId, server, current.isNegated(), null, new DBRunnable(true) {
+                                                            db.insertPlayerGroup(uuid, groupId, server, current.isNegated(), null, new DBRunnable(true) {
 
                                                                 @Override
                                                                 public void run() {
@@ -1845,7 +1926,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                             db.scheduler.runSync(resp, resp.isSameThread());
                                                             return;
                                                         } else {
-                                                            db.addPlayerGroup(uuid, toPromoteToFinal.getId(), server, current.isNegated(), null, new DBRunnable(true) {
+                                                            db.insertPlayerGroup(uuid, toPromoteToFinal.getId(), server, current.isNegated(), null, new DBRunnable(true) {
 
                                                                 @Override
                                                                 public void run() {
@@ -1947,7 +2028,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                             db.scheduler.runSync(resp, resp.isSameThread());
                                                             return;
                                                         } else {
-                                                            db.addPlayerGroup(uuid, toDemoteToFinal.getId(), server, current.isNegated(), null, new DBRunnable(true) {
+                                                            db.insertPlayerGroup(uuid, toDemoteToFinal.getId(), server, current.isNegated(), null, new DBRunnable(true) {
 
                                                                 @Override
                                                                 public void run() {
@@ -2057,10 +2138,48 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void addGroupPermission(int groupId, String permission, String world, String server, final Date expires, final ResponseRunnable response) {
+    public void addGroupPermission(final int groupId, final String permission, final String world, final String server, final Date expires, final ResponseRunnable response) {
+        Date now = new Date();
         Group group = getGroup(groupId);
         if (group != null) {
             List<Permission> groupPermissions = group.getOwnPermissions();
+
+            if (expires != null) {
+                List<Permission> result = group.getOwnPermissions();
+                for (Permission p : result) {
+                    if (p.willExpire()) {
+                        if (p.getPermissionString().equals(permission) && p.getServer().equalsIgnoreCase(server) && p.getWorld().equalsIgnoreCase(world)) {
+                            final Date newExpiry = new Date(p.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
+                            db.deleteGroupPermission(groupId, permission, world, server, expires, new DBRunnable() {
+
+                                @Override
+                                public void run() {
+                                    if (!result.booleanValue()) {
+                                        response.setResponse(false, "Could not update permission expiration date. Check console for any errors.");
+                                        db.scheduler.runSync(response, response.isSameThread());
+                                    } else {
+                                        db.insertGroupPermission(groupId, permission, world, server, newExpiry, new DBRunnable() {
+
+                                            @Override
+                                            public void run() {
+                                                if (!result.booleanValue()) {
+                                                    response.setResponse(false, "Could not update permission expiration date. Check console for any errors.");
+                                                } else {
+                                                    response.setResponse(true, "Permission expiration changed.");
+                                                    loadGroups(response.isSameThread());
+                                                    notifyReloadGroups();
+                                                }
+                                                db.scheduler.runSync(response, response.isSameThread());
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                            return;
+                        }
+                    }
+                }
+            }
 
             for (Permission temp : groupPermissions) {
                 if (temp.getPermissionString().equals(permission) && temp.getServer().equals(server) && temp.getWorld().equals(world)
@@ -2162,7 +2281,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     return;
                 }
 
-                db.addGroupParent(groupId, parentGroupId, new DBRunnable(response.isSameThread()) {
+                db.insertGroupParent(groupId, parentGroupId, new DBRunnable(response.isSameThread()) {
 
                     @Override
                     public void run() {
@@ -2258,7 +2377,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     });
                 }
                 if (!prefix.isEmpty()) {
-                    db.addGroupPrefix(groupId, prefix, finalServer, new DBRunnable(true) {
+                    db.insertGroupPrefix(groupId, prefix, finalServer, new DBRunnable(true) {
 
                         @Override
                         public void run() {
@@ -2315,7 +2434,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     });
                 }
                 if (!suffix.isEmpty()) {
-                    db.addGroupSuffix(groupId, suffix, finalServer, new DBRunnable(true) {
+                    db.insertGroupSuffix(groupId, suffix, finalServer, new DBRunnable(true) {
 
                         @Override
                         public void run() {

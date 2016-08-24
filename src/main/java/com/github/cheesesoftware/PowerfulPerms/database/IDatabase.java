@@ -51,15 +51,15 @@ public interface IDatabase {
 
     public void setPlayerSuffix(UUID uuid, String suffix, DBRunnable done);
 
-    public void addPlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires, DBRunnable done);
+    public void insertPlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires, DBRunnable done);
 
     public void deletePlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires, DBRunnable done);
     
     public void getPlayerGroups(UUID uuid, DBRunnable done);
-
+    
     public void deleteGroup(int groupId, DBRunnable done);
 
-    public void addGroupParent(int groupId, int parentGroupId, DBRunnable done);
+    public void insertGroupParent(int groupId, int parentGroupId, DBRunnable done);
 
     public void deleteGroupParent(int groupId, int parentGroupId, DBRunnable done);
 
@@ -69,7 +69,7 @@ public interface IDatabase {
     
     public void getGroupParents(DBRunnable done);
 
-    public void addGroupPrefix(int groupId, String prefix, String server, DBRunnable done);
+    public void insertGroupPrefix(int groupId, String prefix, String server, DBRunnable done);
 
     public void deleteGroupPrefix(int groupId, String prefix, String server, DBRunnable done);
 
@@ -79,7 +79,7 @@ public interface IDatabase {
     
     public void getGroupPrefixes(DBRunnable done);
 
-    public void addGroupSuffix(int groupId, String suffix, String server, DBRunnable done);
+    public void insertGroupSuffix(int groupId, String suffix, String server, DBRunnable done);
 
     public void deleteGroupSuffix(int groupId, String suffix, String server, DBRunnable done);
 
