@@ -26,7 +26,10 @@ public class UserRemoveGroupCommand extends SubCommand {
                     return CommandResult.success;
                 }
                 final String playerName = args[0];
-                final String groupName = args[2];
+                String groupName = args[2];
+                final boolean negated = groupName.startsWith("-");
+                if (negated)
+                    groupName = groupName.substring(1);
                 final Group group = permissionManager.getGroup(groupName);
                 if (group == null) {
                     sendSender(invoker, sender, "Group does not exist.");
@@ -61,10 +64,6 @@ public class UserRemoveGroupCommand extends SubCommand {
                                     return;
                                 }
                             }
-                            String group = groupName;
-                            boolean negated = group.startsWith("-");
-                            if (negated)
-                                group = group.substring(1);
                             permissionManager.removePlayerGroup(uuid, groupId, server, negated, expires, response);
                         }
                     }
