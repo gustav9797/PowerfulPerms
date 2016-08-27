@@ -61,7 +61,7 @@ public class UserAddPermissionCommand extends SubCommand {
                                 server = "";
                             if (world.equalsIgnoreCase("all"))
                                 world = "";
-                            parsePermission(permissionManager, uuid, playerName, permission, world, server, expires, response);
+                            parsePermission(permissionManager, uuid, permission, world, server, expires, response);
                         }
                     }
                 });
@@ -72,7 +72,7 @@ public class UserAddPermissionCommand extends SubCommand {
             return CommandResult.noPermission;
     }
 
-    private static void parsePermission(PermissionManager permissionManager, UUID uuid, String playerName, String permission, String world, String server, Date expires, ResponseRunnable response) {
+    private static void parsePermission(PermissionManager permissionManager, UUID uuid, String permission, String world, String server, Date expires, ResponseRunnable response) {
         int beginIndex = -1;
         int endIndex = -1;
 
@@ -88,7 +88,7 @@ public class UserAddPermissionCommand extends SubCommand {
                 for (String s : sequenceList) {
                     StringBuilder builder = new StringBuilder(permission);
                     builder.replace(beginIndex, endIndex + 1, s);
-                    parsePermission(permissionManager, uuid, playerName, builder.toString(), world, server, expires, response);
+                    parsePermission(permissionManager, uuid, builder.toString(), world, server, expires, response);
                 }
             }
 
@@ -96,7 +96,7 @@ public class UserAddPermissionCommand extends SubCommand {
 
         if (beginIndex == -1 && endIndex == -1) {
             // Didn't find any more sequence
-            permissionManager.addPlayerPermission(uuid, playerName, permission, world, server, expires, response);
+            permissionManager.addPlayerPermission(uuid, permission, world, server, expires, response);
         }
     }
 }

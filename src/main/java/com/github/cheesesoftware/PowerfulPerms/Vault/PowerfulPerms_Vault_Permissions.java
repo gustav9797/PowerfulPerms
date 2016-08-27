@@ -127,7 +127,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerAdd(String world, String player, String permission) {
-        permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), player, permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
+        permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
 
             @Override
             public void run() {

@@ -1359,14 +1359,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
     // -------------------------------------------------------------------//
 
     @Override
-    public void addPlayerPermission(UUID uuid, final String playerName, String permission, ResponseRunnable response) {
-        addPlayerPermission(uuid, permission, playerName, "", "", null, response);
+    public void addPlayerPermission(UUID uuid, String permission, ResponseRunnable response) {
+        addPlayerPermission(uuid, permission, "", "", null, response);
     }
 
     @Override
-    public void addPlayerPermission(final UUID uuid, final String playerName, final String permission, final String world, final String server, final Date expires, final ResponseRunnable response) {
+    public void addPlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires, final ResponseRunnable response) {
         final Date now = new Date();
-        if (playerName.equalsIgnoreCase("[default]")) {
+        if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
             response.setResponse(false, "You can not add permissions to the default player. Add them to a group instead and add the group to the default player.");
             db.scheduler.runSync(response, response.isSameThread());
             return;
