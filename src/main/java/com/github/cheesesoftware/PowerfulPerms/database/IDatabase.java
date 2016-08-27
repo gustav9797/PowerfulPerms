@@ -92,4 +92,6 @@ public interface IDatabase {
     public void setGroupLadder(int groupId, String ladder, DBRunnable done);
 
     public void setGroupRank(int groupId, int rank, DBRunnable done);
+
+    public void setGroupName(int groupId, String name, DBRunnable done);
 }

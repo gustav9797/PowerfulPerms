@@ -1402,7 +1402,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                             if (p.willExpire()) {
                                                                 if (p.getPermissionString().equals(permission) && p.getServer().equalsIgnoreCase(server) && p.getWorld().equalsIgnoreCase(world)) {
                                                                     final Date newExpiry = new Date(p.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
-                                                                    db.deletePlayerPermission(uuid, permission, world, server, expires, new DBRunnable(true) {
+                                                                    db.deletePlayerPermission(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new DBRunnable(true) {
 
                                                                         @Override
                                                                         public void run() {
@@ -1668,7 +1668,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated && cachedGroup.willExpire()) {
                             // Update expiration date instead
                             final Date newExpiry = new Date(cachedGroup.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
-                            db.deletePlayerGroup(uuid, groupId, serverFinal, negated, expires, new DBRunnable(true) {
+                            db.deletePlayerGroup(uuid, cachedGroup.getGroupId(), serverFinal, cachedGroup.isNegated(), cachedGroup.getExpirationDate(), new DBRunnable(true) {
 
                                 @Override
                                 public void run() {
@@ -1693,6 +1693,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     }
                                 }
                             });
+                            return;
                         } else if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
                             resp.setResponse(false, "Player already has this group.");
                             db.scheduler.runSync(resp, resp.isSameThread());
@@ -2150,7 +2151,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     if (p.willExpire()) {
                         if (p.getPermissionString().equals(permission) && p.getServer().equalsIgnoreCase(server) && p.getWorld().equalsIgnoreCase(world)) {
                             final Date newExpiry = new Date(p.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
-                            db.deleteGroupPermission(groupId, permission, world, server, expires, new DBRunnable() {
+                            db.deleteGroupPermission(groupId, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new DBRunnable() {
 
                                 @Override
                                 public void run() {
@@ -2501,6 +2502,30 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     notifyReloadGroups();
                 } else
                     response.setResponse(false, "Could not set group rank. Check console for errors.");
+                db.scheduler.runSync(response, response.isSameThread());
+            }
+        });
+    }
+
+    @Override
+    public void setGroupName(int groupId, String name, final ResponseRunnable response) {
+        Group group = getGroup(groupId);
+        if (group == null) {
+            response.setResponse(false, "Group does not exist.");
+            db.scheduler.runSync(response, response.isSameThread());
+            return;
+        }
+
+        db.setGroupName(groupId, name, new DBRunnable(response.isSameThread()) {
+
+            @Override
+            public void run() {
+                if (result.booleanValue()) {
+                    response.setResponse(true, "Group name set.");
+                    loadGroups(response.isSameThread());
+                    notifyReloadGroups();
+                } else
+                    response.setResponse(false, "Could not set group name. Check console for errors.");
                 db.scheduler.runSync(response, response.isSameThread());
             }
         });

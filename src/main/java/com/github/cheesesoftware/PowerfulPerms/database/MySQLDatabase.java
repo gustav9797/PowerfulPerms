@@ -183,7 +183,7 @@ public class MySQLDatabase extends Database {
                         for (Entry<String, List<CachedGroup>> e : tempGroups.entrySet()) {
                             String server = e.getKey();
                             for (final CachedGroup cachedGroup : e.getValue()) {
-                                this.addPlayerGroup(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), null, new DBRunnable(true) {
+                                this.insertPlayerGroup(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), null, new DBRunnable(true) {
 
                                     @Override
                                     public void run() {
@@ -226,7 +226,7 @@ public class MySQLDatabase extends Database {
 
                         HashMap<String, String> prefixes = Util.getPrefixSuffix_old(prefixRaw);
                         for (final Entry<String, String> e : prefixes.entrySet()) {
-                            this.addGroupPrefix(id, e.getValue(), e.getKey(), new DBRunnable(true) {
+                            this.insertGroupPrefix(id, e.getValue(), e.getKey(), new DBRunnable(true) {
 
                                 @Override
                                 public void run() {
@@ -237,7 +237,7 @@ public class MySQLDatabase extends Database {
 
                         HashMap<String, String> suffixes = Util.getPrefixSuffix_old(suffixRaw);
                         for (final Entry<String, String> e : suffixes.entrySet()) {
-                            this.addGroupSuffix(id, e.getValue(), e.getKey(), new DBRunnable(true) {
+                            this.insertGroupSuffix(id, e.getValue(), e.getKey(), new DBRunnable(true) {
 
                                 @Override
                                 public void run() {
@@ -250,7 +250,7 @@ public class MySQLDatabase extends Database {
                         for (String parentName : parents) {
                             try {
                                 final int parentId = Integer.parseInt(parentName);
-                                this.addGroupParent(id, parentId, new DBRunnable(true) {
+                                this.insertGroupParent(id, parentId, new DBRunnable(true) {
 
                                     @Override
                                     public void run() {
@@ -918,7 +918,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void addPlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final Date expires, final DBRunnable done) {
+    public void insertPlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final Date expires, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -1065,7 +1065,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void addGroupParent(final int groupId, final int parentGroupId, final DBRunnable done) {
+    public void insertGroupParent(final int groupId, final int parentGroupId, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -1190,7 +1190,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void addGroupPrefix(final int groupId, final String prefix, final String server, final DBRunnable done) {
+    public void insertGroupPrefix(final int groupId, final String prefix, final String server, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -1317,7 +1317,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void addGroupSuffix(final int groupId, final String suffix, final String server, final DBRunnable done) {
+    public void insertGroupSuffix(final int groupId, final String suffix, final String server, final DBRunnable done) {
         scheduler.runAsync(new Runnable() {
 
             @Override
@@ -1479,6 +1479,31 @@ public class MySQLDatabase extends Database {
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `rank`=? WHERE `id`=?");
                     s.setInt(1, rank);
+                    s.setInt(2, groupId);
+                    s.execute();
+                    s.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    success = false;
+                }
+
+                done.setResult(new DBResult(success));
+                scheduler.runSync(done, done.sameThread());
+            }
+        }, done.sameThread());
+    }
+
+    @Override
+    public void setGroupName(final int groupId, final String name, final DBRunnable done) {
+        scheduler.runAsync(new Runnable() {
+
+            @Override
+            public void run() {
+                boolean success = true;
+
+                try {
+                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `name`=? WHERE `id`=?");
+                    s.setString(1, name);
                     s.setInt(2, groupId);
                     s.execute();
                     s.close();
