@@ -61,7 +61,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     public void setTemporaryPrePermissions(List<String> permissions) {
         asyncPermLock.lock();
         try {
-            this.temporaryPrePermissions = permissions;
+            this.temporaryPrePermissions = new ArrayList<String>(permissions);
         } finally {
             asyncPermLock.unlock();
         }
@@ -70,7 +70,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     public void setTemporaryPostPermissions(List<String> permissions) {
         asyncPermLock.lock();
         try {
-            this.temporaryPostPermissions = permissions;
+            this.temporaryPostPermissions = new ArrayList<String>(permissions);
         } finally {
             asyncPermLock.unlock();
         }
