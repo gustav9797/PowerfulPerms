@@ -257,18 +257,6 @@
       <version>2.3.1</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>com.github.bys1</groupId>
-      <artifactId>importer</artifactId>
-      <version>0.3-Beta</version>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>spigot-api</artifactId>
-          <groupId>org.spigotmc</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
   </dependencies>
 </project>
 

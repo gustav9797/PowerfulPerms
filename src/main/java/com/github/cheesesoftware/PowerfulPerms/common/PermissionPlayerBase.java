@@ -177,30 +177,38 @@ public class PermissionPlayerBase implements PermissionPlayer {
     private Boolean preHasPermission(String permission) {
         Boolean has = null;
 
-        // List<String> lperm = Utils.toList(permission, ".");
         String[] lperm = permission.split("\\.");
 
         asyncPermLock.lock();
         try {
             if (temporaryPrePermissions != null) {
-                for (String p : temporaryPrePermissions) {
-                    Boolean check = internalPermissionCheck(permission, p, lperm);
-                    if (check != null)
+                ListIterator<String> it = temporaryPrePermissions.listIterator(temporaryPrePermissions.size());
+                while (it.hasPrevious()) {
+                    Boolean check = internalPermissionCheck(permission, it.previous(), lperm);
+                    if (check != null) {
                         has = check;
+                        break;
+                    }
                 }
             }
 
-            for (String p : realPermissions) {
-                Boolean check = internalPermissionCheck(permission, p, lperm);
-                if (check != null)
+            ListIterator<String> it = realPermissions.listIterator(realPermissions.size());
+            while (it.hasPrevious()) {
+                Boolean check = internalPermissionCheck(permission, it.previous(), lperm);
+                if (check != null) {
                     has = check;
+                    break;
+                }
             }
 
             if (temporaryPostPermissions != null) {
-                for (String p : temporaryPostPermissions) {
-                    Boolean check = internalPermissionCheck(permission, p, lperm);
-                    if (check != null)
+                it = temporaryPostPermissions.listIterator(temporaryPostPermissions.size());
+                while (it.hasPrevious()) {
+                    Boolean check = internalPermissionCheck(permission, it.previous(), lperm);
+                    if (check != null) {
                         has = check;
+                        break;
+                    }
                 }
             }
         } finally {
@@ -210,34 +218,40 @@ public class PermissionPlayerBase implements PermissionPlayer {
         return has;
     }
 
-    private Boolean internalPermissionCheck(String toCheck, String toCheckAgainst, String[] toCheckSplit) {
-        // toCheckAgainst is player's permission.
-
+    private Boolean internalPermissionCheck(String toCheck, String ownPermission, String[] toCheckSplit) {
         Boolean has = null;
-        if (toCheckAgainst.equalsIgnoreCase(toCheck)) {
+        if (ownPermission.equalsIgnoreCase(toCheck)) {
             has = true;
-        } else if (toCheckAgainst.equalsIgnoreCase("-" + toCheck)) {
+        } else if (ownPermission.equalsIgnoreCase("-" + toCheck)) {
             has = false;
-        } else if (toCheckAgainst.endsWith("*")) {
+        } else if (ownPermission.endsWith("*")) {
 
-            // List<String> lp = Utils.toList(toCheckAgainst, ".");
-            String[] toCheckAgainstSplit = toCheckAgainst.split("\\.");
+            boolean ownNegated = ownPermission.startsWith("-");
+            int ownOffset = (ownNegated ? 1 : 0);
+            int i = 0;
+            for (; i + ownOffset < ownPermission.length() && i < toCheck.length(); ++i) {
+                if (ownPermission.charAt(i + ownOffset) == toCheck.charAt(i))
+                    ++i;
+                else
+                    break;
+            }
+            if (ownPermission.charAt(i + ownOffset) == '*') {
+                has = !ownNegated;
+            }
+
+            /*String[] ownPermissionSplit = ownPermission.split("\\.");
             int index = 0;
-            while (index < toCheckAgainstSplit.length && index < toCheckSplit.length) {
-                if (toCheckAgainstSplit[index].equalsIgnoreCase(toCheckSplit[index]) || (index == 0 && toCheckAgainstSplit[index].equalsIgnoreCase("-" + toCheckSplit[index]))) {
+            while (index < ownPermissionSplit.length && index < toCheckSplit.length) {
+                if (ownPermissionSplit[index].equalsIgnoreCase(toCheckSplit[index]) || (index == 0 && ownPermissionSplit[index].equalsIgnoreCase("-" + toCheckSplit[index]))) {
                     index++;
                 } else {
                     break;
                 }
             }
-            /*
-             * plugin.debug("toCheckAgainst " + toCheckAgainst); plugin.debug("toCheck " + toCheck); plugin.debug("toCheckAgainst " + toCheckAgainst.length()); plugin.debug("toCheck " +
-             * toCheck.length()); plugin.debug("toCheckAgainstSplit " + toCheckAgainstSplit.length); plugin.debug("toCheckSplit " + toCheckSplit.length); plugin.debug(toCheckAgainstSplit.toString());
-             */
-            if (toCheckAgainstSplit[index].equalsIgnoreCase("*") || (index == 0 && toCheckAgainstSplit[0].equalsIgnoreCase("-*"))) {
-                has = !toCheckAgainstSplit[0].startsWith("-");
-                // plugin.debug("wildcard perm check: has = " + has + " toCheckAgainst = " + toCheckAgainst);
-            }
+
+            if (ownPermissionSplit[index].equalsIgnoreCase("*") || (index == 0 && ownPermissionSplit[0].equalsIgnoreCase("-*"))) {
+                has = !ownPermissionSplit[0].startsWith("-");
+            }*/
         }
         return has;
     }
