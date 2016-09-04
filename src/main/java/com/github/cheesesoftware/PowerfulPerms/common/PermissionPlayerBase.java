@@ -245,13 +245,6 @@ public class PermissionPlayerBase implements PermissionPlayer {
                 has = !ownNegated;
                 // plugin.debug("wildcard perm check: has = " + has + " ownPermission = " + ownPermission);
             }
-
-            /*
-             * String[] ownPermissionSplit = ownPermission.split("\\."); int index = 0; while (index < ownPermissionSplit.length && index < toCheckSplit.length) { if
-             * (ownPermissionSplit[index].equalsIgnoreCase(toCheckSplit[index]) || (index == 0 && ownPermissionSplit[index].equalsIgnoreCase("-" + toCheckSplit[index]))) { index++; } else { break; } }
-             * 
-             * if (ownPermissionSplit[index].equalsIgnoreCase("*") || (index == 0 && ownPermissionSplit[0].equalsIgnoreCase("-*"))) { has = !ownPermissionSplit[0].startsWith("-"); }
-             */
         }
         return has;
     }

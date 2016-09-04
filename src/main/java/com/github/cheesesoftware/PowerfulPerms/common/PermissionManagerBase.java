@@ -1057,11 +1057,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
         PermissionPlayer gp = getPermissionPlayer(uuid);
         if (gp != null) {
             resultRunnable.setResult(gp.getPermissions());
-            db.scheduler.runSync(resultRunnable);
+            db.scheduler.runSync(resultRunnable, resultRunnable.isSameThread());
             return;
         }
 
-        loadPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>() {
+        loadPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>(resultRunnable.isSameThread()) {
 
             @Override
             public void run() {
