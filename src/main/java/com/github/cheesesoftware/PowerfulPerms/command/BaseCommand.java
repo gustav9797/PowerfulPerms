@@ -91,8 +91,9 @@ public class BaseCommand extends SubCommand {
     private void resolveSequences(ICommand invoker, String sender, String[] args) {
         int beginIndex = -1;
         int endIndex = -1;
-
         for (int a = 0; a < args.length; ++a) {
+            beginIndex = -1;
+            endIndex = -1;
             String arg = args[a];
             char[] chars = arg.toCharArray();
             for (int i = 0; i < chars.length; ++i) {
@@ -111,13 +112,12 @@ public class BaseCommand extends SubCommand {
                         resolveSequences(invoker, sender, temp);
                     }
                 }
-
             }
+        }
 
-            if (beginIndex == -1 && endIndex == -1) {
-                // Didn't find any more sequence
-                continueExecute(invoker, sender, args);
-            }
+        if (beginIndex == -1 && endIndex == -1) {
+            // Didn't find any more sequence
+            continueExecute(invoker, sender, args);
         }
     }
 }
