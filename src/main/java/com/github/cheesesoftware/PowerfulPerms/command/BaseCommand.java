@@ -25,23 +25,24 @@ public class BaseCommand extends SubCommand {
     @Override
     public CommandResult execute(ICommand invoker, String sender, String[] args) {
         args = resolveArgs(args);
+        resolveSequences(invoker, sender, args);
+        return CommandResult.success;
+    }
 
+    private void continueExecute(ICommand invoker, String sender, String[] args) {
         boolean hasSomePermission = false;
         for (SubCommand subCommand : subCommands) {
             CommandResult result = subCommand.execute(invoker, sender, args);
-            if (result == CommandResult.success) {
-                return CommandResult.success;
-            } else if (result == CommandResult.noMatch) {
+            if (result == CommandResult.success)
+                return;
+            else if (result == CommandResult.noMatch)
                 hasSomePermission = true;
-            }
         }
 
         if (hasSomePermission) {
             sendSender(invoker, sender, getUsage());
-            return CommandResult.success;
         } else {
             sendSender(invoker, sender, "You do not have permission.");
-            return CommandResult.noPermission;
         }
     }
 
@@ -85,5 +86,38 @@ public class BaseCommand extends SubCommand {
 
         }
         return output.toArray(new String[output.size()]);
+    }
+
+    private void resolveSequences(ICommand invoker, String sender, String[] args) {
+        int beginIndex = -1;
+        int endIndex = -1;
+
+        for (int a = 0; a < args.length; ++a) {
+            String arg = args[a];
+            char[] chars = arg.toCharArray();
+            for (int i = 0; i < chars.length; ++i) {
+                if (beginIndex == -1 && chars[i] == '{')
+                    beginIndex = i;
+                if (endIndex == -1 && beginIndex != -1 && chars[i] == '}') {
+                    endIndex = i;
+                    // Found sequence
+                    String sequence = arg.substring(beginIndex + 1, endIndex);
+                    String[] sequenceList = sequence.split(",");
+                    for (String s : sequenceList) {
+                        StringBuilder builder = new StringBuilder(arg);
+                        builder.replace(beginIndex, endIndex + 1, s);
+                        String[] temp = args.clone();
+                        temp[a] = builder.toString();
+                        resolveSequences(invoker, sender, temp);
+                    }
+                }
+
+            }
+
+            if (beginIndex == -1 && endIndex == -1) {
+                // Didn't find any more sequence
+                continueExecute(invoker, sender, args);
+            }
+        }
     }
 }

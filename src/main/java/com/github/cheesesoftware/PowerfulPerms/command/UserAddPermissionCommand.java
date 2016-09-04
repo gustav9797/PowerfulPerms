@@ -61,7 +61,7 @@ public class UserAddPermissionCommand extends SubCommand {
                                 server = "";
                             if (world.equalsIgnoreCase("all"))
                                 world = "";
-                            parsePermission(permissionManager, uuid, permission, world, server, expires, response);
+                            permissionManager.addPlayerPermission(uuid, permission, world, server, expires, response);
                         }
                     }
                 });
@@ -72,31 +72,4 @@ public class UserAddPermissionCommand extends SubCommand {
             return CommandResult.noPermission;
     }
 
-    private static void parsePermission(PermissionManager permissionManager, UUID uuid, String permission, String world, String server, Date expires, ResponseRunnable response) {
-        int beginIndex = -1;
-        int endIndex = -1;
-
-        char[] chars = permission.toCharArray();
-        for (int i = 0; i < chars.length; ++i) {
-            if (beginIndex == -1 && chars[i] == '{')
-                beginIndex = i;
-            if (endIndex == -1 && beginIndex != -1 && chars[i] == '}') {
-                endIndex = i;
-                // Found sequence
-                String sequence = permission.substring(beginIndex + 1, endIndex);
-                String[] sequenceList = sequence.split(",");
-                for (String s : sequenceList) {
-                    StringBuilder builder = new StringBuilder(permission);
-                    builder.replace(beginIndex, endIndex + 1, s);
-                    parsePermission(permissionManager, uuid, builder.toString(), world, server, expires, response);
-                }
-            }
-
-        }
-
-        if (beginIndex == -1 && endIndex == -1) {
-            // Didn't find any more sequence
-            permissionManager.addPlayerPermission(uuid, permission, world, server, expires, response);
-        }
-    }
 }
