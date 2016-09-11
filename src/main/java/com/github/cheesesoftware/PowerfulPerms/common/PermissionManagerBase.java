@@ -1023,7 +1023,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
-        getPlayerOwnGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>() {
+        getPlayerOwnGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(resultRunnable.isSameThread()) {
 
             @Override
             public void run() {
@@ -1032,6 +1032,61 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 else
                     resultRunnable.setResult(false);
                 db.scheduler.runSync(resultRunnable);
+            }
+        });
+    }
+
+    protected void copyDefaultGroups(final UUID uuid, final ResponseRunnable resp) {
+        getPlayerOwnGroups(DefaultPermissionPlayer.getUUID(), new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(resp.isSameThread()) {
+            @Override
+            public void run() {
+                if (result == null || result.isEmpty()) {
+                    resp.setResponse(false, "Could not retrieve the default groups.");
+                    db.scheduler.runSync(resp);
+                } else {
+                    getScheduler().runAsync(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            LinkedHashMap<String, List<CachedGroup>> defaultGroups = result;
+                            Iterator<Entry<String, List<CachedGroup>>> it = defaultGroups.entrySet().iterator();
+                            while (it.hasNext()) {
+                                Entry<String, List<CachedGroup>> entry = it.next();
+                                String server = entry.getKey();
+                                Iterator<CachedGroup> it2 = entry.getValue().iterator();
+                                while (it2.hasNext()) {
+                                    final CachedGroup toAdd = it2.next();
+                                    db.insertPlayerGroup(uuid, toAdd.getGroupId(), server, toAdd.isNegated(), toAdd.getExpirationDate(), new DBRunnable(true) {
+
+                                        @Override
+                                        public void run() {
+                                            if (!result.booleanValue())
+                                                plugin.getLogger().severe("Could not copy default group " + toAdd.getGroupId() + " to player " + uuid.toString() + ".");
+                                        }
+                                    });
+                                }
+                            }
+                            resp.setResponse(true, "Default groups copied.");
+                            db.scheduler.runSync(resp);
+                        }
+                    }, resp.isSameThread());
+                }
+
+            }
+        });
+    }
+
+    protected void copyDefaultGroupsIfDefault(final UUID uuid, final ResponseRunnable resp) {
+        this.isPlayerDefault(uuid, new ResultRunnable<Boolean>(resp.isSameThread()) {
+
+            @Override
+            public void run() {
+                if (result.booleanValue()) {
+                    copyDefaultGroups(uuid, resp);
+                } else {
+                    resp.setResponse(false, "Player is not default.");
+                    db.scheduler.runSync(resp);
+                }
             }
         });
     }
@@ -1607,17 +1662,23 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         return;
                     }
 
-                    db.deletePlayerGroup(uuid, groupId, serverFinal, negated, expires, new DBRunnable() {
+                    copyDefaultGroupsIfDefault(uuid, new ResponseRunnable(resp.isSameThread()) {
 
                         @Override
                         public void run() {
-                            if (result.booleanValue()) {
-                                resp.setResponse(true, "Player group removed.");
-                                reloadPlayer(uuid);
-                                notifyReloadPlayer(uuid);
-                            } else
-                                resp.setResponse(false, "Could not remove player group. Check console for errors.");
-                            db.scheduler.runSync(resp, resp.isSameThread());
+                            db.deletePlayerGroup(uuid, groupId, serverFinal, negated, expires, new DBRunnable(resp.isSameThread()) {
+
+                                @Override
+                                public void run() {
+                                    if (result.booleanValue()) {
+                                        resp.setResponse(true, "Player group removed.");
+                                        reloadPlayer(uuid);
+                                        notifyReloadPlayer(uuid);
+                                    } else
+                                        resp.setResponse(false, "Could not remove player group. Check console for errors.");
+                                    db.scheduler.runSync(resp, resp.isSameThread());
+                                }
+                            });
                         }
                     });
 
@@ -1662,56 +1723,68 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     List<CachedGroup> groupList = result.get(serverFinal);
                     if (groupList == null)
                         groupList = new ArrayList<CachedGroup>();
-                    Iterator<CachedGroup> it = groupList.iterator();
-                    while (it.hasNext()) {
-                        CachedGroup cachedGroup = it.next();
-                        if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated && cachedGroup.willExpire()) {
-                            // Update expiration date instead
-                            final Date newExpiry = new Date(cachedGroup.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
-                            db.deletePlayerGroup(uuid, cachedGroup.getGroupId(), serverFinal, cachedGroup.isNegated(), cachedGroup.getExpirationDate(), new DBRunnable(true) {
-
-                                @Override
-                                public void run() {
-                                    if (!result.booleanValue()) {
-                                        resp.setResponse(false, "Could not update player group expiration date. Check console for any errors.");
-                                        db.scheduler.runSync(resp, resp.isSameThread());
-                                    } else {
-                                        db.insertPlayerGroup(uuid, groupId, serverFinal, negated, newExpiry, new DBRunnable(true) {
-
-                                            @Override
-                                            public void run() {
-                                                if (!result.booleanValue()) {
-                                                    resp.setResponse(false, "Could not update player group expiration date. Check console for any errors.");
-                                                } else {
-                                                    resp.setResponse(true, "Group expiration changed.");
-                                                    reloadPlayer(uuid);
-                                                    notifyReloadPlayer(uuid);
-                                                }
-                                                db.scheduler.runSync(resp, resp.isSameThread());
-                                            }
-                                        });
-                                    }
-                                }
-                            });
-                            return;
-                        } else if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
-                            resp.setResponse(false, "Player already has this group.");
-                            db.scheduler.runSync(resp, resp.isSameThread());
-                            return;
-                        }
-                    }
-
-                    db.insertPlayerGroup(uuid, groupId, serverFinal, negated, expires, new DBRunnable() {
+                    final Iterator<CachedGroup> it = groupList.iterator();
+                    getScheduler().runAsync(new Runnable() {
 
                         @Override
                         public void run() {
-                            if (result.booleanValue()) {
-                                resp.setResponse(true, "Player group added.");
-                                reloadPlayer(uuid);
-                                notifyReloadPlayer(uuid);
-                            } else
-                                resp.setResponse(false, "Could not add player group. Check console for errors.");
-                            db.scheduler.runSync(resp, resp.isSameThread());
+                            while (it.hasNext()) {
+                                CachedGroup cachedGroup = it.next();
+                                if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated && cachedGroup.willExpire()) {
+                                    // Update expiration date instead
+                                    final Date newExpiry = new Date(cachedGroup.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
+                                    db.deletePlayerGroup(uuid, cachedGroup.getGroupId(), serverFinal, cachedGroup.isNegated(), cachedGroup.getExpirationDate(), new DBRunnable(true) {
+
+                                        @Override
+                                        public void run() {
+                                            if (!result.booleanValue()) {
+                                                resp.setResponse(false, "Could not update player group expiration date. Check console for any errors.");
+                                                db.scheduler.runSync(resp, resp.isSameThread());
+                                            } else {
+                                                db.insertPlayerGroup(uuid, groupId, serverFinal, negated, newExpiry, new DBRunnable(true) {
+
+                                                    @Override
+                                                    public void run() {
+                                                        if (!result.booleanValue()) {
+                                                            resp.setResponse(false, "Could not update player group expiration date. Check console for any errors.");
+                                                        } else {
+                                                            resp.setResponse(true, "Group expiration changed.");
+                                                            reloadPlayer(uuid);
+                                                            notifyReloadPlayer(uuid);
+                                                        }
+                                                        db.scheduler.runSync(resp, resp.isSameThread());
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    });
+                                    return;
+                                } else if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
+                                    resp.setResponse(false, "Player already has this group.");
+                                    db.scheduler.runSync(resp, resp.isSameThread());
+                                    return;
+                                }
+                            }
+                        }
+                    }, resp.isSameThread());
+
+                    copyDefaultGroupsIfDefault(uuid, new ResponseRunnable(resp.isSameThread()) {
+
+                        @Override
+                        public void run() {
+                            db.insertPlayerGroup(uuid, groupId, serverFinal, negated, expires, new DBRunnable(resp.isSameThread()) {
+
+                                @Override
+                                public void run() {
+                                    if (result.booleanValue()) {
+                                        resp.setResponse(true, "Player group added.");
+                                        reloadPlayer(uuid);
+                                        notifyReloadPlayer(uuid);
+                                    } else
+                                        resp.setResponse(false, "Could not add player group. Check console for errors.");
+                                    db.scheduler.runSync(resp, resp.isSameThread());
+                                }
+                            });
                         }
                     });
 
@@ -1737,7 +1810,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return;
         }
 
-        getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>() {
+        getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(resp.isSameThread()) {
 
             @Override
             public void run() {
@@ -1748,64 +1821,70 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                         if (result != null) {
                             if (!result.isEmpty()) {
-                                Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
-                                boolean changed = false;
-                                Group toUse = null;
-                                while (it.hasNext()) {
-                                    Entry<String, List<CachedGroup>> next = it.next();
-                                    final String server = next.getKey();
-                                    List<CachedGroup> playerCurrentGroups = next.getValue();
-                                    Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
-                                    while (it2.hasNext()) {
-                                        final CachedGroup current = it2.next();
-                                        final Group currentGroup = getGroup(current.getGroupId());
-                                        if (currentGroup.getLadder().equals(group.getLadder()) && current.getExpirationDate() == null) {
-                                            if (toUse == null)
-                                                toUse = currentGroup;
-                                            // Replace with new group if they are on the same ladder and if toUse and current is the same group
-                                            if (toUse.getId() == currentGroup.getId()) {
-                                                // clone.set(clone.indexOf(current), new CachedGroup(-1, groupId, current.isNegated(), null));
-                                                db.deletePlayerGroup(uuid, currentGroup.getId(), server, current.isNegated(), null, new DBRunnable(true) {
+                                copyDefaultGroupsIfDefault(uuid, new ResponseRunnable(true) {
 
-                                                    @Override
-                                                    public void run() {
-                                                        debug("(setrank) removed group " + currentGroup.getId());
-                                                        if (!result.booleanValue()) {
-                                                            resp.setResponse(false, "Could not remove group with ID " + currentGroup.getId() + ".");
-                                                            db.scheduler.runSync(resp, resp.isSameThread());
-                                                            return;
-                                                        } else {
-                                                            db.insertPlayerGroup(uuid, groupId, server, current.isNegated(), null, new DBRunnable(true) {
+                                    @Override
+                                    public void run() {
+                                        Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
+                                        boolean changed = false;
+                                        Group toUse = null;
+                                        while (it.hasNext()) {
+                                            Entry<String, List<CachedGroup>> next = it.next();
+                                            final String server = next.getKey();
+                                            List<CachedGroup> playerCurrentGroups = next.getValue();
+                                            Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
+                                            while (it2.hasNext()) {
+                                                final CachedGroup current = it2.next();
+                                                final Group currentGroup = getGroup(current.getGroupId());
+                                                if (currentGroup.getLadder().equals(group.getLadder()) && current.getExpirationDate() == null) {
+                                                    if (toUse == null)
+                                                        toUse = currentGroup;
+                                                    // Replace with new group if they are on the same ladder and if toUse and current is the same group
+                                                    if (toUse.getId() == currentGroup.getId()) {
+                                                        // clone.set(clone.indexOf(current), new CachedGroup(-1, groupId, current.isNegated(), null));
+                                                        db.deletePlayerGroup(uuid, currentGroup.getId(), server, current.isNegated(), null, new DBRunnable(true) {
 
-                                                                @Override
-                                                                public void run() {
-                                                                    debug("(setrank) added group " + groupId);
-                                                                    if (!result.booleanValue()) {
-                                                                        resp.setResponse(false, "Could not add group with ID " + groupId + ".");
-                                                                        db.scheduler.runSync(resp, resp.isSameThread());
-                                                                        return;
-                                                                    }
+                                                            @Override
+                                                            public void run() {
+                                                                debug("(setrank) removed group " + currentGroup.getId());
+                                                                if (!result.booleanValue()) {
+                                                                    resp.setResponse(false, "Could not remove group with ID " + currentGroup.getId() + ".");
+                                                                    db.scheduler.runSync(resp, resp.isSameThread());
+                                                                    return;
+                                                                } else {
+                                                                    db.insertPlayerGroup(uuid, groupId, server, current.isNegated(), null, new DBRunnable(true) {
+
+                                                                        @Override
+                                                                        public void run() {
+                                                                            debug("(setrank) added group " + groupId);
+                                                                            if (!result.booleanValue()) {
+                                                                                resp.setResponse(false, "Could not add group with ID " + groupId + ".");
+                                                                                db.scheduler.runSync(resp, resp.isSameThread());
+                                                                                return;
+                                                                            }
+                                                                        }
+                                                                    });
                                                                 }
-                                                            });
-                                                        }
+                                                            }
+                                                        });
+                                                        if (!resp.getResponse().isEmpty())
+                                                            return;
+                                                        changed = true;
                                                     }
-                                                });
-                                                if (!resp.getResponse().isEmpty())
-                                                    return;
-                                                changed = true;
+                                                }
                                             }
                                         }
-                                    }
-                                }
 
-                                if (!changed) {
-                                    resp.setResponse(false, "Player has no groups on the specified ladder.");
-                                } else {
-                                    resp.setResponse(true, "Player rank set on ladder \"" + group.getLadder() + "\".");
-                                    reloadPlayer(uuid);
-                                    notifyReloadPlayer(uuid);
-                                }
-                                db.scheduler.runSync(resp, resp.isSameThread());
+                                        if (!changed) {
+                                            resp.setResponse(false, "Player has no groups on the specified ladder.");
+                                        } else {
+                                            resp.setResponse(true, "Player rank set on ladder \"" + group.getLadder() + "\".");
+                                            reloadPlayer(uuid);
+                                            notifyReloadPlayer(uuid);
+                                        }
+                                        db.scheduler.runSync(resp, resp.isSameThread());
+                                    }
+                                });
 
                             } else {
                                 resp.setResponse(false, "Player has no groups.");
@@ -1816,7 +1895,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             db.scheduler.runSync(resp, resp.isSameThread());
                         }
                     }
-                }, sameThread);
+                }, resp.isSameThread());
             }
         });
 
@@ -1887,88 +1966,94 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                     @Override
                     public void run() {
-                        if (result != null) {
-                            if (!result.isEmpty()) {
-                                Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
-                                boolean changed = false;
-                                Group toUse = null;
-                                Group toPromoteTo = null;
-                                while (it.hasNext()) {
-                                    Entry<String, List<CachedGroup>> next = it.next();
-                                    final String server = next.getKey();
-                                    List<CachedGroup> playerCurrentGroups = next.getValue();
-                                    Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
+                        copyDefaultGroupsIfDefault(uuid, new ResponseRunnable(true) {
 
-                                    while (it2.hasNext()) {
-                                        final CachedGroup current = it2.next();
-                                        final Group currentGroup = getGroup(current.getGroupId());
-                                        if (currentGroup.getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
-                                            if (toUse == null) {
-                                                toUse = currentGroup;
-                                                toPromoteTo = getHigherGroup(toUse, groupsClone);
-                                                if (toPromoteTo == null) {
-                                                    resp.setResponse(false, "There is no group on this ladder with a higher rank.");
-                                                    db.scheduler.runSync(resp, resp.isSameThread());
-                                                    return;
-                                                }
-                                            }
-                                            // Replace with new group if they are on the same ladder and if toUse and current is the same group
-                                            if (toUse.getId() == currentGroup.getId()) {
-                                                // This is the group to promote from
-                                                // clone.set(clone.indexOf(current), new CachedGroup(-1, toPromoteTo.getId(), current.isNegated(), null));
-                                                final Group toPromoteToFinal = toPromoteTo;
-                                                db.deletePlayerGroup(uuid, currentGroup.getId(), server, current.isNegated(), null, new DBRunnable(true) {
+                            @Override
+                            public void run() {
+                                if (result != null) {
+                                    if (!result.isEmpty()) {
+                                        Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
+                                        boolean changed = false;
+                                        Group toUse = null;
+                                        Group toPromoteTo = null;
+                                        while (it.hasNext()) {
+                                            Entry<String, List<CachedGroup>> next = it.next();
+                                            final String server = next.getKey();
+                                            List<CachedGroup> playerCurrentGroups = next.getValue();
+                                            Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
 
-                                                    @Override
-                                                    public void run() {
-                                                        debug("(promote) removed group " + currentGroup.getId());
-                                                        if (!result.booleanValue()) {
-                                                            resp.setResponse(false, "Could not remove group with ID " + currentGroup.getId() + ".");
+                                            while (it2.hasNext()) {
+                                                final CachedGroup current = it2.next();
+                                                final Group currentGroup = getGroup(current.getGroupId());
+                                                if (currentGroup.getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
+                                                    if (toUse == null) {
+                                                        toUse = currentGroup;
+                                                        toPromoteTo = getHigherGroup(toUse, groupsClone);
+                                                        if (toPromoteTo == null) {
+                                                            resp.setResponse(false, "There is no group on this ladder with a higher rank.");
                                                             db.scheduler.runSync(resp, resp.isSameThread());
                                                             return;
-                                                        } else {
-                                                            db.insertPlayerGroup(uuid, toPromoteToFinal.getId(), server, current.isNegated(), null, new DBRunnable(true) {
-
-                                                                @Override
-                                                                public void run() {
-                                                                    debug("(promote) added group " + toPromoteToFinal.getId());
-                                                                    if (!result.booleanValue()) {
-                                                                        resp.setResponse(false, "Could not add group with ID " + toPromoteToFinal.getId() + ".");
-                                                                        db.scheduler.runSync(resp, resp.isSameThread());
-                                                                        return;
-                                                                    }
-                                                                }
-                                                            });
                                                         }
                                                     }
-                                                });
-                                                if (!resp.getResponse().isEmpty())
-                                                    return;
-                                                changed = true;
+                                                    // Replace with new group if they are on the same ladder and if toUse and current is the same group
+                                                    if (toUse.getId() == currentGroup.getId()) {
+                                                        // This is the group to promote from
+                                                        // clone.set(clone.indexOf(current), new CachedGroup(-1, toPromoteTo.getId(), current.isNegated(), null));
+                                                        final Group toPromoteToFinal = toPromoteTo;
+                                                        db.deletePlayerGroup(uuid, currentGroup.getId(), server, current.isNegated(), null, new DBRunnable(true) {
+
+                                                            @Override
+                                                            public void run() {
+                                                                debug("(promote) removed group " + currentGroup.getId() + " " + currentGroup.getName());
+                                                                if (!result.booleanValue()) {
+                                                                    resp.setResponse(false, "Could not remove group with ID " + currentGroup.getId() + ".");
+                                                                    db.scheduler.runSync(resp, resp.isSameThread());
+                                                                    return;
+                                                                } else {
+                                                                    db.insertPlayerGroup(uuid, toPromoteToFinal.getId(), server, current.isNegated(), null, new DBRunnable(true) {
+
+                                                                        @Override
+                                                                        public void run() {
+                                                                            debug("(promote) added group " + toPromoteToFinal.getId() + " " + toPromoteToFinal.getName());
+                                                                            if (!result.booleanValue()) {
+                                                                                resp.setResponse(false, "Could not add group with ID " + toPromoteToFinal.getId() + ".");
+                                                                                db.scheduler.runSync(resp, resp.isSameThread());
+                                                                                return;
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                }
+                                                            }
+                                                        });
+                                                        if (!resp.getResponse().isEmpty())
+                                                            return;
+                                                        changed = true;
+                                                    }
+                                                }
                                             }
                                         }
+
+                                        if (!changed) {
+                                            resp.setResponse(false, "Player has no groups on the specified ladder.");
+                                        } else {
+                                            resp.setResponse(true, "Player was promoted to \"" + toPromoteTo.getName() + "\".");
+                                            reloadPlayer(uuid);
+                                            notifyReloadPlayer(uuid);
+                                        }
+                                        db.scheduler.runSync(resp, resp.isSameThread());
+
+                                    } else {
+                                        resp.setResponse(false, "Player has no groups.");
+                                        db.scheduler.runSync(resp, resp.isSameThread());
                                     }
-                                }
-
-                                if (!changed) {
-                                    resp.setResponse(false, "Player has no groups on the specified ladder.");
                                 } else {
-                                    resp.setResponse(true, "Player was promoted to \"" + toPromoteTo.getName() + "\".");
-                                    reloadPlayer(uuid);
-                                    notifyReloadPlayer(uuid);
+                                    resp.setResponse(false, "Player does not exist.");
+                                    db.scheduler.runSync(resp, resp.isSameThread());
                                 }
-                                db.scheduler.runSync(resp, resp.isSameThread());
-
-                            } else {
-                                resp.setResponse(false, "Player has no groups.");
-                                db.scheduler.runSync(resp, resp.isSameThread());
                             }
-                        } else {
-                            resp.setResponse(false, "Player does not exist.");
-                            db.scheduler.runSync(resp, resp.isSameThread());
-                        }
+                        });
                     }
-                }, sameThread);
+                }, resp.isSameThread());
             }
         });
     }
@@ -1991,86 +2076,94 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                     @Override
                     public void run() {
-                        if (result != null) {
-                            if (!result.isEmpty()) {
-                                Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
-                                boolean changed = false;
-                                Group toUse = null;
-                                Group toDemoteTo = null;
-                                while (it.hasNext()) {
-                                    Entry<String, List<CachedGroup>> next = it.next();
-                                    final String server = next.getKey();
-                                    List<CachedGroup> playerCurrentGroups = next.getValue();
-                                    Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
+                        copyDefaultGroupsIfDefault(uuid, new ResponseRunnable(true) {
 
-                                    while (it2.hasNext()) {
-                                        final CachedGroup current = it2.next();
-                                        final Group currentGroup = getGroup(current.getGroupId());
-                                        if (currentGroup.getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
-                                            if (toUse == null) {
-                                                toUse = currentGroup;
-                                                toDemoteTo = getLowerGroup(toUse, groupsClone);
-                                                if (toDemoteTo == null) {
-                                                    resp.setResponse(false, "There is no group on this ladder with a lower rank.");
-                                                    db.scheduler.runSync(resp, resp.isSameThread());
-                                                    return;
-                                                }
-                                            }
-                                            // Remove old group and add lower group if they are on the same ladder and if toUse and current is the same group
-                                            if (toUse.getId() == currentGroup.getId()) {
-                                                final Group toDemoteToFinal = toDemoteTo;
-                                                db.deletePlayerGroup(uuid, currentGroup.getId(), server, current.isNegated(), null, new DBRunnable(true) {
+                            @Override
+                            public void run() {
+                                if (result != null) {
+                                    if (!result.isEmpty()) {
+                                        Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
+                                        boolean changed = false;
+                                        Group toUse = null;
+                                        Group toDemoteTo = null;
+                                        while (it.hasNext()) {
+                                            Entry<String, List<CachedGroup>> next = it.next();
+                                            final String server = next.getKey();
+                                            List<CachedGroup> playerCurrentGroups = next.getValue();
+                                            Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
 
-                                                    @Override
-                                                    public void run() {
-                                                        debug("(demote) removed group " + currentGroup.getId());
-                                                        if (!result.booleanValue()) {
-                                                            resp.setResponse(false, "Could not remove group with ID " + currentGroup.getId() + ".");
+                                            while (it2.hasNext()) {
+                                                final CachedGroup current = it2.next();
+                                                final Group currentGroup = getGroup(current.getGroupId());
+                                                if (currentGroup.getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
+                                                    if (toUse == null) {
+                                                        toUse = currentGroup;
+                                                        toDemoteTo = getLowerGroup(toUse, groupsClone);
+                                                        if (toDemoteTo == null) {
+                                                            resp.setResponse(false, "There is no group on this ladder with a lower rank.");
                                                             db.scheduler.runSync(resp, resp.isSameThread());
                                                             return;
-                                                        } else {
-                                                            db.insertPlayerGroup(uuid, toDemoteToFinal.getId(), server, current.isNegated(), null, new DBRunnable(true) {
-
-                                                                @Override
-                                                                public void run() {
-                                                                    debug("(demote) added group " + toDemoteToFinal.getId());
-                                                                    if (!result.booleanValue()) {
-                                                                        resp.setResponse(false, "Could not add group with ID " + toDemoteToFinal.getId() + ".");
-                                                                        db.scheduler.runSync(resp, resp.isSameThread());
-                                                                        return;
-                                                                    }
-                                                                }
-                                                            });
                                                         }
                                                     }
-                                                });
-                                                if (!resp.getResponse().isEmpty())
-                                                    return;
-                                                changed = true;
+                                                    // Remove old group and add lower group if they are on the same ladder and if toUse and current is the same group
+                                                    if (toUse.getId() == currentGroup.getId()) {
+                                                        final Group toDemoteToFinal = toDemoteTo;
+                                                        db.deletePlayerGroup(uuid, currentGroup.getId(), server, current.isNegated(), null, new DBRunnable(true) {
+
+                                                            @Override
+                                                            public void run() {
+                                                                debug("(demote) removed group " + currentGroup.getId());
+                                                                if (!result.booleanValue()) {
+                                                                    resp.setResponse(false, "Could not remove group with ID " + currentGroup.getId() + ".");
+                                                                    db.scheduler.runSync(resp, resp.isSameThread());
+                                                                    return;
+                                                                } else {
+                                                                    db.insertPlayerGroup(uuid, toDemoteToFinal.getId(), server, current.isNegated(), null, new DBRunnable(true) {
+
+                                                                        @Override
+                                                                        public void run() {
+                                                                            debug("(demote) added group " + toDemoteToFinal.getId());
+                                                                            if (!result.booleanValue()) {
+                                                                                resp.setResponse(false, "Could not add group with ID " + toDemoteToFinal.getId() + ".");
+                                                                                db.scheduler.runSync(resp, resp.isSameThread());
+                                                                                return;
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                }
+                                                            }
+                                                        });
+                                                        if (!resp.getResponse().isEmpty())
+                                                            return;
+                                                        changed = true;
+                                                    }
+                                                }
                                             }
                                         }
+
+                                        if (!changed) {
+                                            resp.setResponse(false, "Player has no groups on the specified ladder.");
+                                        } else {
+                                            resp.setResponse(true, "Player was demoted to \"" + toDemoteTo.getName() + "\".");
+                                            reloadPlayer(uuid);
+                                            notifyReloadPlayer(uuid);
+                                        }
+                                        db.scheduler.runSync(resp, resp.isSameThread());
+
+                                    } else {
+                                        resp.setResponse(false, "Player has no groups.");
+                                        db.scheduler.runSync(resp, resp.isSameThread());
                                     }
-                                }
-
-                                if (!changed) {
-                                    resp.setResponse(false, "Player has no groups on the specified ladder.");
                                 } else {
-                                    resp.setResponse(true, "Player was demoted to \"" + toDemoteTo.getName() + "\".");
-                                    reloadPlayer(uuid);
-                                    notifyReloadPlayer(uuid);
+                                    resp.setResponse(false, "Player does not exist.");
+                                    db.scheduler.runSync(resp, resp.isSameThread());
                                 }
-                                db.scheduler.runSync(resp, resp.isSameThread());
 
-                            } else {
-                                resp.setResponse(false, "Player has no groups.");
-                                db.scheduler.runSync(resp, resp.isSameThread());
                             }
-                        } else {
-                            resp.setResponse(false, "Player does not exist.");
-                            db.scheduler.runSync(resp, resp.isSameThread());
-                        }
+                        });
+
                     }
-                }, sameThread);
+                }, resp.isSameThread());
             }
         });
     }
