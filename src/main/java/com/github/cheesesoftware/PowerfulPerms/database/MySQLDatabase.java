@@ -99,13 +99,8 @@ public class MySQLDatabase extends Database {
         if (plugin.getOldVersion() < 233) {
             // Set [default] UUID
             final PowerfulPermsPlugin pl = plugin;
-            setPlayerUUID("[default]", java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)), new DBRunnable(true) {
-
-                @Override
-                public void run() {
-                    pl.getLogger().info("Applied database patch #1: Inserted UUID for player [default].");
-                }
-            });
+            setPlayerUUID("[default]", java.util.UUID.nameUUIDFromBytes(("[default]").getBytes(Charsets.UTF_8)));
+            pl.getLogger().info("Applied database patch #1: Inserted UUID for player [default].");
         }
 
         if (plugin.getOldVersion() < 240) {
@@ -171,25 +166,14 @@ public class MySQLDatabase extends Database {
                         String groupsRaw = current.getString("groups");
                         String prefix = current.getString("prefix");
                         String suffix = current.getString("suffix");
-                        this.insertPlayer(uuid, name, prefix, suffix, new DBRunnable(true) {
-
-                            @Override
-                            public void run() {
-                                plugin.getLogger().info("Inserted player " + uuid.toString());
-                            }
-                        });
-
+                        this.insertPlayer(uuid, name, prefix, suffix);
+                        plugin.getLogger().info("Inserted player " + uuid.toString());
                         LinkedHashMap<String, List<CachedGroup>> tempGroups = Util.getPlayerGroups_old(groupsRaw);
                         for (Entry<String, List<CachedGroup>> e : tempGroups.entrySet()) {
                             String server = e.getKey();
                             for (final CachedGroup cachedGroup : e.getValue()) {
-                                this.insertPlayerGroup(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), null, new DBRunnable(true) {
-
-                                    @Override
-                                    public void run() {
-                                        plugin.getLogger().info("Inserted player group " + cachedGroup.getGroupId() + " for player " + uuid.toString());
-                                    }
-                                });
+                                this.insertPlayerGroup(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), null);
+                                plugin.getLogger().info("Inserted player group " + cachedGroup.getGroupId() + " for player " + uuid.toString());
                             }
                         }
 
@@ -216,47 +200,27 @@ public class MySQLDatabase extends Database {
                         int rank = current.getInt("rank");
                         groupIds.put(name, id);
 
-                        this.insertGroup(id, name, ladder, rank, new DBRunnable(true) {
-
-                            @Override
-                            public void run() {
-                                plugin.getLogger().info("Inserted group " + id);
-                            }
-                        });
+                        this.insertGroup(id, name, ladder, rank);
+                        plugin.getLogger().info("Inserted group " + id);
 
                         HashMap<String, String> prefixes = Util.getPrefixSuffix_old(prefixRaw);
                         for (final Entry<String, String> e : prefixes.entrySet()) {
-                            this.insertGroupPrefix(id, e.getValue(), e.getKey(), new DBRunnable(true) {
-
-                                @Override
-                                public void run() {
-                                    plugin.getLogger().info("Inserted group prefix " + e.getKey() + ":" + e.getValue() + " for group " + id);
-                                }
-                            });
+                            this.insertGroupPrefix(id, e.getValue(), e.getKey());
+                            plugin.getLogger().info("Inserted group prefix " + e.getKey() + ":" + e.getValue() + " for group " + id);
                         }
 
                         HashMap<String, String> suffixes = Util.getPrefixSuffix_old(suffixRaw);
                         for (final Entry<String, String> e : suffixes.entrySet()) {
-                            this.insertGroupSuffix(id, e.getValue(), e.getKey(), new DBRunnable(true) {
-
-                                @Override
-                                public void run() {
-                                    plugin.getLogger().info("Inserted group suffix " + e.getKey() + ":" + e.getValue() + " for group " + id);
-                                }
-                            });
+                            this.insertGroupSuffix(id, e.getValue(), e.getKey());
+                            plugin.getLogger().info("Inserted group suffix " + e.getKey() + ":" + e.getValue() + " for group " + id);
                         }
 
                         ArrayList<String> parents = Util.getGroupParents_old(parentsRaw);
                         for (String parentName : parents) {
                             try {
                                 final int parentId = Integer.parseInt(parentName);
-                                this.insertGroupParent(id, parentId, new DBRunnable(true) {
-
-                                    @Override
-                                    public void run() {
-                                        plugin.getLogger().info("Inserted group parent " + parentId + " for group " + id);
-                                    }
-                                });
+                                this.insertGroupParent(id, parentId);
+                                plugin.getLogger().info("Inserted group parent " + parentId + " for group " + id);
                             } catch (NumberFormatException e) {
                                 plugin.getLogger().warning("Couldn't add group parent " + parentName + " to group " + id);
                             }
@@ -295,13 +259,8 @@ public class MySQLDatabase extends Database {
                         if (groupname != null && !groupname.isEmpty()) {
                             Integer groupId = groupIds.get(groupname);
                             if (groupId != null) {
-                                this.insertGroupPermission(groupId, permission, world, server, null, new DBRunnable(true) {
-
-                                    @Override
-                                    public void run() {
-                                        plugin.getLogger().info("Inserted permission " + permission + " for group " + groupname);
-                                    }
-                                });
+                                this.insertGroupPermission(groupId, permission, world, server, null);
+                                plugin.getLogger().info("Inserted permission " + permission + " for group " + groupname);
                             } else
                                 plugin.getLogger().warning("Couldn't add group permission " + permission + " to group " + groupname);
                         } else if (uuid != null || playername != null) {
@@ -311,25 +270,15 @@ public class MySQLDatabase extends Database {
                                     @Override
                                     public void run() {
                                         if (result != null) {
-                                            insertPlayerPermission(uuid, permission, world, server, null, new DBRunnable(true) {
-
-                                                @Override
-                                                public void run() {
-                                                    plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
-                                                }
-                                            });
+                                            insertPlayerPermission(uuid, permission, world, server, null);
+                                            plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
                                         }
                                     }
 
                                 });
                             } else {
-                                this.insertPlayerPermission(uuid, permission, world, server, null, new DBRunnable(true) {
-
-                                    @Override
-                                    public void run() {
-                                        plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
-                                    }
-                                });
+                                this.insertPlayerPermission(uuid, permission, world, server, null);
+                                plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
                             }
                         }
                     }
@@ -387,1135 +336,750 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public void insertGroup(final int id, final String group, final String ladder, final int rank, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroups + " SET " + (id != -1 ? "`id`=?, " : "") + "`name`=?, `ladder`=?, `rank`=?");
-                    if (id != -1) {
-                        s.setInt(1, id);
-                        s.setString(2, group);
-                        s.setString(3, ladder);
-                        s.setInt(4, rank);
-                    } else {
-                        s.setString(1, group);
-                        s.setString(2, ladder);
-                        s.setInt(3, rank);
-                    }
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
+    public boolean insertGroup(final int id, final String group, final String ladder, final int rank) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroups + " SET " + (id != -1 ? "`id`=?, " : "") + "`name`=?, `ladder`=?, `rank`=?");
+            if (id != -1) {
+                s.setInt(1, id);
+                s.setString(2, group);
+                s.setString(3, ladder);
+                s.setInt(4, rank);
+            } else {
+                s.setString(1, group);
+                s.setString(2, ladder);
+                s.setInt(3, rank);
             }
-        }, done.sameThread());
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void insertPlayer(final UUID uuid, final String name, final String prefix, final String suffix, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayers + " SET `uuid`=?, `name`=?, `prefix`=?, `suffix`=?;");
-                    s.setString(1, uuid.toString());
-                    s.setString(2, name);
-                    s.setString(3, prefix);
-                    s.setString(4, suffix);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean insertPlayer(final UUID uuid, final String name, final String prefix, final String suffix) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblPlayers + " SET `uuid`=?, `name`=?, `prefix`=?, `suffix`=?;");
+            s.setString(1, uuid.toString());
+            s.setString(2, name);
+            s.setString(3, prefix);
+            s.setString(4, suffix);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void getPlayer(final UUID uuid, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
+    public DBResult getPlayer(final UUID uuid) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `uuid`=?");
+            s.setString(1, uuid.toString());
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
 
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `uuid`=?");
-                    s.setString(1, uuid.toString());
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+        return result;
     }
 
     @Override
-    public void getPlayers(final String name, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE BINARY `name`=?");
-                    s.setString(1, name);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getPlayers(final String name) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE BINARY `name`=?");
+            s.setString(1, name);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void setPlayerName(final UUID uuid, final String name, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `name`=? WHERE `uuid`=?;");
-                    s.setString(1, name);
-                    s.setString(2, uuid.toString());
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean setPlayerName(final UUID uuid, final String name) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `name`=? WHERE `uuid`=?;");
+            s.setString(1, name);
+            s.setString(2, uuid.toString());
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void setPlayerUUID(final String name, final UUID uuid, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `uuid`=? WHERE `name`=?;");
-                    s.setString(1, uuid.toString());
-                    s.setString(2, name);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean setPlayerUUID(final String name, final UUID uuid) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `uuid`=? WHERE `name`=?;");
+            s.setString(1, uuid.toString());
+            s.setString(2, name);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void getGroups(final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroups);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getGroups() {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroups);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void getGroupPermissions(final int groupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPermissions + " WHERE `groupid`=?");
-                    s.setInt(1, groupId);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getGroupPermissions(final int groupId) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPermissions + " WHERE `groupid`=?");
+            s.setInt(1, groupId);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void getGroupPermissions(final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPermissions);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getGroupPermissions() {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPermissions);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void getPlayerPermissions(final UUID uuid, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=?");
-                    s.setString(1, uuid.toString());
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getPlayerPermissions(final UUID uuid) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=?");
+            s.setString(1, uuid.toString());
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void playerHasPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = false;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=? AND `permission`=? AND `world`=? AND `server`=? AND "
-                            + (expires == null ? "`expires` is NULL" : "`expires`=?"));
-                    s.setString(1, uuid.toString());
-                    s.setString(2, permission);
-                    s.setString(3, world);
-                    s.setString(4, server);
-                    if (expires != null)
-                        s.setString(5, getExpirationDateString(expires));
-                    s.execute();
-                    ResultSet result = s.getResultSet();
-                    if (result.next()) {
-                        success = true;
-                    }
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
+    public boolean playerHasPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires) {
+        boolean success = false;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement(
+                    "SELECT * FROM " + tblPlayerPermissions + " WHERE `playeruuid`=? AND `permission`=? AND `world`=? AND `server`=? AND " + (expires == null ? "`expires` is NULL" : "`expires`=?"));
+            s.setString(1, uuid.toString());
+            s.setString(2, permission);
+            s.setString(3, world);
+            s.setString(4, server);
+            if (expires != null)
+                s.setString(5, getExpirationDateString(expires));
+            s.execute();
+            ResultSet result = s.getResultSet();
+            if (result.next()) {
+                success = true;
             }
-        }, done.sameThread());
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return success;
     }
 
     @Override
-    public void insertPlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection()
-                            .prepareStatement("INSERT INTO " + tblPlayerPermissions + " SET `playeruuid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
-                    s.setString(1, uuid.toString());
-                    s.setString(2, permission);
-                    s.setString(3, world);
-                    s.setString(4, server);
-                    if (expires != null)
-                        s.setString(5, getExpirationDateString(expires));
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean insertPlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection()
+                    .prepareStatement("INSERT INTO " + tblPlayerPermissions + " SET `playeruuid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
+            s.setString(1, uuid.toString());
+            s.setString(2, permission);
+            s.setString(3, world);
+            s.setString(4, server);
+            if (expires != null)
+                s.setString(5, getExpirationDateString(expires));
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deletePlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
+    public boolean deletePlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires) {
+        boolean success = true;
+        int amount = 0;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement(
+                    "DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=? AND `permission`=? AND `server`=? AND `world`=? AND " + (expires == null ? "`expires` is NULL" : "`expires`=?"));
 
-            @Override
-            public void run() {
-                boolean success = true;
-                int amount = 0;
+            s.setString(1, uuid.toString());
+            s.setString(2, permission);
+            s.setString(3, server);
+            s.setString(4, world);
+            if (expires != null)
+                s.setString(5, getExpirationDateString(expires));
 
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=? AND `permission`=? AND `server`=? AND `world`=? AND "
-                            + (expires == null ? "`expires` is NULL" : "`expires`=?"));
-
-                    s.setString(1, uuid.toString());
-                    s.setString(2, permission);
-                    s.setString(3, server);
-                    s.setString(4, world);
-                    if (expires != null)
-                        s.setString(5, getExpirationDateString(expires));
-
-                    amount = s.executeUpdate();
-                    if (amount <= 0)
-                        success = false;
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+            amount = s.executeUpdate();
+            if (amount <= 0)
+                success = false;
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deletePlayerPermissions(final UUID uuid, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
+    public boolean deletePlayerPermissions(final UUID uuid) {
+        boolean success = true;
+        int amount = 0;
+        try {
+            String statement = "DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=?";
+            PreparedStatement s = sql.getConnection().prepareStatement(statement);
 
-            @Override
-            public void run() {
-                boolean success = true;
-                int amount = 0;
-
-                try {
-                    String statement = "DELETE FROM `" + tblPlayerPermissions + "` WHERE `playeruuid`=?";
-                    PreparedStatement s = sql.getConnection().prepareStatement(statement);
-
-                    s.setString(1, uuid.toString());
-                    amount = s.executeUpdate();
-                    if (amount <= 0)
-                        success = false;
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+            s.setString(1, uuid.toString());
+            amount = s.executeUpdate();
+            if (amount <= 0)
+                success = false;
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void insertGroupPermission(final int groupId, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection()
-                            .prepareStatement("INSERT INTO " + tblGroupPermissions + " SET `groupid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
-                    s.setInt(1, groupId);
-                    s.setString(2, permission);
-                    s.setString(3, world);
-                    s.setString(4, server);
-                    if (expires != null)
-                        s.setString(5, getExpirationDateString(expires));
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean insertGroupPermission(final int groupId, final String permission, final String world, final String server, final Date expires) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection()
+                    .prepareStatement("INSERT INTO " + tblGroupPermissions + " SET `groupid`=?, `permission`=?, `world`=?, `server`=?" + (expires != null ? ", `expires`=?" : ""));
+            s.setInt(1, groupId);
+            s.setString(2, permission);
+            s.setString(3, world);
+            s.setString(4, server);
+            if (expires != null)
+                s.setString(5, getExpirationDateString(expires));
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deleteGroupPermission(final int groupId, final String permission, final String world, final String server, final Date expires, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-                int amount = 0;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement(
-                            "DELETE FROM " + tblGroupPermissions + " WHERE `groupid`=? AND `permission`=? AND `world`=? AND `server`=? AND " + (expires == null ? "`expires` is NULL" : "`expires`=?"));
-                    s.setInt(1, groupId);
-                    s.setString(2, permission);
-                    s.setString(3, world);
-                    s.setString(4, server);
-                    if (expires != null)
-                        s.setString(5, getExpirationDateString(expires));
-                    amount = s.executeUpdate();
-                    if (amount <= 0)
-                        success = false;
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult deleteGroupPermission(final int groupId, final String permission, final String world, final String server, final Date expires) {
+        boolean success = true;
+        int amount = 0;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement(
+                    "DELETE FROM " + tblGroupPermissions + " WHERE `groupid`=? AND `permission`=? AND `world`=? AND `server`=? AND " + (expires == null ? "`expires` is NULL" : "`expires`=?"));
+            s.setInt(1, groupId);
+            s.setString(2, permission);
+            s.setString(3, world);
+            s.setString(4, server);
+            if (expires != null)
+                s.setString(5, getExpirationDateString(expires));
+            amount = s.executeUpdate();
+            if (amount <= 0)
+                success = false;
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return new DBResult(success, amount);
     }
 
     @Override
-    public void deleteGroupPermissions(final int groupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
+    public DBResult deleteGroupPermissions(final int groupId) {
+        boolean success = true;
+        int amount = 0;
 
-            @Override
-            public void run() {
-                boolean success = true;
-                int amount = 0;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupPermissions + " WHERE `groupid`=?");
-                    s.setInt(1, groupId);
-                    amount = s.executeUpdate();
-                    if (amount <= 0)
-                        success = false;
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success, amount));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupPermissions + " WHERE `groupid`=?");
+            s.setInt(1, groupId);
+            amount = s.executeUpdate();
+            if (amount <= 0)
+                success = false;
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return new DBResult(success, amount);
     }
 
     @Override
-    public void setPlayerPrefix(final UUID uuid, final String prefix, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
+    public boolean setPlayerPrefix(final UUID uuid, final String prefix) {
+        boolean success = true;
 
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `prefix`=? WHERE `uuid`=?");
-                    s.setString(1, prefix);
-                    s.setString(2, uuid.toString());
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `prefix`=? WHERE `uuid`=?");
+            s.setString(1, prefix);
+            s.setString(2, uuid.toString());
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void setPlayerSuffix(final UUID uuid, final String suffix, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `suffix`=? WHERE `uuid`=?");
-                    s.setString(1, suffix);
-                    s.setString(2, uuid.toString());
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean setPlayerSuffix(final UUID uuid, final String suffix) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblPlayers + " SET `suffix`=? WHERE `uuid`=?");
+            s.setString(1, suffix);
+            s.setString(2, uuid.toString());
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void insertPlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final Date expires, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection()
-                            .prepareStatement("INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?, `negated`=?" + (expires != null ? ", `expires`=?" : ""));
-                    s.setString(1, uuid.toString());
-                    s.setInt(2, groupId);
-                    s.setString(3, server);
-                    s.setBoolean(4, negated);
-                    if (expires != null)
-                        s.setString(5, getExpirationDateString(expires));
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean insertPlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final Date expires) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection()
+                    .prepareStatement("INSERT INTO " + tblPlayerGroups + " SET `playeruuid`=?, `groupid`=?, `server`=?, `negated`=?" + (expires != null ? ", `expires`=?" : ""));
+            s.setString(1, uuid.toString());
+            s.setInt(2, groupId);
+            s.setString(3, server);
+            s.setBoolean(4, negated);
+            if (expires != null)
+                s.setString(5, getExpirationDateString(expires));
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deletePlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final Date expires, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement(
-                            "DELETE FROM " + tblPlayerGroups + " WHERE `playeruuid`=? AND `groupid`=? AND `server`=? AND `negated`=? AND " + (expires == null ? "`expires` is NULL" : "`expires`=?"));
-                    s.setString(1, uuid.toString());
-                    s.setInt(2, groupId);
-                    s.setString(3, server);
-                    s.setBoolean(4, negated);
-                    if (expires != null)
-                        s.setString(5, getExpirationDateString(expires));
-                    plugin.debug(s.toString());
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean deletePlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final Date expires) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement(
+                    "DELETE FROM " + tblPlayerGroups + " WHERE `playeruuid`=? AND `groupid`=? AND `server`=? AND `negated`=? AND " + (expires == null ? "`expires` is NULL" : "`expires`=?"));
+            s.setString(1, uuid.toString());
+            s.setInt(2, groupId);
+            s.setString(3, server);
+            s.setBoolean(4, negated);
+            if (expires != null)
+                s.setString(5, getExpirationDateString(expires));
+            plugin.debug(s.toString());
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void getPlayerGroups(final UUID uuid, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayerGroups + " WHERE `playeruuid`=?");
-                    s.setString(1, uuid.toString());
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getPlayerGroups(final UUID uuid) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayerGroups + " WHERE `playeruuid`=?");
+            s.setString(1, uuid.toString());
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void deleteGroup(final int groupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
+    public boolean deleteGroup(final int groupId) {
+        boolean success = true;
+        int amount = 0;
 
-            @Override
-            public void run() {
-                boolean success = true;
-                int amount = 0;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroups + " WHERE `id`=?;");
+            s.setInt(1, groupId);
+            amount = s.executeUpdate();
+            if (amount <= 0)
+                success = false;
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
 
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroups + " WHERE `id`=?;");
-                    s.setInt(1, groupId);
-                    amount = s.executeUpdate();
-                    if (amount <= 0)
-                        success = false;
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
+        final boolean success2 = success;
 
-                final boolean success2 = success;
-                final int amount2 = amount;
-
-                plugin.getLogger().info("Deleting group " + groupId + "...");
-                deleteGroupPermissions(groupId, new DBRunnable(true) {
-
-                    @Override
-                    public void run() {
-                        plugin.getLogger().info("Deleting group parents...");
-                        deleteGroupParents(groupId, new DBRunnable(true) {
-
-                            @Override
-                            public void run() {
-                                plugin.getLogger().info("Deleting group prefixes...");
-                                deleteGroupPrefixes(groupId, new DBRunnable(true) {
-
-                                    @Override
-                                    public void run() {
-                                        plugin.getLogger().info("Deleting group suffixes...");
-                                        deleteGroupSuffixes(groupId, new DBRunnable(true) {
-
-                                            @Override
-                                            public void run() {
-                                                plugin.getLogger().info("Done.");
-                                                done.setResult(new DBResult(success2, amount2));
-                                                scheduler.runSync(done, done.sameThread());
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                    }
-                });
-
-            }
-        }, done.sameThread());
+        plugin.getLogger().info("Deleting group " + groupId + "...");
+        deleteGroupPermissions(groupId);
+        plugin.getLogger().info("Deleting group parents...");
+        deleteGroupParents(groupId);
+        plugin.getLogger().info("Deleting group prefixes...");
+        deleteGroupPrefixes(groupId);
+        plugin.getLogger().info("Deleting group suffixes...");
+        deleteGroupSuffixes(groupId);
+        plugin.getLogger().info("Done.");
+        return success2;
     }
 
     @Override
-    public void insertGroupParent(final int groupId, final int parentGroupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
+    public boolean insertGroupParent(final int groupId, final int parentGroupId) {
+        boolean success = true;
 
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroupParents + " SET `groupid`=?, `parentgroupid`=?");
-                    s.setInt(1, groupId);
-                    s.setInt(2, parentGroupId);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroupParents + " SET `groupid`=?, `parentgroupid`=?");
+            s.setInt(1, groupId);
+            s.setInt(2, parentGroupId);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deleteGroupParent(final int groupId, final int parentGroupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupParents + " WHERE `groupid`=? AND `parentgroupid`=?");
-                    s.setInt(1, groupId);
-                    s.setInt(2, parentGroupId);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean deleteGroupParent(final int groupId, final int parentGroupId) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupParents + " WHERE `groupid`=? AND `parentgroupid`=?");
+            s.setInt(1, groupId);
+            s.setInt(2, parentGroupId);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deleteGroupParents(final int groupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupParents + " WHERE `groupid`=?");
-                    s.setInt(1, groupId);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean deleteGroupParents(final int groupId) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupParents + " WHERE `groupid`=?");
+            s.setInt(1, groupId);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void getGroupParents(final int groupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupParents + " WHERE `groupid`=?");
-                    s.setInt(1, groupId);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getGroupParents(final int groupId) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupParents + " WHERE `groupid`=?");
+            s.setInt(1, groupId);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void getGroupParents(final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupParents);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getGroupParents() {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupParents);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void insertGroupPrefix(final int groupId, final String prefix, final String server, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroupPrefixes + " SET `groupid`=?, `prefix`=?, `server`=?");
-                    s.setInt(1, groupId);
-                    s.setString(2, prefix);
-                    s.setString(3, server);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean insertGroupPrefix(final int groupId, final String prefix, final String server) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroupPrefixes + " SET `groupid`=?, `prefix`=?, `server`=?");
+            s.setInt(1, groupId);
+            s.setString(2, prefix);
+            s.setString(3, server);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deleteGroupPrefix(final int groupId, final String prefix, final String server, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupPrefixes + " WHERE `groupid`=? AND `prefix`=? AND `server`=?");
-                    s.setInt(1, groupId);
-                    s.setString(2, prefix);
-                    s.setString(3, server);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean deleteGroupPrefix(final int groupId, final String prefix, final String server) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupPrefixes + " WHERE `groupid`=? AND `prefix`=? AND `server`=?");
+            s.setInt(1, groupId);
+            s.setString(2, prefix);
+            s.setString(3, server);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deleteGroupPrefixes(final int groupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupPrefixes + " WHERE `groupid`=?");
-                    s.setInt(1, groupId);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean deleteGroupPrefixes(final int groupId) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupPrefixes + " WHERE `groupid`=?");
+            s.setInt(1, groupId);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void getGroupPrefixes(final int groupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPrefixes + " WHERE `groupid`=?");
-                    s.setInt(1, groupId);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getGroupPrefixes(final int groupId) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPrefixes + " WHERE `groupid`=?");
+            s.setInt(1, groupId);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void getGroupPrefixes(final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPrefixes);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getGroupPrefixes() {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupPrefixes);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void insertGroupSuffix(final int groupId, final String suffix, final String server, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroupSuffixes + " SET `groupid`=?, `suffix`=?, `server`=?");
-                    s.setInt(1, groupId);
-                    s.setString(2, suffix);
-                    s.setString(3, server);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean insertGroupSuffix(final int groupId, final String suffix, final String server) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("INSERT INTO " + tblGroupSuffixes + " SET `groupid`=?, `suffix`=?, `server`=?");
+            s.setInt(1, groupId);
+            s.setString(2, suffix);
+            s.setString(3, server);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deleteGroupSuffix(final int groupId, final String suffix, final String server, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupSuffixes + " WHERE `groupid`=? AND `suffix`=? AND `server`=?");
-                    s.setInt(1, groupId);
-                    s.setString(2, suffix);
-                    s.setString(3, server);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean deleteGroupSuffix(final int groupId, final String suffix, final String server) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupSuffixes + " WHERE `groupid`=? AND `suffix`=? AND `server`=?");
+            s.setInt(1, groupId);
+            s.setString(2, suffix);
+            s.setString(3, server);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void deleteGroupSuffixes(final int groupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupSuffixes + " WHERE `groupid`=?");
-                    s.setInt(1, groupId);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean deleteGroupSuffixes(final int groupId) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupSuffixes + " WHERE `groupid`=?");
+            s.setInt(1, groupId);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void getGroupSuffixes(final int groupId, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupSuffixes + " WHERE `groupid`=?");
-                    s.setInt(1, groupId);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getGroupSuffixes(final int groupId) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupSuffixes + " WHERE `groupid`=?");
+            s.setInt(1, groupId);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void getGroupSuffixes(final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                DBResult result;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupSuffixes);
-                    s.execute();
-                    ResultSet r = s.getResultSet();
-                    result = fromResultSet(r);
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    result = new DBResult(false);
-                }
-
-                done.setResult(result);
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public DBResult getGroupSuffixes() {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupSuffixes);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
     }
 
     @Override
-    public void setGroupLadder(final int groupId, final String ladder, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `ladder`=? WHERE `id`=?");
-                    s.setString(1, ladder);
-                    s.setInt(2, groupId);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean setGroupLadder(final int groupId, final String ladder) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `ladder`=? WHERE `id`=?");
+            s.setString(1, ladder);
+            s.setInt(2, groupId);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void setGroupRank(final int groupId, final int rank, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `rank`=? WHERE `id`=?");
-                    s.setInt(1, rank);
-                    s.setInt(2, groupId);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean setGroupRank(final int groupId, final int rank) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `rank`=? WHERE `id`=?");
+            s.setInt(1, rank);
+            s.setInt(2, groupId);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
     @Override
-    public void setGroupName(final int groupId, final String name, final DBRunnable done) {
-        scheduler.runAsync(new Runnable() {
-
-            @Override
-            public void run() {
-                boolean success = true;
-
-                try {
-                    PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `name`=? WHERE `id`=?");
-                    s.setString(1, name);
-                    s.setInt(2, groupId);
-                    s.execute();
-                    s.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    success = false;
-                }
-
-                done.setResult(new DBResult(success));
-                scheduler.runSync(done, done.sameThread());
-            }
-        }, done.sameThread());
+    public boolean setGroupName(final int groupId, final String name) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("UPDATE " + tblGroups + " SET `name`=? WHERE `id`=?");
+            s.setString(1, name);
+            s.setInt(2, groupId);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
     }
 
 }

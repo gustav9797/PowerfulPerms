@@ -10,88 +10,88 @@ public interface IDatabase {
     public boolean tableExists(String table);
 
     public void createTable(String tableName);
-    
+
     public void renameTable(String tableName, String newTableName);
 
-    public void insertGroup(int id, String group, String ladder, int rank, DBRunnable done);
+    public boolean insertGroup(int id, String group, String ladder, int rank);
 
-    public void insertPlayer(UUID uuid, String name, String prefix, String suffix, DBRunnable done);
-    
-    public void getPlayer(UUID uuid, DBRunnable done);
+    public boolean insertPlayer(UUID uuid, String name, String prefix, String suffix);
 
-    public void getPlayers(String name, DBRunnable done);
+    public DBResult getPlayer(UUID uuid);
 
-    public void setPlayerName(UUID uuid, String name, DBRunnable done);
+    public DBResult getPlayers(String name);
 
-    public void setPlayerUUID(String name, UUID uuid, DBRunnable done);
+    public boolean setPlayerName(UUID uuid, String name);
 
-    public void getGroups(DBRunnable done);
+    public boolean setPlayerUUID(String name, UUID uuid);
 
-    public void getGroupPermissions(int groupId, DBRunnable done);
-    
-    public void getGroupPermissions(DBRunnable done);
+    public DBResult getGroups();
 
-    public void getPlayerPermissions(UUID uuid, DBRunnable done);
+    public DBResult getGroupPermissions(int groupId);
 
-    public void playerHasPermission(UUID uuid, String permission, String world, String server, Date expires, DBRunnable done);
+    public DBResult getGroupPermissions();
 
-    public void insertPlayerPermission(UUID uuid, String permission, String world, String server, Date expires, DBRunnable done);
+    public DBResult getPlayerPermissions(UUID uuid);
 
-    public void insertGroupPermission(int groupId, String permission, String world, String server, Date expires, DBRunnable done);
+    public boolean playerHasPermission(UUID uuid, String permission, String world, String server, Date expires);
 
-    public void deletePlayerPermission(UUID uuid, String permission, String world, String server, Date expires, DBRunnable done);
+    public boolean insertPlayerPermission(UUID uuid, String permission, String world, String server, Date expires);
 
-    public void deletePlayerPermissions(UUID uuid, DBRunnable done);
+    public boolean insertGroupPermission(int groupId, String permission, String world, String server, Date expires);
 
-    public void deleteGroupPermission(int groupId, String permission, String world, String server, Date expires, DBRunnable done);
+    public boolean deletePlayerPermission(UUID uuid, String permission, String world, String server, Date expires);
 
-    public void deleteGroupPermissions(int groupId, DBRunnable done);
+    public boolean deletePlayerPermissions(UUID uuid);
 
-    public void setPlayerPrefix(UUID uuid, String prefix, DBRunnable done);
+    public DBResult deleteGroupPermission(int groupId, String permission, String world, String server, Date expires);
 
-    public void setPlayerSuffix(UUID uuid, String suffix, DBRunnable done);
+    public DBResult deleteGroupPermissions(int groupId);
 
-    public void insertPlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires, DBRunnable done);
+    public boolean setPlayerPrefix(UUID uuid, String prefix);
 
-    public void deletePlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires, DBRunnable done);
-    
-    public void getPlayerGroups(UUID uuid, DBRunnable done);
-    
-    public void deleteGroup(int groupId, DBRunnable done);
+    public boolean setPlayerSuffix(UUID uuid, String suffix);
 
-    public void insertGroupParent(int groupId, int parentGroupId, DBRunnable done);
+    public boolean insertPlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires);
 
-    public void deleteGroupParent(int groupId, int parentGroupId, DBRunnable done);
+    public boolean deletePlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires);
 
-    public void deleteGroupParents(int groupId, DBRunnable done);
+    public DBResult getPlayerGroups(UUID uuid);
 
-    public void getGroupParents(int groupId, DBRunnable done);
-    
-    public void getGroupParents(DBRunnable done);
+    public boolean deleteGroup(int groupId);
 
-    public void insertGroupPrefix(int groupId, String prefix, String server, DBRunnable done);
+    public boolean insertGroupParent(int groupId, int parentGroupId);
 
-    public void deleteGroupPrefix(int groupId, String prefix, String server, DBRunnable done);
+    public boolean deleteGroupParent(int groupId, int parentGroupId);
 
-    public void deleteGroupPrefixes(int groupId, DBRunnable done);
+    public boolean deleteGroupParents(int groupId);
 
-    public void getGroupPrefixes(int groupId, DBRunnable done);
-    
-    public void getGroupPrefixes(DBRunnable done);
+    public DBResult getGroupParents(int groupId);
 
-    public void insertGroupSuffix(int groupId, String suffix, String server, DBRunnable done);
+    public DBResult getGroupParents();
 
-    public void deleteGroupSuffix(int groupId, String suffix, String server, DBRunnable done);
+    public boolean insertGroupPrefix(int groupId, String prefix, String server);
 
-    public void deleteGroupSuffixes(int groupId, DBRunnable done);
+    public boolean deleteGroupPrefix(int groupId, String prefix, String server);
 
-    public void getGroupSuffixes(int groupId, DBRunnable done);
-    
-    public void getGroupSuffixes(DBRunnable done);
+    public boolean deleteGroupPrefixes(int groupId);
 
-    public void setGroupLadder(int groupId, String ladder, DBRunnable done);
+    public DBResult getGroupPrefixes(int groupId);
 
-    public void setGroupRank(int groupId, int rank, DBRunnable done);
+    public DBResult getGroupPrefixes();
 
-    public void setGroupName(int groupId, String name, DBRunnable done);
+    public boolean insertGroupSuffix(int groupId, String suffix, String server);
+
+    public boolean deleteGroupSuffix(int groupId, String suffix, String server);
+
+    public boolean deleteGroupSuffixes(int groupId);
+
+    public DBResult getGroupSuffixes(int groupId);
+
+    public DBResult getGroupSuffixes();
+
+    public boolean setGroupLadder(int groupId, String ladder);
+
+    public boolean setGroupRank(int groupId, int rank);
+
+    public boolean setGroupName(int groupId, String name);
 }
