@@ -13,7 +13,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
 
 import net.milkbowl.vault.permission.Permission;
 
@@ -75,20 +74,18 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            permissionManager.addGroupPermission(groupId, permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
-
-                @Override
-                public void run() {
-
-                }
-            });
+            permissionManager.addGroupPermission(groupId, permission, (world != null ? world : ""), server, null);
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean groupHas(String world, String group, String permission) {
+    public boolean groupHas(String world, String groupName, String permission) {
+        Group group = permissionManager.getGroup(groupName);
+        if(group != null) {
+            
+        }
         Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(groupHas). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
     }
@@ -98,13 +95,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            permissionManager.removeGroupPermission(groupId, permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
-
-                @Override
-                public void run() {
-
-                }
-            });
+            permissionManager.removeGroupPermission(groupId, permission, (world != null ? world : ""), server, null);
             return true;
         }
         return false;
@@ -127,13 +118,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerAdd(String world, String player, String permission) {
-        permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
-
-            @Override
-            public void run() {
-
-            }
-        });
+        permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, null);
         return true;
     }
 
@@ -142,13 +127,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            permissionManager.addPlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, null, new ResponseRunnable() {
-
-                @Override
-                public void run() {
-
-                }
-            });
+            permissionManager.addPlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, null);
             return true;
         }
         return false;
@@ -169,13 +148,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerRemove(String world, String player, String permission) {
-        permissionManager.removePlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, null, new ResponseRunnable() {
-
-            @Override
-            public void run() {
-
-            }
-        });
+        permissionManager.removePlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, null);
         return true;
     }
 
@@ -184,13 +157,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            permissionManager.removePlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, null, new ResponseRunnable() {
-
-                @Override
-                public void run() {
-
-                }
-            });
+            permissionManager.removePlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, null);
             return true;
         }
         return false;

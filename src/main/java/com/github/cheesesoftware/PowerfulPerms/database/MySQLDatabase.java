@@ -19,8 +19,8 @@ import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
 import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 import com.google.common.base.Charsets;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class MySQLDatabase extends Database {
 
@@ -265,17 +265,16 @@ public class MySQLDatabase extends Database {
                                 plugin.getLogger().warning("Couldn't add group permission " + permission + " to group " + groupname);
                         } else if (uuid != null || playername != null) {
                             if (uuid == null) {
-                                plugin.getPermissionManager().getConvertUUID(playername, new ResultRunnable<UUID>(true) {
-
-                                    @Override
-                                    public void run() {
-                                        if (result != null) {
-                                            insertPlayerPermission(uuid, permission, world, server, null);
-                                            plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
-                                        }
+                                ListenableFuture<UUID> first = plugin.getPermissionManager().getConvertUUID(playername);
+                                try {
+                                    UUID result2 = first.get();
+                                    if (result2 != null) {
+                                        insertPlayerPermission(result2, permission, world, server, null);
+                                        plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
                                     }
-
-                                });
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             } else {
                                 this.insertPlayerPermission(uuid, permission, world, server, null);
                                 plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
@@ -556,7 +555,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public boolean deletePlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires) {
+    public DBResult deletePlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires) {
         boolean success = true;
         int amount = 0;
         try {
@@ -578,11 +577,11 @@ public class MySQLDatabase extends Database {
             e.printStackTrace();
             success = false;
         }
-        return success;
+        return new DBResult(success, amount);
     }
 
     @Override
-    public boolean deletePlayerPermissions(final UUID uuid) {
+    public DBResult deletePlayerPermissions(final UUID uuid) {
         boolean success = true;
         int amount = 0;
         try {
@@ -598,7 +597,7 @@ public class MySQLDatabase extends Database {
             e.printStackTrace();
             success = false;
         }
-        return success;
+        return new DBResult(success, amount);
     }
 
     @Override

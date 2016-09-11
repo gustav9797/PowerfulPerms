@@ -4,7 +4,10 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupSetLadderCommand extends SubCommand {
 
@@ -28,16 +31,21 @@ public class GroupSetLadderCommand extends SubCommand {
                     return CommandResult.success;
                 }
                 int groupId = group.getId();
-
-                final ResponseRunnable response = new ResponseRunnable() {
-                    @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
-                    }
-                };
-
+                
                 String ladder = args[2];
-                permissionManager.setGroupLadder(groupId, ladder, response);
+                ListenableFuture<Response> first = permissionManager.setGroupLadder(groupId, ladder);
+                Futures.addCallback(first, new FutureCallback<Response>() {
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
+                    }
+
+                    @Override
+                    public void onSuccess(Response result) {
+                        sendSender(invoker, sender, result.getResponse());
+                    }
+                });
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

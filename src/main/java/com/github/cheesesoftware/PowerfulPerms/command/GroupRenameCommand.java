@@ -4,7 +4,10 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupRenameCommand extends SubCommand {
 
@@ -29,14 +32,19 @@ public class GroupRenameCommand extends SubCommand {
                 }
                 int groupId = group.getId();
 
-                final ResponseRunnable response = new ResponseRunnable() {
-                    @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
-                    }
-                };
+                ListenableFuture<Response> first = permissionManager.setGroupName(groupId, args[2]);
+                Futures.addCallback(first, new FutureCallback<Response>() {
 
-                permissionManager.setGroupName(groupId, args[2], response);
+                    @Override
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
+                    }
+
+                    @Override
+                    public void onSuccess(Response result) {
+                        sendSender(invoker, sender, result.getResponse());
+                    }
+                });
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

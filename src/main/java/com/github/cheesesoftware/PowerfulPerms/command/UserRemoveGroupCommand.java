@@ -7,8 +7,10 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class UserRemoveGroupCommand extends SubCommand {
 
@@ -37,21 +39,20 @@ public class UserRemoveGroupCommand extends SubCommand {
                 }
                 final int groupId = group.getId();
 
-                final ResponseRunnable response = new ResponseRunnable() {
+                ListenableFuture<UUID> first = permissionManager.getConvertUUID(playerName);
+                Futures.addCallback(first, new FutureCallback<UUID>() {
+
                     @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
                     }
-                };
-
-                permissionManager.getConvertUUID(playerName, new ResultRunnable<UUID>() {
 
                     @Override
-                    public void run() {
+                    public void onSuccess(UUID result) {
                         final UUID uuid = result;
                         if (uuid == null) {
-                            response.setResponse(false, "Could not find player UUID.");
-                            permissionManager.getScheduler().runSync(response, response.isSameThread());
+                            sendSender(invoker, sender, "Could not find player UUID.");
+                            return;
                         } else {
                             String server = "";
                             Date expires = null;
@@ -64,10 +65,23 @@ public class UserRemoveGroupCommand extends SubCommand {
                                     return;
                                 }
                             }
-                            permissionManager.removePlayerGroup(uuid, groupId, server, negated, expires, response);
+                            ListenableFuture<Response> second = permissionManager.removePlayerGroup(uuid, groupId, server, negated, expires);
+                            Futures.addCallback(second, new FutureCallback<Response>() {
+
+                                @Override
+                                public void onFailure(Throwable t) {
+                                    t.printStackTrace();
+                                }
+
+                                @Override
+                                public void onSuccess(Response result) {
+                                    sendSender(invoker, sender, result.getResponse());
+                                }
+                            });
                         }
                     }
                 });
+
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

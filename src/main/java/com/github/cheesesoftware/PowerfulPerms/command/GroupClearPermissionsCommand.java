@@ -4,7 +4,10 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupClearPermissionsCommand extends SubCommand {
 
@@ -25,15 +28,20 @@ public class GroupClearPermissionsCommand extends SubCommand {
                     return CommandResult.success;
                 }
                 int groupId = group.getId();
-                
-                final ResponseRunnable response = new ResponseRunnable() {
-                    @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
-                    }
-                };
 
-                permissionManager.removeGroupPermissions(groupId, response);
+                ListenableFuture<Response> first = permissionManager.removeGroupPermissions(groupId);
+                Futures.addCallback(first, new FutureCallback<Response>() {
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
+                    }
+
+                    @Override
+                    public void onSuccess(Response result) {
+                        sendSender(invoker, sender, result.getResponse());
+                    }
+                });
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

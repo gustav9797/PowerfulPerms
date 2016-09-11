@@ -14,6 +14,7 @@ import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -21,7 +22,6 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import com.github.cheesesoftware.PowerfulPerms.common.event.PowerfulEventHandler;
 import com.github.cheesesoftware.PowerfulPerms.database.DBResult;
-import com.github.cheesesoftware.PowerfulPerms.database.DBRunnable;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
@@ -36,11 +36,8 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PlayerGroupExpiredEvent;
 import com.github.cheesesoftware.PowerfulPermsAPI.PlayerPermissionExpiredEvent;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
 import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
 import com.google.common.base.Charsets;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -115,50 +112,37 @@ public abstract class PermissionManagerBase implements PermissionManager {
         if (!db.tableExists(Database.tblGroups)) {
             db.createTable(Database.tblGroups);
 
-            this.createGroup("Guest", "default", 100, new ResponseRunnable(true) {
-
-                @Override
-                public void run() {
-                    tempPlugin.getLogger().info("Created group Guest");
-                    setGroupPrefix(getGroup("Guest").getId(), "[Guest] ", new ResponseRunnable(true) {
-
-                        @Override
-                        public void run() {
-                            tempPlugin.getLogger().info("Set group Guest prefix to \"[Guest] \"");
-                        }
-                    });
-                    setGroupSuffix(getGroup("Guest").getId(), ": ", new ResponseRunnable(true) {
-
-                        @Override
-                        public void run() {
-                            tempPlugin.getLogger().info("Set group Guest suffix to \": \"");
-                        }
-                    });
-                }
-            });
+            try {
+                ListenableFuture<Response> first = this.createGroup("Guest", "default", 100);
+                first.get();
+                tempPlugin.getLogger().info("Created group Guest");
+                ListenableFuture<Response> second = setGroupPrefix(getGroup("Guest").getId(), "[Guest] ");
+                second.get();
+                tempPlugin.getLogger().info("Set group Guest prefix to \"[Guest] \"");
+                ListenableFuture<Response> third = setGroupSuffix(getGroup("Guest").getId(), ": ");
+                third.get();
+                tempPlugin.getLogger().info("Set group Guest suffix to \": \"");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         if (!db.tableExists(Database.tblPlayers)) {
             db.createTable(Database.tblPlayers);
 
-            this.createPlayer("[default]", DefaultPermissionPlayer.getUUID(), new ResponseRunnable(true) {
-
-                @Override
-                public void run() {
-                    tempPlugin.getLogger().info("Inserted player [default]");
-                    Group guest = getGroup("Guest");
-                    if (guest != null) {
-                        addPlayerGroup(DefaultPermissionPlayer.getUUID(), guest.getId(), new ResponseRunnable(true) {
-
-                            @Override
-                            public void run() {
-                                tempPlugin.getLogger().info("Added group Guest to player [default]");
-                            }
-                        });
-                    }
+            try {
+                ListenableFuture<Response> first = createPlayer("[default]", DefaultPermissionPlayer.getUUID());
+                first.get();
+                tempPlugin.getLogger().info("Inserted player [default]");
+                Group guest = getGroup("Guest");
+                if (guest != null) {
+                    ListenableFuture<Response> second = addPlayerGroup(DefaultPermissionPlayer.getUUID(), guest.getId());
+                    second.get();
+                    tempPlugin.getLogger().info("Added group Guest to player [default]");
                 }
-            });
-
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         // Initialize Redis
@@ -207,6 +191,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
         }, 60);
     }
 
+    @Override
+    public ExecutorService getExecutor() {
+        return service;
+    }
+
     protected void checkPlayerTimedGroupsAndPermissions(final UUID uuid, PermissionPlayer player) {
         LinkedHashMap<String, List<CachedGroup>> playerGroups = player.getCachedGroups();
         for (Entry<String, List<CachedGroup>> e : playerGroups.entrySet()) {
@@ -217,18 +206,17 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                         @Override
                         public void run() {
-                            debug("CachedGroup " + cachedGroup.getId() + " in player " + uuid.toString() + " expired.");
-                            removePlayerGroup(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), cachedGroup.getExpirationDate(), new ResponseRunnable() {
-
-                                @Override
-                                public void run() {
-                                    if (success) {
-                                        plugin.getLogger().info("Group " + cachedGroup.getGroupId() + " in player " + uuid.toString() + " expired and was removed.");
-                                        getEventHandler().fireEvent(new PlayerGroupExpiredEvent(uuid, cachedGroup));
-                                    } else
-                                        debug("Could not remove expired player group. " + response);
-                                }
-                            });
+                            try {
+                                debug("CachedGroup " + cachedGroup.getId() + " in player " + uuid.toString() + " expired.");
+                                ListenableFuture<Response> first = removePlayerGroup(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), cachedGroup.getExpirationDate());
+                                if (first.get().succeeded()) {
+                                    plugin.getLogger().info("Group " + cachedGroup.getGroupId() + " in player " + uuid.toString() + " expired and was removed.");
+                                    getEventHandler().fireEvent(new PlayerGroupExpiredEvent(uuid, cachedGroup));
+                                } else
+                                    debug("Could not remove expired player group. " + first.get().getResponse());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
 
                     };
@@ -256,18 +244,17 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                     @Override
                     public void run() {
-                        debug("Permission " + p.getId() + " in player " + uuid.toString() + " expired.");
-                        removePlayerPermission(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new ResponseRunnable() {
-
-                            @Override
-                            public void run() {
-                                if (success) {
-                                    plugin.getLogger().info("Permission " + p.getId() + " in player " + uuid.toString() + " expired and was removed.");
-                                    getEventHandler().fireEvent(new PlayerPermissionExpiredEvent(uuid, p));
-                                } else
-                                    debug("Could not remove expired player permission. " + response);
-                            }
-                        });
+                        try {
+                            debug("Permission " + p.getId() + " in player " + uuid.toString() + " expired.");
+                            ListenableFuture<Response> first = removePlayerPermission(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate());
+                            if (first.get().succeeded()) {
+                                plugin.getLogger().info("Permission " + p.getId() + " in player " + uuid.toString() + " expired and was removed.");
+                                getEventHandler().fireEvent(new PlayerPermissionExpiredEvent(uuid, p));
+                            } else
+                                debug("Could not remove expired player permission. " + first.get().getResponse());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
 
                 };
@@ -297,18 +284,17 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                     @Override
                     public void run() {
-                        debug("Permission " + p.getId() + " in group " + group.getId() + " expired.");
-                        removeGroupPermission(group.getId(), p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate(), new ResponseRunnable() {
-
-                            @Override
-                            public void run() {
-                                if (success) {
-                                    plugin.getLogger().info("Permission " + p.getId() + " in group " + group.getId() + " expired and was removed.");
-                                    getEventHandler().fireEvent(new GroupPermissionExpiredEvent(group, p));
-                                } else
-                                    debug("Could not remove expired group permission. " + response);
-                            }
-                        });
+                        try {
+                            debug("Permission " + p.getId() + " in group " + group.getId() + " expired.");
+                            ListenableFuture<Response> first = removeGroupPermission(group.getId(), p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate());
+                            if (first.get().succeeded()) {
+                                plugin.getLogger().info("Permission " + p.getId() + " in group " + group.getId() + " expired and was removed.");
+                                getEventHandler().fireEvent(new GroupPermissionExpiredEvent(group, p));
+                            } else
+                                debug("Could not remove expired group permission. " + first.get().getResponse());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
 
                 };
@@ -352,34 +338,27 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void getConvertUUID(final String playerName, final ResultRunnable<UUID> resultRunnable) {
-        if (playerName.equalsIgnoreCase("[default]") || playerName.equalsIgnoreCase("{default}")) {
-            resultRunnable.setResult(DefaultPermissionPlayer.getUUID());
-            db.scheduler.runSync(resultRunnable);
-            return;
-        }
-
-        // If player name is UUID, return it directly
-        try {
-            UUID uuid = UUID.fromString(playerName);
-            resultRunnable.setResult(uuid);
-            db.scheduler.runSync(resultRunnable);
-            return;
-        } catch (Exception e) {
-        }
-
-        // If player is online, get UUID directly
-        if (plugin.isPlayerOnline(playerName)) {
-            resultRunnable.setResult(plugin.getPlayerUUID(playerName));
-            db.scheduler.runSync(resultRunnable);
-            return;
-        }
-
-        // If player UUID exists in database, use that
-        db.getPlayers(playerName, new DBRunnable(resultRunnable.isSameThread()) {
+    public ListenableFuture<UUID> getConvertUUID(final String playerName) {
+        ListenableFuture<UUID> listenableFuture = service.submit(new Callable<UUID>() {
 
             @Override
-            public void run() {
+            public UUID call() throws Exception {
+                if (playerName.equalsIgnoreCase("[default]") || playerName.equalsIgnoreCase("{default}"))
+                    return DefaultPermissionPlayer.getUUID();
+
+                // If player name is UUID, return it directly
+                try {
+                    UUID uuid = UUID.fromString(playerName);
+                    return uuid;
+                } catch (Exception e) {
+                }
+
+                // If player is online, get UUID directly
+                if (plugin.isPlayerOnline(playerName))
+                    return plugin.getPlayerUUID(playerName);
+
+                // If player UUID exists in database, use that
+                DBResult result = db.getPlayers(playerName);
                 if (result.hasNext()) {
                     final DBDocument row = result.next();
                     if (row != null) {
@@ -387,9 +366,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         UUID uuid = UUID.fromString(stringUUID);
                         if (uuid != null) {
                             debug("UUID found in DB, skipping mojang api lookup");
-                            resultRunnable.setResult(uuid);
-                            db.scheduler.runSync(resultRunnable);
-                            return;
+                            return uuid;
                         }
                     }
                 }
@@ -398,113 +375,82 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 // Check if DB contains offline uuid. If so, return it. If not, return online uuid.
                 if (plugin.getServerMode() == ServerMode.MIXED) {
                     // Generate offline UUID and check database if it exists. If so, return it.
+                    final UUID offlineuuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(Charsets.UTF_8));
+                    debug("Generated mixed mode offline UUID " + offlineuuid);
 
-                    db.scheduler.runAsync(new Runnable() {
+                    // Get online UUID.
 
-                        @Override
-                        public void run() {
-                            final UUID offlineuuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(Charsets.UTF_8));
-                            debug("Generated mixed mode offline UUID " + offlineuuid);
+                    debug("Begin UUID retrieval...");
+                    ArrayList<String> list = new ArrayList<String>();
+                    list.add(playerName);
+                    UUIDFetcher fetcher = new UUIDFetcher(list);
+                    try {
+                        Map<String, UUID> result2 = fetcher.call();
+                        if (result2 != null && result2.containsKey(playerName)) {
+                            final UUID onlineuuid = result2.get(playerName);
+                            debug("Retrieved UUID " + onlineuuid);
+                            // Check if database contains online UUID.
 
-                            // Get online UUID.
-
-                            debug("Begin UUID retrieval...");
-                            ArrayList<String> list = new ArrayList<String>();
-                            list.add(playerName);
-                            UUIDFetcher fetcher = new UUIDFetcher(list);
-                            try {
-                                Map<String, UUID> result = fetcher.call();
-                                if (result != null && result.containsKey(playerName)) {
-                                    final UUID onlineuuid = result.get(playerName);
-                                    debug("Retrieved UUID " + onlineuuid);
-                                    // Check if database contains online UUID.
-
-                                    db.getPlayer(onlineuuid, new DBRunnable() {
-                                        @Override
-                                        public void run() {
-                                            if (result.hasNext()) {
-                                                // Database contains online UUID. Return it.
-                                                debug("online UUID found in DB");
-                                                resultRunnable.setResult(onlineuuid);
-                                                db.scheduler.runSync(resultRunnable);
-                                            } else {
-                                                // Could not find online UUID in database.
-                                                // Check if offline UUID exists.
-                                                debug("online UUID not found in DB");
-                                                db.getPlayer(offlineuuid, new DBRunnable() {
-
-                                                    @Override
-                                                    public void run() {
-                                                        if (result.hasNext()) {
-                                                            // Found offline UUID in database. Return it.
-                                                            debug("offline UUID found in DB, return offline");
-                                                            resultRunnable.setResult(offlineuuid);
-                                                        } else {
-                                                            // Could not find neither of offline or online UUIDs in database.
-                                                            // Online UUID exists for player name so return it.
-                                                            debug("offline UUID not found in DB, return online");
-                                                            resultRunnable.setResult(onlineuuid);
-                                                        }
-                                                        db.scheduler.runSync(resultRunnable);
-                                                    }
-                                                });
-                                            }
-
-                                        }
-                                    });
+                            DBResult result3 = db.getPlayer(onlineuuid);
+                            if (result3.hasNext()) {
+                                // Database contains online UUID. Return it.
+                                debug("online UUID found in DB");
+                                return onlineuuid;
+                            } else {
+                                // Could not find online UUID in database.
+                                // Check if offline UUID exists.
+                                debug("online UUID not found in DB");
+                                DBResult offline = db.getPlayer(offlineuuid);
+                                if (offline.hasNext()) {
+                                    // Found offline UUID in database. Return it.
+                                    debug("offline UUID found in DB, return offline");
+                                    return offlineuuid;
                                 } else {
-                                    // Could not find online UUID for specified name
-                                    debug("Did not find online UUID for player name " + playerName + ", return offline");
-                                    resultRunnable.setResult(offlineuuid);
-                                    db.scheduler.runSync(resultRunnable);
+                                    // Could not find neither of offline or online UUIDs in database.
+                                    // Online UUID exists for player name so return it.
+                                    debug("offline UUID not found in DB, return online");
+                                    return onlineuuid;
                                 }
-                            } catch (Exception e) {
-                                e.printStackTrace();
                             }
+                        } else {
+                            // Could not find online UUID for specified name
+                            debug("Did not find online UUID for player name " + playerName + ", return offline");
+                            return offlineuuid;
                         }
-
-                    }, false);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
                 } else {
                     if (plugin.getServerMode() == ServerMode.ONLINE) {
                         // Convert player name to UUID using Mojang API
-                        db.scheduler.runAsync(new Runnable() {
+                        debug("Begin UUID retrieval...");
+                        ArrayList<String> list = new ArrayList<String>();
+                        list.add(playerName);
+                        UUIDFetcher fetcher = new UUIDFetcher(list);
+                        try {
+                            Map<String, UUID> result2 = fetcher.call();
+                            if (result2 != null && result2.containsKey(playerName)) {
+                                UUID uuid = result2.get(playerName);
+                                debug("Retrieved UUID " + uuid);
+                                return uuid;
+                            } else
+                                return null;
 
-                            @Override
-                            public void run() {
-                                debug("Begin UUID retrieval...");
-                                ArrayList<String> list = new ArrayList<String>();
-                                list.add(playerName);
-                                UUIDFetcher fetcher = new UUIDFetcher(list);
-                                try {
-                                    Map<String, UUID> result = fetcher.call();
-                                    if (result != null && result.containsKey(playerName)) {
-                                        UUID uuid = result.get(playerName);
-                                        debug("Retrieved UUID " + uuid);
-                                        resultRunnable.setResult(uuid);
-                                    } else
-                                        resultRunnable.setResult(null);
-
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                                db.scheduler.runSync(resultRunnable);
-                            }
-                        }, false);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     } else {
-
                         // Generate UUID from player name
                         UUID uuid = java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(Charsets.UTF_8));
-                        resultRunnable.setResult(uuid);
-
                         debug("Generated offline mode UUID " + uuid);
-                        db.scheduler.runSync(resultRunnable);
+                        return uuid;
                     }
-
                 }
+                return null;
             }
         });
-
+        return listenableFuture;
     }
 
     @Override
@@ -625,18 +571,19 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void reloadDefaultPlayers(final boolean samethread) {
-        loadPlayerGroups(DefaultPermissionPlayer.getUUID(), new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(samethread) {
-
-            @Override
-            public void run() {
-                if (result != null) {
-                    defaultGroups = result;
-                    reloadPlayers();
-                    debug("DEFAULT PLAYER LOADED: " + (defaultGroups != null));
-                } else
-                    plugin.getLogger().severe(consolePrefix + "Can not get data from user [default].");
-            }
-        });
+        ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> first = loadPlayerGroups(DefaultPermissionPlayer.getUUID());
+        LinkedHashMap<String, List<CachedGroup>> result;
+        try {
+            result = first.get();
+            if (result != null) {
+                defaultGroups = result;
+                reloadPlayers();
+                debug("DEFAULT PLAYER LOADED: " + (defaultGroups != null));
+            } else
+                plugin.getLogger().severe(consolePrefix + "Can not get data from user [default].");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -700,11 +647,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
         debug("loadPlayer begin");
-
-        db.getPlayer(uuid, new DBRunnable(login) {
+        db.scheduler.runAsync(new Runnable() {
 
             @Override
             public void run() {
+                DBResult result = db.getPlayer(uuid);
                 if (result.booleanValue()) {
                     final DBDocument row = result.next();
                     if (row != null) {
@@ -719,55 +666,46 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             // Check if name mismatch, update player name
                             if (!playerName_loaded.equals(name)) {
                                 debug("PLAYER NAME MISMATCH.");
-                                db.setPlayerName(uuid, name, new DBRunnable(login) {
-
-                                    @Override
-                                    public void run() {
-                                        debug("PLAYER NAME UPDATED. NAMECHANGE");
-                                        loadPlayerFinished(row, login, uuid);
-                                    }
-                                });
+                                boolean success = db.setPlayerName(uuid, name);
+                                if (!success)
+                                    debug("COULD NOT UPDATE PLAYER NAME OF PLAYER " + uuid.toString());
+                                else
+                                    debug("PLAYER NAME UPDATED. NAMECHANGE");
+                                loadPlayerFinished(row, login, uuid);
                             } else
                                 loadPlayerFinished(row, login, uuid);
                         } else
                             loadPlayerFinished(row, login, uuid);
                     } else {
                         // Could not find player with UUID. Create new player.
-                        db.insertPlayer(uuid, name, "", "", new DBRunnable(login) {
-
-                            @Override
-                            public void run() {
-                                debug("NEW PLAYER CREATED");
-                                loadPlayerFinished(null, login, uuid);
-                            }
-                        });
+                        boolean success = db.insertPlayer(uuid, name, "", "");
+                        if (!success)
+                            debug("COULD NOT CREATE PLAYER " + uuid.toString() + " - " + name);
+                        else
+                            debug("NEW PLAYER CREATED");
+                        loadPlayerFinished(null, login, uuid);
                     }
-
                 }
             }
-        });
+        }, login);
     }
 
-    protected void loadPlayerFinished(DBDocument row, final boolean login, final UUID uuid) {
-        debug("loadPlayerFinished begin");
-        final String prefix_loaded = (row != null ? row.getString("prefix") : "");
-        final String suffix_loaded = (row != null ? row.getString("suffix") : "");
-
-        this.loadPlayerGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(login) {
+    protected void loadPlayerFinished(final DBDocument row, final boolean login, final UUID uuid) {
+        db.scheduler.runAsync(new Runnable() {
 
             @Override
             public void run() {
-                final LinkedHashMap<String, List<CachedGroup>> tempGroups = result;
-                loadPlayerOwnPermissions(uuid, new ResultRunnable<List<Permission>>(login) {
+                debug("loadPlayerFinished begin");
+                final String prefix_loaded = (row != null ? row.getString("prefix") : "");
+                final String suffix_loaded = (row != null ? row.getString("suffix") : "");
 
-                    @Override
-                    public void run() {
-                        debug("loadPlayerFinished runnable begin");
-                        List<Permission> perms;
-                        if (result != null) {
-                            perms = result;
-                        } else
-                            perms = new ArrayList<Permission>();
+                try {
+                    ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> first = loadPlayerGroups(uuid);
+                    LinkedHashMap<String, List<CachedGroup>> tempGroups = first.get();
+                    ListenableFuture<List<Permission>> second = loadPlayerOwnPermissions(uuid);
+                    List<Permission> perms = second.get();
+                    if (perms == null) {
+                        perms = new ArrayList<Permission>();
 
                         if (login) {
                             debug("Inserted into cachedPlayers allowing playerjoin to finish");
@@ -794,11 +732,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         }
                         debug("loadPlayerFinished runnable end");
                     }
-                });
-
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        });
-
+        }, login);
     }
 
     protected PermissionPlayerBase loadCachedPlayer(UUID uuid) {
@@ -877,84 +815,65 @@ public abstract class PermissionManagerBase implements PermissionManager {
     protected void loadGroups(final boolean beginSameThread, final boolean endSameThread) {
         debug("loadGroups begin");
 
-        db.getGroups(new DBRunnable(beginSameThread) {
+        db.scheduler.runAsync(new Runnable() {
 
             @Override
             public void run() {
+                DBResult result = db.getGroups();
                 if (result.booleanValue()) {
                     final DBResult groupResult = result;
 
-                    loadGroupParents(new ResultRunnable<HashMap<Integer, List<Integer>>>(beginSameThread) {
+                    try {
+                        ListenableFuture<HashMap<Integer, List<Integer>>> first = loadGroupParents();
+                        HashMap<Integer, List<Integer>> parents = first.get();
+                        debug("loadgroups parents size: " + parents.size());
 
-                        @Override
-                        public void run() {
-                            final HashMap<Integer, List<Integer>> parents = result;
-                            debug("loadgroups parents size: " + parents.size());
+                        ListenableFuture<HashMap<Integer, HashMap<String, String>>> second = loadGroupPrefixes();
+                        debug("a");
+                        final HashMap<Integer, HashMap<String, String>> prefixes = second.get();
+                        debug("b");
 
-                            loadGroupPrefixes(new ResultRunnable<HashMap<Integer, HashMap<String, String>>>(beginSameThread) {
+                        ListenableFuture<HashMap<Integer, HashMap<String, String>>> third = loadGroupSuffixes();
+                        debug("c");
+                        final HashMap<Integer, HashMap<String, String>> suffixes = third.get();
+                        debug("d");
 
-                                @Override
-                                public void run() {
-                                    final HashMap<Integer, HashMap<String, String>> prefixes = result;
+                        ListenableFuture<HashMap<Integer, List<PowerfulPermission>>> fourth = loadGroupPermissions();
+                        debug("e");
+                        final HashMap<Integer, List<PowerfulPermission>> permissions = fourth.get();
+                        debug("f");
 
-                                    loadGroupSuffixes(new ResultRunnable<HashMap<Integer, HashMap<String, String>>>(beginSameThread) {
+                        groupsLock.lock();
+                        try {
+                            groups.clear();
+                            while (groupResult.hasNext()) {
+                                DBDocument row = groupResult.next();
+                                final int groupId = row.getInt("id");
+                                final String name = row.getString("name");
+                                String ladder1 = row.getString("ladder");
+                                final String ladder = (ladder1 == null || ladder1.isEmpty() ? "default" : ladder1);
+                                final int rank = row.getInt("rank");
 
-                                        @Override
-                                        public void run() {
-                                            final HashMap<Integer, HashMap<String, String>> suffixes = result;
+                                PowerfulGroup group = new PowerfulGroup(groupId, name, permissions.get(groupId), prefixes.get(groupId), suffixes.get(groupId), ladder, rank, plugin);
+                                group.setParents(parents.get(groupId));
+                                groups.put(groupId, group);
 
-                                            loadGroupPermissions(new ResultRunnable<HashMap<Integer, List<PowerfulPermission>>>(beginSameThread) {
+                                checkGroupTimedPermissions(group);
+                            }
 
-                                                @Override
-                                                public void run() {
-                                                    final HashMap<Integer, List<PowerfulPermission>> permissions = result;
-
-                                                    // Make sure to run on Bukkit main thread when altering the groups
-                                                    db.scheduler.runSync(new Runnable() {
-
-                                                        @Override
-                                                        public void run() {
-                                                            groupsLock.lock();
-                                                            try {
-                                                                groups.clear();
-                                                                while (groupResult.hasNext()) {
-                                                                    DBDocument row = groupResult.next();
-                                                                    final int groupId = row.getInt("id");
-                                                                    final String name = row.getString("name");
-                                                                    String ladder1 = row.getString("ladder");
-                                                                    final String ladder = (ladder1 == null || ladder1.isEmpty() ? "default" : ladder1);
-                                                                    final int rank = row.getInt("rank");
-
-                                                                    PowerfulGroup group = new PowerfulGroup(groupId, name, permissions.get(groupId), prefixes.get(groupId), suffixes.get(groupId),
-                                                                            ladder, rank, plugin);
-                                                                    group.setParents(parents.get(groupId));
-                                                                    groups.put(groupId, group);
-
-                                                                    checkGroupTimedPermissions(group);
-                                                                }
-
-                                                                // Reload players too.
-                                                                reloadDefaultPlayers(beginSameThread);
-                                                                debug("loadGroups end");
-                                                            } finally {
-                                                                groupsLock.unlock();
-                                                            }
-
-                                                        }
-                                                    }, endSameThread);
-
-                                                }
-                                            });
-
-                                        }
-                                    });
-                                }
-                            });
+                            // Reload players too.
+                            reloadDefaultPlayers(beginSameThread);
+                            debug("loadGroups end");
+                        } finally {
+                            groupsLock.unlock();
                         }
-                    });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-        });
+        }, beginSameThread);
+
     }
 
     @Override
@@ -1000,7 +919,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 PermissionPlayer gp = getPermissionPlayer(uuid);
                 if (gp != null && !gp.isDefault())
                     return gp.getCachedGroups();
-                this.loadPlayerGroups(uuid);
+                ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> first = loadPlayerGroups(uuid);
+                return first.get();
             }
         });
         return listenableFuture;
@@ -1043,10 +963,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerOwnGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> result = second.get();
                 if (result == null || result.isEmpty())
-                    resultRunnable.setResult(true);
+                    return true;
                 else
-                    resultRunnable.setResult(false);
-                db.scheduler.runSync(resultRunnable);
+                    return false;
             }
         });
         return listenableFuture;
@@ -1099,18 +1018,20 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void getPlayerData(UUID uuid, final ResultRunnable<DBDocument> resultRunnable) {
-        db.getPlayer(uuid, new DBRunnable() {
+    public ListenableFuture<DBDocument> getPlayerData(final UUID uuid) {
+        ListenableFuture<DBDocument> listenableFuture = service.submit(new Callable<DBDocument>() {
 
             @Override
-            public void run() {
+            public DBDocument call() throws Exception {
+                DBResult result = db.getPlayer(uuid);
                 if (result.hasNext()) {
                     DBDocument row = result.next();
-                    resultRunnable.setResult(row);
+                    return row;
                 }
-                db.scheduler.runSync(resultRunnable);
+                return null;
             }
         });
+        return listenableFuture;
     }
 
     @Override
@@ -1188,11 +1109,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return listenableFuture;
     }
 
-    protected void loadGroupParents(final ResultRunnable<HashMap<Integer, List<Integer>>> resultRunnable) {
-        db.getGroupParents(new DBRunnable(resultRunnable.isSameThread()) {
+    protected ListenableFuture<HashMap<Integer, List<Integer>>> loadGroupParents() {
+        ListenableFuture<HashMap<Integer, List<Integer>>> listenableFuture = service.submit(new Callable<HashMap<Integer, List<Integer>>>() {
 
             @Override
-            public void run() {
+            public HashMap<Integer, List<Integer>> call() throws Exception {
+                DBResult result = db.getGroupParents();
                 if (result.booleanValue()) {
                     HashMap<Integer, List<Integer>> parents = new HashMap<Integer, List<Integer>>();
                     while (result.hasNext()) {
@@ -1206,19 +1128,21 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         localParents.add(parentId);
                         parents.put(groupId, localParents);
                     }
-                    resultRunnable.setResult(parents);
-                    db.scheduler.runSync(resultRunnable, resultRunnable.isSameThread());
+                    return parents;
                 } else
                     plugin.getLogger().severe("Could not load group parents.");
+                return null;
             }
         });
+        return listenableFuture;
     }
 
-    protected void loadGroupPrefixes(final ResultRunnable<HashMap<Integer, HashMap<String, String>>> resultRunnable) {
-        db.getGroupPrefixes(new DBRunnable(resultRunnable.isSameThread()) {
+    protected ListenableFuture<HashMap<Integer, HashMap<String, String>>> loadGroupPrefixes() {
+        ListenableFuture<HashMap<Integer, HashMap<String, String>>> listenableFuture = service.submit(new Callable<HashMap<Integer, HashMap<String, String>>>() {
 
             @Override
-            public void run() {
+            public HashMap<Integer, HashMap<String, String>> call() throws Exception {
+                DBResult result = db.getGroupPrefixes();
                 if (result.booleanValue()) {
                     HashMap<Integer, HashMap<String, String>> prefixes = new HashMap<Integer, HashMap<String, String>>();
                     while (result.hasNext()) {
@@ -1231,19 +1155,21 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         localPrefixes.put(row.getString("server"), row.getString("prefix"));
                         prefixes.put(groupId, localPrefixes);
                     }
-                    resultRunnable.setResult(prefixes);
-                    db.scheduler.runSync(resultRunnable, resultRunnable.isSameThread());
+                    return prefixes;
                 } else
                     plugin.getLogger().severe("Could not load group prefixes.");
+                return null;
             }
         });
+        return listenableFuture;
     }
 
-    protected void loadGroupSuffixes(final ResultRunnable<HashMap<Integer, HashMap<String, String>>> resultRunnable) {
-        db.getGroupSuffixes(new DBRunnable(resultRunnable.isSameThread()) {
+    protected ListenableFuture<HashMap<Integer, HashMap<String, String>>> loadGroupSuffixes() {
+        ListenableFuture<HashMap<Integer, HashMap<String, String>>> listenableFuture = service.submit(new Callable<HashMap<Integer, HashMap<String, String>>>() {
 
             @Override
-            public void run() {
+            public HashMap<Integer, HashMap<String, String>> call() throws Exception {
+                DBResult result = db.getGroupSuffixes();
                 if (result.booleanValue()) {
                     HashMap<Integer, HashMap<String, String>> suffixes = new HashMap<Integer, HashMap<String, String>>();
                     while (result.hasNext()) {
@@ -1256,19 +1182,22 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         localSuffixes.put(row.getString("server"), row.getString("suffix"));
                         suffixes.put(groupId, localSuffixes);
                     }
-                    resultRunnable.setResult(suffixes);
-                    db.scheduler.runSync(resultRunnable, resultRunnable.isSameThread());
+                    return suffixes;
                 } else
                     plugin.getLogger().severe("Could not load group suffixes.");
+                return null;
             }
         });
+        return listenableFuture;
+
     }
 
-    protected void loadGroupPermissions(final ResultRunnable<HashMap<Integer, List<PowerfulPermission>>> resultRunnable) {
-        db.getGroupPermissions(new DBRunnable(resultRunnable.isSameThread()) {
+    protected ListenableFuture<HashMap<Integer, List<PowerfulPermission>>> loadGroupPermissions() {
+        ListenableFuture<HashMap<Integer, List<PowerfulPermission>>> listenableFuture = service.submit(new Callable<HashMap<Integer, List<PowerfulPermission>>>() {
 
             @Override
-            public void run() {
+            public HashMap<Integer, List<PowerfulPermission>> call() throws Exception {
+                DBResult result = db.getGroupPermissions();
                 if (result.booleanValue()) {
                     HashMap<Integer, List<PowerfulPermission>> permissions = new HashMap<Integer, List<PowerfulPermission>>();
                     while (result.hasNext()) {
@@ -1281,105 +1210,103 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         localPermissions.add(new PowerfulPermission(row.getInt("id"), row.getString("permission"), row.getString("world"), row.getString("server"), row.getDate("expires")));
                         permissions.put(groupId, localPermissions);
                     }
-                    resultRunnable.setResult(permissions);
-                    db.scheduler.runSync(resultRunnable, resultRunnable.isSameThread());
+                    return permissions;
                 } else
                     plugin.getLogger().severe("Could not load group permissions.");
+                return null;
             }
         });
+        return listenableFuture;
     }
 
     @Override
-    public void getPlayerPrefix(UUID uuid, final ResultRunnable<String> resultRunnable) {
-        // If player is online, get data directly from player
-        PermissionPlayer gp = getPermissionPlayer(uuid);
-        if (gp != null) {
-            resultRunnable.setResult(gp.getPrefix());
-            db.scheduler.runSync(resultRunnable);
-            return;
-        }
-
-        // TODO: this is player own prefix...
-        db.getPlayer(uuid, new DBRunnable() {
+    public ListenableFuture<String> getPlayerPrefix(final UUID uuid) {
+        ListenableFuture<String> listenableFuture = service.submit(new Callable<String>() {
 
             @Override
-            public void run() {
+            public String call() throws Exception {
+                // If player is online, get data directly from player
+                PermissionPlayer gp = getPermissionPlayer(uuid);
+                if (gp != null)
+                    return gp.getPrefix();
+
+                // TODO: this is player own prefix...
+                DBResult result = db.getPlayer(uuid);
                 if (result.hasNext()) {
                     DBDocument row = result.next();
-                    resultRunnable.setResult(row.getString("prefix"));
+                    return row.getString("prefix");
                 }
-                db.scheduler.runSync(resultRunnable);
+                return null;
             }
         });
+        return listenableFuture;
     }
 
     @Override
-    public void getPlayerSuffix(UUID uuid, final ResultRunnable<String> resultRunnable) {
-        // If player is online, get data directly from player
-        PermissionPlayer gp = getPermissionPlayer(uuid);
-        if (gp != null) {
-            resultRunnable.setResult(gp.getSuffix());
-            db.scheduler.runSync(resultRunnable);
-            return;
-        }
-
-        // TODO: this is player own suffix...
-        db.getPlayer(uuid, new DBRunnable() {
+    public ListenableFuture<String> getPlayerSuffix(final UUID uuid) {
+        ListenableFuture<String> listenableFuture = service.submit(new Callable<String>() {
 
             @Override
-            public void run() {
+            public String call() throws Exception {
+                // If player is online, get data directly from player
+                PermissionPlayer gp = getPermissionPlayer(uuid);
+                if (gp != null)
+                    return gp.getSuffix();
+
+                // TODO: this is player own suffix...
+                DBResult result = db.getPlayer(uuid);
                 if (result.hasNext()) {
                     DBDocument row = result.next();
-                    resultRunnable.setResult(row.getString("suffix"));
+                    return row.getString("suffix");
                 }
-                db.scheduler.runSync(resultRunnable);
+                return null;
             }
         });
+        return listenableFuture;
     }
 
     @Override
-    public void getPlayerOwnPrefix(UUID uuid, final ResultRunnable<String> resultRunnable) {
-        // If player is online, get data directly from player
-        PermissionPlayer gp = getPermissionPlayer(uuid);
-        if (gp != null) {
-            resultRunnable.setResult(gp.getOwnPrefix());
-            db.scheduler.runSync(resultRunnable);
-            return;
-        }
-        db.getPlayer(uuid, new DBRunnable() {
+    public ListenableFuture<String> getPlayerOwnPrefix(final UUID uuid) {
+        ListenableFuture<String> listenableFuture = service.submit(new Callable<String>() {
 
             @Override
-            public void run() {
+            public String call() throws Exception {
+                // If player is online, get data directly from player
+                PermissionPlayer gp = getPermissionPlayer(uuid);
+                if (gp != null)
+                    return gp.getOwnPrefix();
+
+                DBResult result = db.getPlayer(uuid);
                 if (result.hasNext()) {
                     DBDocument row = result.next();
-                    resultRunnable.setResult(row.getString("prefix"));
+                    return row.getString("prefix");
                 }
-                db.scheduler.runSync(resultRunnable);
+                return null;
             }
         });
+        return listenableFuture;
     }
 
     @Override
-    public void getPlayerOwnSuffix(UUID uuid, final ResultRunnable<String> resultRunnable) {
-        // If player is online, get data directly from player
-        PermissionPlayer gp = getPermissionPlayer(uuid);
-        if (gp != null) {
-            resultRunnable.setResult(gp.getOwnSuffix());
-            db.scheduler.runSync(resultRunnable);
-            return;
-        }
-
-        db.getPlayer(uuid, new DBRunnable() {
+    public ListenableFuture<String> getPlayerOwnSuffix(final UUID uuid) {
+        ListenableFuture<String> listenableFuture = service.submit(new Callable<String>() {
 
             @Override
-            public void run() {
+            public String call() throws Exception {
+                // If player is online, get data directly from player
+                PermissionPlayer gp = getPermissionPlayer(uuid);
+                if (gp != null)
+                    return gp.getOwnSuffix();
+
+                DBResult result = db.getPlayer(uuid);
                 if (result.hasNext()) {
                     DBDocument row = result.next();
-                    resultRunnable.setResult(row.getString("suffix"));
+                    return row.getString("suffix");
                 }
-                db.scheduler.runSync(resultRunnable);
+                return null;
             }
         });
+        return listenableFuture;
     }
 
     @Override
@@ -1421,8 +1348,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
     // -------------------------------------------------------------------//
 
     @Override
-    public void addPlayerPermission(UUID uuid, String permission, ResponseRunnable response) {
-        addPlayerPermission(uuid, permission, "", "", null, response);
+    public ListenableFuture<Response> addPlayerPermission(UUID uuid, String permission) {
+        return addPlayerPermission(uuid, permission, "", "", null);
     }
 
     @Override
@@ -1450,29 +1377,28 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     if (p.willExpire()) {
                                         if (p.getPermissionString().equals(permission) && p.getServer().equalsIgnoreCase(server) && p.getWorld().equalsIgnoreCase(world)) {
                                             final Date newExpiry = new Date(p.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
-                                            boolean deleted = db.deletePlayerPermission(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate());
-                                            if (!deleted)
+                                            DBResult result2 = db.deletePlayerPermission(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate());
+                                            if (!result2.booleanValue())
                                                 return new Response(false, "Could not update permission expiration date. Check console for any errors.");
                                             else {
                                                 boolean inserted = db.insertPlayerPermission(uuid, permission, world, server, newExpiry);
                                                 if (!inserted) {
                                                     return new Response(false, "Could not update permission expiration date. Check console for any errors.");
                                                 } else {
-                                                    return new Response(true, "Permission expiration changed.");
                                                     reloadPlayer(uuid);
                                                     notifyReloadPlayer(uuid);
+                                                    return new Response(true, "Permission expiration changed.");
                                                 }
                                             }
-                                            break;
                                         }
                                     }
                                 }
                             }
                             boolean inserted = db.insertPlayerPermission(uuid, permission, world, server, expires);
                             if (inserted) {
-                                return new Response(true, "Permission added to player.");
                                 reloadPlayer(uuid);
                                 notifyReloadPlayer(uuid);
+                                return new Response(true, "Permission added to player.");
                             } else
                                 return new Response(false, "Could not add permission. Check console for any errors.");
                         } else
@@ -1486,123 +1412,120 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
-    public void removePlayerPermission(UUID uuid, String permission, ResponseRunnable response) {
-        removePlayerPermission(uuid, permission, "", "", null, response);
+    public ListenableFuture<Response> removePlayerPermission(UUID uuid, String permission) {
+        return removePlayerPermission(uuid, permission, "", "", null);
     }
 
     @Override
-    public void removePlayerPermission(final UUID uuid, String permission, String world, String server, Date expires) {
-        db.deletePlayerPermission(uuid, permission, world, server, expires, new DBRunnable(response.isSameThread()) {
+    public ListenableFuture<Response> removePlayerPermission(final UUID uuid, final String permission, final String world, final String server, final Date expires) {
+        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
 
             @Override
-            public void run() {
+            public Response call() throws Exception {
+                DBResult result = db.deletePlayerPermission(uuid, permission, world, server, expires);
                 if (result.booleanValue()) {
                     int amount = result.rowsChanged();
-                    return new Response(true, "Removed " + amount + " permissions from the player.");
                     reloadPlayer(uuid);
                     notifyReloadPlayer(uuid);
+                    return new Response(true, "Removed " + amount + " permissions from the player.");
                 } else
                     return new Response(false, "Player does not have the specified permission.");
-                db.scheduler.runSync(response, response.isSameThread());
             }
         });
+        return listenableFuture;
     }
 
     @Override
-    public void removePlayerPermissions(final UUID uuid) {
-
-        db.deletePlayerPermissions(uuid, new DBRunnable(response.isSameThread()) {
+    public ListenableFuture<Response> removePlayerPermissions(final UUID uuid) {
+        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
 
             @Override
-            public void run() {
+            public Response call() throws Exception {
+
+                DBResult result = db.deletePlayerPermissions(uuid);
                 if (result.booleanValue()) {
                     int amount = result.rowsChanged();
-                    return new Response(true, "Removed " + amount + " permissions from the player.");
                     reloadPlayer(uuid);
                     notifyReloadPlayer(uuid);
+                    return new Response(true, "Removed " + amount + " permissions from the player.");
                 } else
                     return new Response(false, "Player does not have any permissions.");
-                db.scheduler.runSync(response, response.isSameThread());
             }
         });
+        return listenableFuture;
     }
 
     @Override
-    public void setPlayerPrefix(final UUID uuid, String prefix) {
-        if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
-            return new Response(false, "You can not set the prefix of the default player. Add it to a group instead and add the group to the default player.");
-            db.scheduler.runSync(response, response.isSameThread());
-            return;
-        }
-
-        db.setPlayerPrefix(uuid, prefix, new DBRunnable(response.isSameThread()) {
+    public ListenableFuture<Response> setPlayerPrefix(final UUID uuid, final String prefix) {
+        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
 
             @Override
-            public void run() {
-                if (result.booleanValue()) {
-                    return new Response(true, "Player prefix set.");
+            public Response call() throws Exception {
+                if (uuid.equals(DefaultPermissionPlayer.getUUID()))
+                    return new Response(false, "You can not set the prefix of the default player. Add it to a group instead and add the group to the default player.");
+
+                boolean success = db.setPlayerPrefix(uuid, prefix);
+                if (success) {
                     reloadPlayer(uuid);
                     notifyReloadPlayer(uuid);
+                    return new Response(true, "Player prefix set.");
                 } else
                     return new Response(false, "Could not set player prefix. Check console for errors.");
-                db.scheduler.runSync(response, response.isSameThread());
             }
         });
+        return listenableFuture;
     }
 
     @Override
-    public void setPlayerSuffix(final UUID uuid, String suffix) {
-        if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
-            return new Response(false, "You can not set the suffix of the default player. Add it to a group instead and add the group to the default player.");
-            db.scheduler.runSync(response, response.isSameThread());
-            return;
-        }
-
-        db.setPlayerSuffix(uuid, suffix, new DBRunnable(response.isSameThread()) {
+    public ListenableFuture<Response> setPlayerSuffix(final UUID uuid, final String suffix) {
+        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
 
             @Override
-            public void run() {
-                if (result.booleanValue()) {
-                    return new Response(true, "Player suffix set.");
+            public Response call() throws Exception {
+                if (uuid.equals(DefaultPermissionPlayer.getUUID()))
+                    return new Response(false, "You can not set the suffix of the default player. Add it to a group instead and add the group to the default player.");
+
+                boolean success = db.setPlayerSuffix(uuid, suffix);
+                if (success) {
                     reloadPlayer(uuid);
                     notifyReloadPlayer(uuid);
+                    return new Response(true, "Player suffix set.");
                 } else
                     return new Response(false, "Could not set player suffix. Check console for errors.");
-                db.scheduler.runSync(response, response.isSameThread());
             }
         });
+        return listenableFuture;
     }
 
     @Override
-    public void removePlayerGroup(UUID uuid, int groupId, ResponseRunnable response) {
-        removePlayerGroup(uuid, groupId, "", false, null, response);
+    public ListenableFuture<Response> removePlayerGroup(UUID uuid, int groupId) {
+        return removePlayerGroup(uuid, groupId, "", false, null);
     }
 
     @Override
-    public void removePlayerGroup(UUID uuid, int groupId, boolean negated, ResponseRunnable response) {
-        removePlayerGroup(uuid, groupId, "", negated, null, response);
+    public ListenableFuture<Response> removePlayerGroup(UUID uuid, int groupId, boolean negated) {
+        return removePlayerGroup(uuid, groupId, "", negated, null);
     }
 
     @Override
-    public void removePlayerGroup(final UUID uuid, final int groupId, String server, final boolean negated, final Date expires, final ResponseRunnable resp) {
-        if (server.equalsIgnoreCase("all"))
-            server = "";
-
-        final String serverFinal = server;
-
-        final Group group = getGroup(groupId);
-        if (group == null) {
-            return new Response(false, "Group does not exist.");
-            db.scheduler.runSync(resp, resp.isSameThread());
-            return;
-        }
-
-        getPlayerCurrentGroups(uuid, new ResultRunnable<LinkedHashMap<String, List<CachedGroup>>>(resp.isSameThread()) {
+    public ListenableFuture<Response> removePlayerGroup(final UUID uuid, final int groupId, final String server, final boolean negated, final Date expires) {
+        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
 
             @Override
-            public void run() {
-                if (result != null) {
+            public Response call() throws Exception {
+                String tempServer = server;
+                if (server.equalsIgnoreCase("all"))
+                    tempServer = "";
 
+                final String serverFinal = tempServer;
+
+                final Group group = getGroup(groupId);
+                if (group == null)
+                    return new Response(false, "Group does not exist.");
+
+                ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> first = getPlayerCurrentGroups(uuid);
+                LinkedHashMap<String, List<CachedGroup>> result = first.get();
+                if (result != null) {
                     boolean removed = false;
                     List<CachedGroup> groupList = result.get(serverFinal);
                     if (groupList == null)
@@ -1620,38 +1543,24 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         }
                     }
 
-                    if (!removed) {
+                    if (!removed)
                         return new Response(false, "Player does not have this group.");
-                        db.scheduler.runSync(resp, resp.isSameThread());
-                        return;
-                    }
 
-                    copyDefaultGroupsIfDefault(uuid, new ResponseRunnable(resp.isSameThread()) {
-
-                        @Override
-                        public void run() {
-                            db.deletePlayerGroup(uuid, groupId, serverFinal, negated, expires, new DBRunnable(resp.isSameThread()) {
-
-                                @Override
-                                public void run() {
-                                    if (result.booleanValue()) {
-                                        return new Response(true, "Player group removed.");
-                                        reloadPlayer(uuid);
-                                        notifyReloadPlayer(uuid);
-                                    } else
-                                        return new Response(false, "Could not remove player group. Check console for errors.");
-                                    db.scheduler.runSync(resp, resp.isSameThread());
-                                }
-                            });
-                        }
-                    });
-
-                } else {
+                    ListenableFuture<Response> second = copyDefaultGroupsIfDefault(uuid);
+                    if (!second.get().succeeded())
+                        plugin.getLogger().severe(second.get().getResponse());
+                    boolean deleted = db.deletePlayerGroup(uuid, groupId, serverFinal, negated, expires);
+                    if (deleted) {
+                        reloadPlayer(uuid);
+                        notifyReloadPlayer(uuid);
+                        return new Response(true, "Player group removed.");
+                    } else
+                        return new Response(false, "Could not remove player group. Check console for errors.");
+                } else
                     return new Response(false, "Player does not exist.");
-                    db.scheduler.runSync(resp, resp.isSameThread());
-                }
             }
         });
+        return listenableFuture;
     }
 
     @Override

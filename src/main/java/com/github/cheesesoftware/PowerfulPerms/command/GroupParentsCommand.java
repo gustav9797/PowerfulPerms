@@ -4,7 +4,10 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupParentsCommand extends SubCommand {
 
@@ -29,13 +32,6 @@ public class GroupParentsCommand extends SubCommand {
                 }
                 int groupId = group.getId();
 
-                final ResponseRunnable response = new ResponseRunnable() {
-                    @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
-                    }
-                };
-
                 if (args.length >= 4 && args[2].equalsIgnoreCase("add")) {
                     String parent = args[3];
                     final Group parentGroup = permissionManager.getGroup(parent);
@@ -44,7 +40,19 @@ public class GroupParentsCommand extends SubCommand {
                         return CommandResult.success;
                     }
                     int parentId = parentGroup.getId();
-                    permissionManager.addGroupParent(groupId, parentId, response);
+                    ListenableFuture<Response> first = permissionManager.addGroupParent(groupId, parentId);
+                    Futures.addCallback(first, new FutureCallback<Response>() {
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            t.printStackTrace();
+                        }
+
+                        @Override
+                        public void onSuccess(Response result) {
+                            sendSender(invoker, sender, result.getResponse());
+                        }
+                    });
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("remove")) {
                     String parent = args[3];
                     final Group parentGroup = permissionManager.getGroup(parent);
@@ -53,7 +61,19 @@ public class GroupParentsCommand extends SubCommand {
                         return CommandResult.success;
                     }
                     int parentId = parentGroup.getId();
-                    permissionManager.removeGroupParent(groupId, parentId, response);
+                    ListenableFuture<Response> first = permissionManager.removeGroupParent(groupId, parentId);
+                    Futures.addCallback(first, new FutureCallback<Response>() {
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            t.printStackTrace();
+                        }
+
+                        @Override
+                        public void onSuccess(Response result) {
+                            sendSender(invoker, sender, result.getResponse());
+                        }
+                    });
                 } else {
                     // List parents
                     sendSender(invoker, sender, "Listing parents for group " + groupName + ":");

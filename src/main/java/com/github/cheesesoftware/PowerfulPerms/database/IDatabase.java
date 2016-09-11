@@ -39,9 +39,9 @@ public interface IDatabase {
 
     public boolean insertGroupPermission(int groupId, String permission, String world, String server, Date expires);
 
-    public boolean deletePlayerPermission(UUID uuid, String permission, String world, String server, Date expires);
+    public DBResult deletePlayerPermission(UUID uuid, String permission, String world, String server, Date expires);
 
-    public boolean deletePlayerPermissions(UUID uuid);
+    public DBResult deletePlayerPermissions(UUID uuid);
 
     public DBResult deleteGroupPermission(int groupId, String permission, String world, String server, Date expires);
 

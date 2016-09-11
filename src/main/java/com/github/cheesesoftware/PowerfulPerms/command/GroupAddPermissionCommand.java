@@ -6,7 +6,10 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupAddPermissionCommand extends SubCommand {
 
@@ -31,13 +34,6 @@ public class GroupAddPermissionCommand extends SubCommand {
                 }
                 int groupId = group.getId();
 
-                final ResponseRunnable response = new ResponseRunnable() {
-                    @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
-                    }
-                };
-
                 String permission = args[2];
                 String world = "";
                 String server = "";
@@ -57,7 +53,19 @@ public class GroupAddPermissionCommand extends SubCommand {
                     server = "";
                 if (world.equalsIgnoreCase("all"))
                     world = "";
-                permissionManager.addGroupPermission(groupId, permission, world, server, expires, response);
+                ListenableFuture<Response> first = permissionManager.addGroupPermission(groupId, permission, world, server, expires);
+                Futures.addCallback(first, new FutureCallback<Response>() {
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
+                    }
+
+                    @Override
+                    public void onSuccess(Response result) {
+                        sendSender(invoker, sender, result.getResponse());
+                    }
+                });
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

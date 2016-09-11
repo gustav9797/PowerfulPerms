@@ -4,7 +4,10 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupDeleteCommand extends SubCommand {
 
@@ -30,15 +33,19 @@ public class GroupDeleteCommand extends SubCommand {
                     sendSender(invoker, sender, "You are about to delete a group. Confirm with \"/pp group " + groupName + " delete confirm\"");
                     return CommandResult.success;
                 } else {
+                    ListenableFuture<Response> first = permissionManager.deleteGroup(groupId);
+                    Futures.addCallback(first, new FutureCallback<Response>() {
 
-                    final ResponseRunnable response = new ResponseRunnable() {
                         @Override
-                        public void run() {
-                            sendSender(invoker, sender, response);
+                        public void onFailure(Throwable t) {
+                            t.printStackTrace();
                         }
-                    };
 
-                    permissionManager.deleteGroup(groupId, response);
+                        @Override
+                        public void onSuccess(Response result) {
+                            sendSender(invoker, sender, result.getResponse());
+                        }
+                    });
                 }
                 return CommandResult.success;
             } else

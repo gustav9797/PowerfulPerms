@@ -3,7 +3,10 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupCreateCommand extends SubCommand {
 
@@ -19,13 +22,6 @@ public class GroupCreateCommand extends SubCommand {
 
                 final String groupName = args[0];
 
-                final ResponseRunnable response = new ResponseRunnable() {
-                    @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
-                    }
-                };
-
                 String ladder = "default";
                 if (args.length >= 3)
                     ladder = args[2];
@@ -38,7 +34,20 @@ public class GroupCreateCommand extends SubCommand {
                         return CommandResult.success;
                     }
                 }
-                permissionManager.createGroup(groupName, ladder, rank, response);
+                
+                ListenableFuture<Response> first = permissionManager.createGroup(groupName, ladder, rank);
+                Futures.addCallback(first, new FutureCallback<Response>() {
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
+                    }
+
+                    @Override
+                    public void onSuccess(Response result) {
+                        sendSender(invoker, sender, result.getResponse());
+                    }
+                });
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

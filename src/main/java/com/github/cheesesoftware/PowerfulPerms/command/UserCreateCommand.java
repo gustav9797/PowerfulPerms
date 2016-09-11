@@ -1,12 +1,16 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResultRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 public class UserCreateCommand extends SubCommand {
 
@@ -22,26 +26,38 @@ public class UserCreateCommand extends SubCommand {
 
                 final String playerName = args[0];
 
-                final ResponseRunnable response = new ResponseRunnable() {
+                ListenableFuture<UUID> first = permissionManager.getConvertUUID(playerName);
+                Futures.addCallback(first, new FutureCallback<UUID>() {
+
                     @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
+                    public void onFailure(Throwable t) {
+                        t.printStackTrace();
                     }
-                };
-
-                permissionManager.getConvertUUID(playerName, new ResultRunnable<UUID>() {
 
                     @Override
-                    public void run() {
+                    public void onSuccess(UUID result) {
                         final UUID uuid = result;
                         if (uuid == null) {
-                            response.setResponse(false, "Could not find player UUID.");
-                            permissionManager.getScheduler().runSync(response, response.isSameThread());
+                            sendSender(invoker, sender, "Could not find player UUID.");
                         } else {
-                            permissionManager.createPlayer(playerName, uuid, response);
+                            final ListenableFuture<Response> second = permissionManager.createPlayer(playerName, uuid);
+                            second.addListener(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    try {
+                                        sendSender(invoker, sender, second.get().getResponse());
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    } catch (ExecutionException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }, MoreExecutors.sameThreadExecutor());
                         }
                     }
                 });
+
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

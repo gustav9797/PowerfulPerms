@@ -9,7 +9,10 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.github.cheesesoftware.PowerfulPermsAPI.ResponseRunnable;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupSuffixCommand extends SubCommand {
 
@@ -33,13 +36,6 @@ public class GroupSuffixCommand extends SubCommand {
                     return CommandResult.success;
                 }
                 int groupId = group.getId();
-
-                final ResponseRunnable response = new ResponseRunnable() {
-                    @Override
-                    public void run() {
-                        sendSender(invoker, sender, response);
-                    }
-                };
 
                 String server = "";
                 if (args.length >= 4 && args[2].equalsIgnoreCase("set")) {
@@ -79,9 +75,33 @@ public class GroupSuffixCommand extends SubCommand {
                     } else
                         suffix = args[3];
 
-                    permissionManager.setGroupSuffix(groupId, suffix, server, response);
+                    ListenableFuture<Response> first = permissionManager.setGroupSuffix(groupId, suffix, server);
+                    Futures.addCallback(first, new FutureCallback<Response>() {
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            t.printStackTrace();
+                        }
+
+                        @Override
+                        public void onSuccess(Response result) {
+                            sendSender(invoker, sender, result.getResponse());
+                        }
+                    });
                 } else if (args.length >= 3 && args[2].equalsIgnoreCase("remove")) {
-                    permissionManager.setGroupSuffix(groupId, "", (args.length >= 4 ? args[3] : ""), response);
+                    ListenableFuture<Response> first = permissionManager.setGroupSuffix(groupId, "", (args.length >= 4 ? args[3] : ""));
+                    Futures.addCallback(first, new FutureCallback<Response>() {
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            t.printStackTrace();
+                        }
+
+                        @Override
+                        public void onSuccess(Response result) {
+                            sendSender(invoker, sender, result.getResponse());
+                        }
+                    });
                 } else {
                     HashMap<String, String> prefix = permissionManager.getGroupServerSuffix(groupId);
                     if (prefix != null) {
