@@ -14,10 +14,5 @@ public enum CommandResult {
     /**
      * Return if this command is the wrong one for the first argument(s).
      */
-    noMatch,
-
-    /**
-     * Return if not used.
-     */
-    NONE
+    noMatch
 }

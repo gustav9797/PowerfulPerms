@@ -695,7 +695,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
             @Override
             public void run() {
-                debug("loadPlayerFinished begin");
+                debug("loadPlayerFinished begin. Login: " + login);
                 final String prefix_loaded = (row != null ? row.getString("prefix") : "");
                 final String suffix_loaded = (row != null ? row.getString("suffix") : "");
 
@@ -704,34 +704,33 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     LinkedHashMap<String, List<CachedGroup>> tempGroups = first.get();
                     ListenableFuture<List<Permission>> second = loadPlayerOwnPermissions(uuid);
                     List<Permission> perms = second.get();
-                    if (perms == null) {
+                    if (perms == null)
                         perms = new ArrayList<Permission>();
 
-                        if (login) {
-                            debug("Inserted into cachedPlayers allowing playerjoin to finish");
-                            cachedPlayers.put(uuid, new CachedPlayer(tempGroups, prefix_loaded, suffix_loaded, perms));
-                        } else {
-                            // Player should be reloaded if "login" is false. Reload already loaded player.
+                    if (login) {
+                        debug("Inserted into cachedPlayers allowing playerjoin to finish");
+                        cachedPlayers.put(uuid, new CachedPlayer(tempGroups, prefix_loaded, suffix_loaded, perms));
+                    } else {
+                        // Player should be reloaded if "login" is false. Reload already loaded player.
 
-                            PermissionPlayerBase toUpdate = (PermissionPlayerBase) getPermissionPlayer(uuid);
-                            if (plugin.isPlayerOnline(uuid) && toUpdate != null) {
-                                debug("Player instance " + toUpdate.toString());
-                                PermissionPlayerBase base;
-                                debug("loadPlayerFinished reload group count:" + tempGroups.size());
-                                if (tempGroups.isEmpty()) {
-                                    // Player has no groups, put default data
-                                    base = new PermissionPlayerBase(deepCopyDefaultGroups(), perms, prefix_loaded, suffix_loaded, plugin, true);
-                                } else
-                                    base = new PermissionPlayerBase(tempGroups, perms, prefix_loaded, suffix_loaded, plugin, false);
-                                toUpdate.update(base);
-                                checkPlayerTimedGroupsAndPermissions(uuid, toUpdate);
+                        PermissionPlayerBase toUpdate = (PermissionPlayerBase) getPermissionPlayer(uuid);
+                        if (plugin.isPlayerOnline(uuid) && toUpdate != null) {
+                            debug("Player instance " + toUpdate.toString());
+                            PermissionPlayerBase base;
+                            debug("loadPlayerFinished reload group count:" + tempGroups.size());
+                            if (tempGroups.isEmpty()) {
+                                // Player has no groups, put default data
+                                base = new PermissionPlayerBase(deepCopyDefaultGroups(), perms, prefix_loaded, suffix_loaded, plugin, true);
+                            } else
+                                base = new PermissionPlayerBase(tempGroups, perms, prefix_loaded, suffix_loaded, plugin, false);
+                            toUpdate.update(base);
+                            checkPlayerTimedGroupsAndPermissions(uuid, toUpdate);
 
-                                if (cachedPlayers.get(uuid) != null)
-                                    cachedPlayers.remove(uuid);
-                            }
+                            if (cachedPlayers.get(uuid) != null)
+                                cachedPlayers.remove(uuid);
                         }
-                        debug("loadPlayerFinished runnable end");
                     }
+                    debug("loadPlayerFinished runnable end");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -829,19 +828,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         debug("loadgroups parents size: " + parents.size());
 
                         ListenableFuture<HashMap<Integer, HashMap<String, String>>> second = loadGroupPrefixes();
-                        debug("a");
                         final HashMap<Integer, HashMap<String, String>> prefixes = second.get();
-                        debug("b");
 
                         ListenableFuture<HashMap<Integer, HashMap<String, String>>> third = loadGroupSuffixes();
-                        debug("c");
                         final HashMap<Integer, HashMap<String, String>> suffixes = third.get();
-                        debug("d");
 
                         ListenableFuture<HashMap<Integer, List<PowerfulPermission>>> fourth = loadGroupPermissions();
-                        debug("e");
                         final HashMap<Integer, List<PowerfulPermission>> permissions = fourth.get();
-                        debug("f");
 
                         groupsLock.lock();
                         try {
@@ -860,13 +853,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                                 checkGroupTimedPermissions(group);
                             }
-
-                            // Reload players too.
-                            reloadDefaultPlayers(beginSameThread);
                             debug("loadGroups end");
                         } finally {
                             groupsLock.unlock();
                         }
+                        // Reload players too.
+                        reloadDefaultPlayers(beginSameThread);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
