@@ -295,7 +295,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
         TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
         // Sort groups by rank if same ladder
         for (Group group : input) {
-            if (group.getLadder().equalsIgnoreCase(ladder)) {
+            if (ladder == null || group.getLadder().equalsIgnoreCase(ladder)) {
                 sortedGroups.put(group.getRank(), group);
             }
         }
@@ -320,7 +320,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
         TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
         // Sort groups by rank if same ladder
         for (Group group : input) {
-            if (group.getLadder().equalsIgnoreCase(ladder)) {
+            if (ladder == null || group.getLadder().equalsIgnoreCase(ladder)) {
                 sortedGroups.put(group.getRank(), group);
             }
         }
@@ -337,23 +337,23 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns the player's default prefix. Uses group rank.
+     * Returns the player's prefix from the group with highest rank across all ladders.
      */
     @Override
     public String getPrefix() {
         if (!prefix.isEmpty())
             return prefix;
-        return getPrefix("default");
+        return getPrefix(null);
     }
 
     /**
-     * Returns the player's default suffix. Uses group rank.
+     * Returns the player's suffix from the group with highest rank across all ladders.
      */
     @Override
     public String getSuffix() {
         if (!suffix.isEmpty())
             return suffix;
-        return getSuffix("default");
+        return getSuffix(null);
     }
 
     /**
@@ -375,13 +375,29 @@ public class PermissionPlayerBase implements PermissionPlayer {
     protected List<String> calculatePermissions(String playerServer, String playerWorld) {
         ArrayList<Permission> unprocessedPerms = new ArrayList<Permission>();
 
-        // Add permissions from groups in reverse order.
+        // Add permissions from groups in normal order.
         plugin.debug("current groups count " + currentGroups.size());
         List<Group> input = getGroups();
-        ListIterator<Group> it = input.listIterator(input.size());
-        while (it.hasPrevious()) {
-            Group group = it.previous();
-            unprocessedPerms.addAll(group.getPermissions());
+        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
+
+        // Insert groups by rank value
+        for (Group group : input) {
+            List<Group> temp = sortedGroups.get(group.getRank());
+            if (temp == null)
+                temp = new ArrayList<Group>();
+            temp.add(group);
+            sortedGroups.put(group.getRank(), temp);
+        }
+
+        // Add permissions from sorted groups
+        Iterator<List<Group>> it = sortedGroups.values().iterator();
+        while (it.hasNext()) {
+            List<Group> tempGroups = it.next();
+            Iterator<Group> it2 = tempGroups.iterator();
+            while (it2.hasNext()) {
+                Group group = it2.next();
+                unprocessedPerms.addAll(group.getPermissions());
+            }
         }
 
         // Add own permissions.
