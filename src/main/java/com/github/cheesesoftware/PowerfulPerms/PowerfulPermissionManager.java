@@ -220,7 +220,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             }
             putPermissionPlayer(p.getUniqueId(), permissionsPlayer);
             checkPlayerTimedGroupsAndPermissions(p.getUniqueId(), permissionsPlayer);
-            eventHandler.fireEvent(new PlayerLoadedEvent(p.getUniqueId()));
+            eventHandler.fireEvent(new PlayerLoadedEvent(p.getUniqueId(), p.getName()));
         }
         debug("loadCachedPlayer end");
     }

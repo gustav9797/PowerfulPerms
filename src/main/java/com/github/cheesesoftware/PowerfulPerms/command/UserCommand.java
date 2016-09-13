@@ -89,12 +89,19 @@ public class UserCommand extends SubCommand {
                                     }
                                     rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
 
-                                    ListenableFuture<Boolean> third = permissionManager.isPlayerDefault(uuid);
+                                    final ListenableFuture<Boolean> third = permissionManager.isPlayerDefault(uuid);
                                     third.addListener(new Runnable() {
 
                                         @Override
                                         public void run() {
-                                            rows.add("This player has no groups and is using [default] groups.");
+                                            try {
+                                                if (third.get())
+                                                    rows.add("This player has no groups and is using [default] groups.");
+                                            } catch (InterruptedException e2) {
+                                                e2.printStackTrace();
+                                            } catch (ExecutionException e2) {
+                                                e2.printStackTrace();
+                                            }
 
                                             final ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> fourth = permissionManager.getPlayerCurrentGroups(uuid);
                                             fourth.addListener(new Runnable() {

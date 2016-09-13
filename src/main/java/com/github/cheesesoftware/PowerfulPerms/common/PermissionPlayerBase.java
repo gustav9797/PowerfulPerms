@@ -279,11 +279,32 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns the player's group on the default ladder.
+     * Returns the group with highest rank value across all ladders of the player.
      */
     @Override
-    public Group getGroup() {
-        return getGroup("default");
+    public Group getPrimaryGroup() {
+        List<Group> input = getGroups();
+        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
+
+        for (Group group : input) {
+            List<Group> temp = sortedGroups.get(group.getRank());
+            if (temp == null)
+                temp = new ArrayList<Group>();
+            temp.add(group);
+            sortedGroups.put(group.getRank(), temp);
+        }
+
+        Iterator<List<Group>> it = sortedGroups.descendingMap().values().iterator();
+        while (it.hasNext()) {
+            List<Group> tempGroups = it.next();
+            Iterator<Group> it2 = tempGroups.iterator();
+            while (it2.hasNext()) {
+                Group group = it2.next();
+                if (group != null)
+                    return group;
+            }
+        }
+        return null;
     }
 
     /**
@@ -296,11 +317,13 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
         // Insert groups by rank value
         for (Group group : input) {
-            List<Group> temp = sortedGroups.get(group.getRank());
-            if (temp == null)
-                temp = new ArrayList<Group>();
-            temp.add(group);
-            sortedGroups.put(group.getRank(), temp);
+            if (ladder == null || group.getLadder().equalsIgnoreCase(ladder)) {
+                List<Group> temp = sortedGroups.get(group.getRank());
+                if (temp == null)
+                    temp = new ArrayList<Group>();
+                temp.add(group);
+                sortedGroups.put(group.getRank(), temp);
+            }
         }
 
         // Return prefix from group with highest rank, if not found, move on to next rank
@@ -328,11 +351,13 @@ public class PermissionPlayerBase implements PermissionPlayer {
 
         // Insert groups by rank value
         for (Group group : input) {
-            List<Group> temp = sortedGroups.get(group.getRank());
-            if (temp == null)
-                temp = new ArrayList<Group>();
-            temp.add(group);
-            sortedGroups.put(group.getRank(), temp);
+            if (ladder == null || group.getLadder().equalsIgnoreCase(ladder)) {
+                List<Group> temp = sortedGroups.get(group.getRank());
+                if (temp == null)
+                    temp = new ArrayList<Group>();
+                temp.add(group);
+                sortedGroups.put(group.getRank(), temp);
+            }
         }
 
         // Return suffix from group with highest rank, if not found, move on to next rank

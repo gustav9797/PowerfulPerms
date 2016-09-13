@@ -733,7 +733,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             checkPlayerTimedGroupsAndPermissions(uuid, toUpdate);
 
                             cachedPlayers.remove(uuid);
-                            eventHandler.fireEvent(new PlayerLoadedEvent(uuid));
+                            eventHandler.fireEvent(new PlayerLoadedEvent(uuid, plugin.getPlayerName(uuid)));
                         }
                     }
                     debug("loadPlayerFinished runnable end");
@@ -1536,8 +1536,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         return new Response(false, "Player does not have this group.");
 
                     ListenableFuture<Response> second = copyDefaultGroupsIfDefault(uuid);
-                    if (!second.get().succeeded())
-                        plugin.getLogger().severe(second.get().getResponse());
+                    second.get();
                     boolean deleted = db.deletePlayerGroup(uuid, groupId, serverFinal, negated, expires);
                     if (deleted) {
                         reloadPlayer(uuid, true);
@@ -1609,8 +1608,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     }
 
                     ListenableFuture<Response> second = copyDefaultGroupsIfDefault(uuid);
-                    if (!second.get().succeeded())
-                        plugin.getLogger().severe(second.get().getResponse());
+                    second.get();
                     boolean inserted = db.insertPlayerGroup(uuid, groupId, serverFinal, negated, expires);
                     if (inserted) {
                         reloadPlayer(uuid, true);
@@ -1644,8 +1642,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 if (result != null) {
                     if (!result.isEmpty()) {
                         ListenableFuture<Response> third = copyDefaultGroupsIfDefault(uuid);
-                        if (!third.get().succeeded())
-                            plugin.getLogger().severe(third.get().getResponse());
+                        third.get();
 
                         Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
                         boolean changed = false;
@@ -1759,8 +1756,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> result = second.get();
                 ListenableFuture<Response> third = copyDefaultGroupsIfDefault(uuid);
-                if (!third.get().succeeded())
-                    plugin.getLogger().severe(third.get().getResponse());
+                third.get();
                 if (result != null) {
                     if (!result.isEmpty()) {
                         Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
@@ -1837,8 +1833,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> result = second.get();
                 ListenableFuture<Response> third = copyDefaultGroupsIfDefault(uuid);
-                if (!third.get().succeeded())
-                    plugin.getLogger().severe(third.get().getResponse());
+                third.get();
                 if (result != null) {
                     if (!result.isEmpty()) {
                         Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();

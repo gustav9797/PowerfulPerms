@@ -11,13 +11,15 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import eu.taigacraft.importer.permissions.PermissionsImporter;
+
 public class ImporterHook implements eu.taigacraft.importer.permissions.PermissionsImporter {
 
     PermissionManager permissionManager;
 
     public void hook(PowerfulPermsPlugin plugin) {
         permissionManager = plugin.getPermissionManager();
-        eu.taigacraft.importer.permissions.PermissionsImporter.register("PowerfulPerms", this);
+        PermissionsImporter.register("PowerfulPerms", this);
     }
 
     @Override
@@ -91,18 +93,12 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
     }
 
     @Override
-    public boolean hasPermission(OfflinePlayer player, String permission, String worldname) {
+    public Boolean hasPermission(OfflinePlayer player, String permission, String worldname) {
         return hasPermission(player, permission);
     }
 
     @Override
     public List<String> getRanks(OfflinePlayer arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Boolean hasPermission(OfflinePlayer arg0, String arg1, String arg2) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -1,7 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -59,12 +58,9 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     public String getPrimaryGroup(String world, String player) {
         PermissionPlayer p = permissionManager.getPermissionPlayer(player);
         if (p != null) {
-            List<Group> groups = p.getGroups();
-            if (groups != null) {
-                Iterator<Group> it = groups.iterator();
-                if (it.hasNext())
-                    return it.next().getName();
-            }
+            Group group = p.getPrimaryGroup();
+            if (group != null)
+                return group.getName();
         }
         return null;
     }
@@ -83,8 +79,8 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     @Override
     public boolean groupHas(String world, String groupName, String permission) {
         Group group = permissionManager.getGroup(groupName);
-        if(group != null) {
-            
+        if (group != null) {
+
         }
         Bukkit.getLogger().warning(PowerfulPerms.consolePrefix + "One of your plugins is using Vault in an undesirable way(groupHas). Please contact the developer of PowerfulPerms(gustav9797)");
         return false;
