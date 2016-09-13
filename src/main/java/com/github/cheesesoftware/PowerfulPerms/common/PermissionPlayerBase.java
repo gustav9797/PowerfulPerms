@@ -292,21 +292,28 @@ public class PermissionPlayerBase implements PermissionPlayer {
     @Override
     public String getPrefix(String ladder) {
         List<Group> input = getGroups();
-        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
-        // Sort groups by rank if same ladder
+        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
+
+        // Insert groups by rank value
         for (Group group : input) {
-            if (ladder == null || group.getLadder().equalsIgnoreCase(ladder)) {
-                sortedGroups.put(group.getRank(), group);
-            }
+            List<Group> temp = sortedGroups.get(group.getRank());
+            if (temp == null)
+                temp = new ArrayList<Group>();
+            temp.add(group);
+            sortedGroups.put(group.getRank(), temp);
         }
 
         // Return prefix from group with highest rank, if not found, move on to next rank
-        Iterator<Group> it = sortedGroups.descendingMap().values().iterator();
+        Iterator<List<Group>> it = sortedGroups.descendingMap().values().iterator();
         while (it.hasNext()) {
-            Group group = it.next();
-            String prefix = group.getPrefix(PermissionManagerBase.serverName);
-            if (!prefix.isEmpty())
-                return prefix;
+            List<Group> tempGroups = it.next();
+            Iterator<Group> it2 = tempGroups.iterator();
+            while (it2.hasNext()) {
+                Group group = it2.next();
+                String prefix = group.getPrefix(PermissionManagerBase.serverName);
+                if (!prefix.isEmpty())
+                    return prefix;
+            }
         }
         return null;
     }
@@ -317,21 +324,28 @@ public class PermissionPlayerBase implements PermissionPlayer {
     @Override
     public String getSuffix(String ladder) {
         List<Group> input = getGroups();
-        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
-        // Sort groups by rank if same ladder
+        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
+
+        // Insert groups by rank value
         for (Group group : input) {
-            if (ladder == null || group.getLadder().equalsIgnoreCase(ladder)) {
-                sortedGroups.put(group.getRank(), group);
-            }
+            List<Group> temp = sortedGroups.get(group.getRank());
+            if (temp == null)
+                temp = new ArrayList<Group>();
+            temp.add(group);
+            sortedGroups.put(group.getRank(), temp);
         }
 
-        // Return prefix from group with highest rank, if not found, move on to next rank
-        Iterator<Group> it = sortedGroups.descendingMap().values().iterator();
+        // Return suffix from group with highest rank, if not found, move on to next rank
+        Iterator<List<Group>> it = sortedGroups.descendingMap().values().iterator();
         while (it.hasNext()) {
-            Group group = it.next();
-            String suffix = group.getSuffix(PermissionManagerBase.serverName);
-            if (!suffix.isEmpty())
-                return suffix;
+            List<Group> tempGroups = it.next();
+            Iterator<Group> it2 = tempGroups.iterator();
+            while (it2.hasNext()) {
+                Group group = it2.next();
+                String suffix = group.getSuffix(PermissionManagerBase.serverName);
+                if (!suffix.isEmpty())
+                    return suffix;
+            }
         }
         return null;
     }

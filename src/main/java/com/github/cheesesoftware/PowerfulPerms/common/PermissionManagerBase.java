@@ -557,15 +557,20 @@ public abstract class PermissionManagerBase implements PermissionManager {
         }
     }
 
+    // TODO: add reloadplayer(uuid, samethread) to API, remove this
     @Override
     public void reloadPlayer(UUID uuid) {
+        reloadPlayer(uuid, false);
+    }
+
+    public void reloadPlayer(UUID uuid, boolean sameThread) {
         if (plugin.isPlayerOnline(uuid)) {
             String name = plugin.getPlayerName(uuid);
             if (name != null) {
-                this.loadPlayer(uuid, name, false);
+                this.loadPlayer(uuid, name, sameThread);
             }
         } else if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
-            reloadDefaultPlayers(false);
+            reloadDefaultPlayers(sameThread);
         }
     }
 
@@ -1377,7 +1382,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                                 if (!inserted) {
                                                     return new Response(false, "Could not update permission expiration date. Check console for any errors.");
                                                 } else {
-                                                    reloadPlayer(uuid);
+                                                    reloadPlayer(uuid, true);
                                                     notifyReloadPlayer(uuid);
                                                     return new Response(true, "Permission expiration changed.");
                                                 }
@@ -1388,7 +1393,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             }
                             boolean inserted = db.insertPlayerPermission(uuid, permission, world, server, expires);
                             if (inserted) {
-                                reloadPlayer(uuid);
+                                reloadPlayer(uuid, true);
                                 notifyReloadPlayer(uuid);
                                 return new Response(true, "Permission added to player.");
                             } else
@@ -1417,7 +1422,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 DBResult result = db.deletePlayerPermission(uuid, permission, world, server, expires);
                 if (result.booleanValue()) {
                     int amount = result.rowsChanged();
-                    reloadPlayer(uuid);
+                    reloadPlayer(uuid, true);
                     notifyReloadPlayer(uuid);
                     return new Response(true, "Removed " + amount + " permissions from the player.");
                 } else
@@ -1437,7 +1442,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 DBResult result = db.deletePlayerPermissions(uuid);
                 if (result.booleanValue()) {
                     int amount = result.rowsChanged();
-                    reloadPlayer(uuid);
+                    reloadPlayer(uuid, true);
                     notifyReloadPlayer(uuid);
                     return new Response(true, "Removed " + amount + " permissions from the player.");
                 } else
@@ -1458,7 +1463,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                 boolean success = db.setPlayerPrefix(uuid, prefix);
                 if (success) {
-                    reloadPlayer(uuid);
+                    reloadPlayer(uuid, true);
                     notifyReloadPlayer(uuid);
                     return new Response(true, "Player prefix set.");
                 } else
@@ -1479,7 +1484,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                 boolean success = db.setPlayerSuffix(uuid, suffix);
                 if (success) {
-                    reloadPlayer(uuid);
+                    reloadPlayer(uuid, true);
                     notifyReloadPlayer(uuid);
                     return new Response(true, "Player suffix set.");
                 } else
@@ -1543,7 +1548,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         plugin.getLogger().severe(second.get().getResponse());
                     boolean deleted = db.deletePlayerGroup(uuid, groupId, serverFinal, negated, expires);
                     if (deleted) {
-                        reloadPlayer(uuid);
+                        reloadPlayer(uuid, true);
                         notifyReloadPlayer(uuid);
                         return new Response(true, "Player group removed.");
                     } else
@@ -1602,7 +1607,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                 if (!inserted) {
                                     return new Response(false, "Could not update player group expiration date. Check console for any errors.");
                                 } else {
-                                    reloadPlayer(uuid);
+                                    reloadPlayer(uuid, true);
                                     notifyReloadPlayer(uuid);
                                     return new Response(true, "Group expiration changed.");
                                 }
@@ -1616,7 +1621,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         plugin.getLogger().severe(second.get().getResponse());
                     boolean inserted = db.insertPlayerGroup(uuid, groupId, serverFinal, negated, expires);
                     if (inserted) {
-                        reloadPlayer(uuid);
+                        reloadPlayer(uuid, true);
                         notifyReloadPlayer(uuid);
                         return new Response(true, "Player group added.");
                     } else
@@ -1685,7 +1690,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (!changed) {
                             return new Response(false, "Player has no groups on the specified ladder.");
                         } else {
-                            reloadPlayer(uuid);
+                            reloadPlayer(uuid, true);
                             notifyReloadPlayer(uuid);
                             return new Response(true, "Player rank set on ladder \"" + group.getLadder() + "\".");
                         }
@@ -1809,7 +1814,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (!changed) {
                             return new Response(false, "Player has no groups on the specified ladder.");
                         } else {
-                            reloadPlayer(uuid);
+                            reloadPlayer(uuid, true);
                             notifyReloadPlayer(uuid);
                             return new Response(true, "Player was promoted to \"" + toPromoteTo.getName() + "\".");
                         }
@@ -1886,7 +1891,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (!changed) {
                             return new Response(false, "Player has no groups on the specified ladder.");
                         } else {
-                            reloadPlayer(uuid);
+                            reloadPlayer(uuid, true);
                             notifyReloadPlayer(uuid);
                             return new Response(true, "Player was demoted to \"" + toDemoteTo.getName() + "\".");
                         }
@@ -1927,7 +1932,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                 boolean inserted = db.insertGroup(-1, name, ladder, rank);
                 if (inserted) {
-                    loadGroups();
+                    loadGroups(true);
                     notifyReloadGroups();
                     return new Response(true, "Created group.");
                 } else
@@ -1945,9 +1950,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
             public Response call() throws Exception {
 
                 boolean deleted = db.deleteGroup(groupId);
-                if (deleted)
+                if (deleted) {
+                    loadGroups(true);
+                    notifyReloadGroups();
                     return new Response(true, "Deleted group.");
-                else
+                } else
                     return new Response(false, "Group does not exist.");
             }
         });
@@ -1984,7 +1991,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                         if (!inserted) {
                                             return new Response(false, "Could not update permission expiration date. Check console for any errors.");
                                         } else {
-                                            loadGroups();
+                                            loadGroups(true);
                                             notifyReloadGroups();
                                             return new Response(true, "Permission expiration changed.");
                                         }
@@ -2003,7 +2010,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                     boolean inserted = db.insertGroupPermission(groupId, permission, world, server, expires);
                     if (inserted) {
-                        loadGroups();
+                        loadGroups(true);
                         notifyReloadGroups();
                         return new Response(true, "Added permission to group.");
                     } else
@@ -2030,7 +2037,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 if (group != null) {
                     DBResult result = db.deleteGroupPermission(groupId, permission, world, server, expires);
                     if (result.booleanValue()) {
-                        loadGroups();
+                        loadGroups(true);
                         notifyReloadGroups();
                         return new Response(true, "Removed " + result.rowsChanged() + " permissions from the group.");
                     } else
@@ -2056,7 +2063,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         return new Response(false, "Group does not have any permissions.");
 
                     DBResult result = db.deleteGroupPermissions(groupId);
-                    loadGroups();
+                    loadGroups(true);
                     notifyReloadGroups();
                     return new Response(true, "Removed " + result.rowsChanged() + " permissions from the group.");
 
@@ -2082,7 +2089,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                         boolean inserted = db.insertGroupParent(groupId, parentGroupId);
                         if (inserted) {
-                            loadGroups();
+                            loadGroups(true);
                             notifyReloadGroups();
                             return new Response(true, "Added parent to group.");
                         } else
@@ -2111,7 +2118,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             return new Response(false, "Group does not have the specified parent.");
                         boolean deleted = db.deleteGroupParent(groupId, parentGroupId);
                         if (deleted) {
-                            loadGroups();
+                            loadGroups(true);
                             notifyReloadGroups();
                             return new Response(true, "Removed parent from group.");
                         } else
@@ -2159,7 +2166,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         return new Response(false, "Could not add group prefix. Check console for errors.");
                 }
 
-                loadGroups();
+                loadGroups(true);
                 notifyReloadGroups();
                 return new Response(true, "Group prefix set.");
             }
@@ -2200,7 +2207,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         return new Response(false, "Could not add group suffix. Check console for errors.");
                 }
 
-                loadGroups();
+                loadGroups(true);
                 notifyReloadGroups();
                 return new Response(true, "Group suffix set.");
             }
@@ -2224,7 +2231,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                 boolean success = db.setGroupLadder(groupId, tempLadder);
                 if (success) {
-                    loadGroups();
+                    loadGroups(true);
                     notifyReloadGroups();
                     return new Response(true, "Group ladder set.");
                 } else
@@ -2246,7 +2253,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                 boolean success = db.setGroupRank(groupId, rank);
                 if (success) {
-                    loadGroups();
+                    loadGroups(true);
                     notifyReloadGroups();
                     return new Response(true, "Group rank set.");
                 } else
@@ -2268,7 +2275,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
                 boolean success = db.setGroupName(groupId, name);
                 if (success) {
-                    loadGroups();
+                    loadGroups(true);
                     notifyReloadGroups();
                     return new Response(true, "Group name set.");
                 } else
