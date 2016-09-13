@@ -9,6 +9,7 @@ import redis.clients.jedis.JedisPubSub;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPermsAPI.PlayerLoadedEvent;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
@@ -105,7 +106,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
 
                 @Override
                 public void run() {
-                    loadPlayer(e.getConnection().getUniqueId(), e.getConnection().getName(), true);
+                    loadPlayer(e.getConnection().getUniqueId(), e.getConnection().getName(), true, true);
                     debug("LoginEvent uuid " + e.getConnection().getUniqueId().toString());
                     e.completeIntent(plugin);
                 }
@@ -140,18 +141,28 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
      * Loads online player data from database, removes old data.
      */
     private void loadPlayer(ProxiedPlayer player) {
-        loadPlayer(player.getUniqueId(), player.getName(), false);
+        loadPlayer(player.getUniqueId(), player.getName(), false, false);
     }
 
     /**
      * Continues loading a previously cached player.
      */
     private void loadCachedPlayer(ProxiedPlayer player) {
+        playersLock.lock();
+        try {
+            if (players.containsKey(player.getUniqueId())) {
+                players.remove(player.getUniqueId());
+            }
+        } finally {
+            playersLock.unlock();
+        }
+
         PermissionPlayerBase base = super.loadCachedPlayer(player.getUniqueId());
         if (base != null && player != null) {
             PowerfulPermissionPlayer permissionPlayer = new PowerfulPermissionPlayer(player, base, plugin);
-            setPermissionPlayer(player.getUniqueId(), permissionPlayer);
+            putPermissionPlayer(player.getUniqueId(), permissionPlayer);
             checkPlayerTimedGroupsAndPermissions(player.getUniqueId(), permissionPlayer);
+            eventHandler.fireEvent(new PlayerLoadedEvent(player.getUniqueId()));
         } else
             debug("loadCachedPlayer: ProxiedPlayer or PermissionPlayerBase is null");
         debug("loadCachedPlayer finish");

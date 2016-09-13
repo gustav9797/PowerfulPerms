@@ -33,6 +33,7 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PlayerGroupExpiredEvent;
+import com.github.cheesesoftware.PowerfulPermsAPI.PlayerLoadedEvent;
 import com.github.cheesesoftware.PowerfulPermsAPI.PlayerPermissionExpiredEvent;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
@@ -464,7 +465,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
             @Override
             public Response call() throws Exception {
-                loadPlayer(uuid, name, true);
+                loadPlayer(uuid, name, true, true);
                 return new Response(true, "Player created.");
             }
         });
@@ -550,7 +551,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     players.remove(uuid);
                 }
                 debug("Reloading player " + uuid.toString());
-                loadPlayer(uuid, null, false);
+                loadPlayer(uuid, null, false, false);
             }
         } finally {
             playersLock.unlock();
@@ -567,7 +568,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         if (plugin.isPlayerOnline(uuid)) {
             String name = plugin.getPlayerName(uuid);
             if (name != null) {
-                this.loadPlayer(uuid, name, sameThread);
+                this.loadPlayer(uuid, name, false, sameThread);
             }
         } else if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
             reloadDefaultPlayers(sameThread);
@@ -596,7 +597,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         if (plugin.isPlayerOnline(name)) {
             UUID uuid = plugin.getPlayerUUID(name);
             if (uuid != null) {
-                this.loadPlayer(uuid, name, false);
+                this.loadPlayer(uuid, name, false, false);
             }
         }
     }
@@ -614,7 +615,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         }
     }
 
-    protected void setPermissionPlayer(UUID uuid, PermissionPlayer permissionPlayer) {
+    protected void putPermissionPlayer(UUID uuid, PermissionPlayer permissionPlayer) {
         playersLock.lock();
         try {
             players.put(uuid, permissionPlayer);
@@ -650,7 +651,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return getPermissionPlayer(uuid);
     }
 
-    protected void loadPlayer(final UUID uuid, final String name, final boolean login) {
+    protected void loadPlayer(final UUID uuid, final String name, final boolean storeCache, final boolean sameThread) {
         debug("loadPlayer begin");
         db.scheduler.runAsync(new Runnable() {
 
@@ -676,11 +677,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     debug("COULD NOT UPDATE PLAYER NAME OF PLAYER " + uuid.toString());
                                 else
                                     debug("PLAYER NAME UPDATED. NAMECHANGE");
-                                loadPlayerFinished(row, login, uuid);
+                                loadPlayerFinished(uuid, row, storeCache, sameThread);
                             } else
-                                loadPlayerFinished(row, login, uuid);
+                                loadPlayerFinished(uuid, row, storeCache, sameThread);
                         } else
-                            loadPlayerFinished(row, login, uuid);
+                            loadPlayerFinished(uuid, row, storeCache, sameThread);
                     } else {
                         // Could not find player with UUID. Create new player.
                         boolean success = db.insertPlayer(uuid, name, "", "");
@@ -688,19 +689,19 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             debug("COULD NOT CREATE PLAYER " + uuid.toString() + " - " + name);
                         else
                             debug("NEW PLAYER CREATED");
-                        loadPlayerFinished(null, login, uuid);
+                        loadPlayerFinished(uuid, null, storeCache, sameThread);
                     }
                 }
             }
-        }, login);
+        }, sameThread);
     }
 
-    protected void loadPlayerFinished(final DBDocument row, final boolean login, final UUID uuid) {
+    protected void loadPlayerFinished(final UUID uuid, final DBDocument row, final boolean storeCache, final boolean sameThread) {
         db.scheduler.runAsync(new Runnable() {
 
             @Override
             public void run() {
-                debug("loadPlayerFinished begin. Login: " + login);
+                debug("loadPlayerFinished begin. storeCache: " + storeCache + " sameThread: " + sameThread);
                 final String prefix_loaded = (row != null ? row.getString("prefix") : "");
                 final String suffix_loaded = (row != null ? row.getString("suffix") : "");
 
@@ -712,7 +713,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     if (perms == null)
                         perms = new ArrayList<Permission>();
 
-                    if (login) {
+                    if (storeCache) {
                         debug("Inserted into cachedPlayers allowing playerjoin to finish");
                         cachedPlayers.put(uuid, new CachedPlayer(tempGroups, prefix_loaded, suffix_loaded, perms));
                     } else {
@@ -731,8 +732,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             toUpdate.update(base);
                             checkPlayerTimedGroupsAndPermissions(uuid, toUpdate);
 
-                            if (cachedPlayers.get(uuid) != null)
-                                cachedPlayers.remove(uuid);
+                            cachedPlayers.remove(uuid);
+                            eventHandler.fireEvent(new PlayerLoadedEvent(uuid));
                         }
                     }
                     debug("loadPlayerFinished runnable end");
@@ -740,7 +741,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     e.printStackTrace();
                 }
             }
-        }, login);
+        }, sameThread);
     }
 
     protected PermissionPlayerBase loadCachedPlayer(UUID uuid) {
@@ -749,15 +750,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
         if (cachedPlayer == null) {
             plugin.getLogger().severe(consolePrefix + "Could not continue load player. Cached player is null.");
             return null;
-        }
-
-        playersLock.lock();
-        try {
-            if (players.containsKey(uuid)) {
-                players.remove(uuid);
-            }
-        } finally {
-            playersLock.unlock();
         }
 
         PermissionPlayerBase base;

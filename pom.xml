@@ -176,16 +176,16 @@
 			<url>http://repo.alskebo.com/repository/maven-releases</url>
 		</repository>
 		<repository>
-	      <id>jitpack.io</id>
-	      <url>https://jitpack.io/</url>
-	    </repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io/</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
 		<dependency>
 			<groupId>com.github.cheesesoftware</groupId>
 			<artifactId>PowerfulPermsAPI</artifactId>
-			<version>1.1.0</version>
+			<version>1.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.spigotmc</groupId>
@@ -226,11 +226,17 @@
 			<version>2.3.1</version>
 			<scope>provided</scope>
 		</dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>17.0</version>
-        </dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>17.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.bys1</groupId>
+			<artifactId>importer</artifactId>
+			<version>0.4-Beta</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 	<version>4.2.0</version>
 </project>

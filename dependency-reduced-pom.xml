@@ -255,6 +255,18 @@
       <version>17.0</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>com.github.bys1</groupId>
+      <artifactId>importer</artifactId>
+      <version>0.4-Beta</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>spigot-api</artifactId>
+          <groupId>org.spigotmc</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
 </project>
 

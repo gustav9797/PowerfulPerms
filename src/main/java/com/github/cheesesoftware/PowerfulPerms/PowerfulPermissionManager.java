@@ -22,6 +22,7 @@ import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
+import com.github.cheesesoftware.PowerfulPermsAPI.PlayerLoadedEvent;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
@@ -102,7 +103,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         debug("AsyncPlayerPreLoginEvent " + e.getName());
 
         if (e.getLoginResult() == AsyncPlayerPreLoginEvent.Result.ALLOWED) {
-            loadPlayer(e.getUniqueId(), e.getName(), true);
+            loadPlayer(e.getUniqueId(), e.getName(), true, true);
         }
     }
 
@@ -117,7 +118,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         } else {
             // Player is not cached, Load directly on Bukkit main thread.
             debug("onPlayerLogin player isn't cached, loading directly");
-            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
+            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true, true);
 
             if (e.getResult() == PlayerLoginEvent.Result.ALLOWED)
                 loadCachedPlayer(e.getPlayer());
@@ -139,14 +140,14 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     public void onPlayerJoin(final PlayerJoinEvent e) {
         debug("PlayerJoinEvent " + e.getPlayer().getName());
         Player p = e.getPlayer();
-        
+
         if (!containsPermissionPlayer(p.getUniqueId())) {
             // Player is not cached, Load directly on Bukkit main thread.
             debug("onPlayerJoin player isn't loaded, loading directly");
-            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true);
+            loadPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName(), true, true);
             loadCachedPlayer(e.getPlayer());
         }
-        
+
         if (containsPermissionPlayer(p.getUniqueId())) {
             PowerfulPermissionPlayer permissionsPlayer = (PowerfulPermissionPlayer) getPermissionPlayer(p.getUniqueId());
             permissionsPlayer.updatePermissions();
@@ -181,18 +182,28 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             if (containsPermissionPlayer(p.getUniqueId())) {
                 loadPlayer(p);
             } else {
-                loadPlayer(p.getUniqueId(), p.getName(), true);
+                loadPlayer(p.getUniqueId(), p.getName(), true, true);
                 loadCachedPlayer(p);
             }
         }
     }
 
     private void loadPlayer(Player player) {
-        loadPlayer(player.getUniqueId(), player.getName(), false);
+        loadPlayer(player.getUniqueId(), player.getName(), false, false);
     }
 
     private void loadCachedPlayer(Player p) {
         debug("loadCachedPlayer begin");
+
+        playersLock.lock();
+        try {
+            if (players.containsKey(p.getUniqueId())) {
+                players.remove(p.getUniqueId());
+            }
+        } finally {
+            playersLock.unlock();
+        }
+
         PermissionPlayerBase base = super.loadCachedPlayer(p.getUniqueId());
         if (base != null) {
             removePermissionPlayer(p.getUniqueId());
@@ -207,8 +218,9 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                 Bukkit.getLogger().severe(PowerfulPerms.consolePrefix + "Could not inject permissible. Using default Bukkit permissions.");
                 e.printStackTrace();
             }
-            setPermissionPlayer(p.getUniqueId(), permissionsPlayer);
+            putPermissionPlayer(p.getUniqueId(), permissionsPlayer);
             checkPlayerTimedGroupsAndPermissions(p.getUniqueId(), permissionsPlayer);
+            eventHandler.fireEvent(new PlayerLoadedEvent(p.getUniqueId()));
         }
         debug("loadCachedPlayer end");
     }
