@@ -6,6 +6,8 @@ import java.util.UUID;
 public interface IDatabase {
 
     public void applyPatches();
+    
+    public boolean ping();
 
     public boolean tableExists(String table);
 

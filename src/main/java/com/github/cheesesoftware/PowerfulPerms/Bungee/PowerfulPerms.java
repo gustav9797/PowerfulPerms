@@ -7,8 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.sql.SQLException;
-import java.util.Date;
-import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +24,9 @@ import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
 import com.google.common.io.ByteStreams;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PermissionCheckEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -92,8 +94,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         }
 
         Database db = new MySQLDatabase(new BungeeScheduler(this), sql, this, config.getString("prefix"));
-        String serverName = "bungeeproxy" + (new Random()).nextInt(5000) + (new Date()).getTime();
-        permissionManager = new PowerfulPermissionManager(db, this, serverName);
+        permissionManager = new PowerfulPermissionManager(db, this, "BungeeCord");
         this.getProxy().getPluginManager().registerListener(this, this);
         this.getProxy().getPluginManager().registerListener(this, permissionManager);
 
@@ -247,6 +248,28 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         if (player != null)
             return player.getName();
         return null;
+    }
+
+    @Override
+    public Map<UUID, String> getOnlinePlayers() {
+        HashMap<UUID, String> players = new HashMap<UUID, String>();
+        for (ProxiedPlayer player : getProxy().getPlayers())
+            players.put(player.getUniqueId(), player.getName());
+        return players;
+    }
+
+    @Override
+    public void sendPlayerMessage(String name, String message) {
+        CommandSender commandSender = null;
+        if (name.equalsIgnoreCase("console"))
+            commandSender = ProxyServer.getInstance().getConsole();
+        else
+            commandSender = ProxyServer.getInstance().getPlayer(name);
+
+        if (commandSender != null) {
+            TextComponent text = new TextComponent(PermissionManagerBase.pluginPrefixShort + message);
+            commandSender.sendMessage(text);
+        }
     }
 
     @Override

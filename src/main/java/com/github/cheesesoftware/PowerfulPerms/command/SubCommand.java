@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
@@ -46,11 +45,11 @@ public abstract class SubCommand {
     }
 
     protected void sendSender(ICommand command, String sender, String message) {
-        command.sendSender(sender, PermissionManagerBase.pluginPrefixShort + message);
+        plugin.sendPlayerMessage(sender, message);
     }
 
     protected void sendSender(ICommand command, String sender, List<String> message) {
         for (String m : message)
-            command.sendSender(sender, PermissionManagerBase.pluginPrefixShort + m);
+            plugin.sendPlayerMessage(sender, m);
     }
 }

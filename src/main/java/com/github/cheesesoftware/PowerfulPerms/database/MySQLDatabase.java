@@ -1,5 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.database;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -292,6 +293,18 @@ public class MySQLDatabase extends Database {
 
             }
         }
+    }
+
+    @Override
+    public boolean ping() {
+        try {
+            Connection connection = sql.getConnection();
+            if (connection != null && connection.isValid(10))
+                return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override

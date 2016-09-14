@@ -19,6 +19,7 @@ public class BaseCommand extends SubCommand {
         subCommands.add(new ShowLaddersCommand(plugin, permissionManager));
         subCommands.add(new HasPermissionCommand(plugin, permissionManager));
         subCommands.add(new ReloadCommand(plugin, permissionManager));
+        subCommands.add(new TestBaseCommand(plugin, permissionManager));
         subCommands.add(new AboutCommand(plugin, permissionManager));
     }
 

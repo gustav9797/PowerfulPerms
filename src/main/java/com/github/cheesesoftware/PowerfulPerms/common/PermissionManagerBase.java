@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.Map.Entry;
@@ -46,6 +47,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 public abstract class PermissionManagerBase implements PermissionManager {
 
@@ -74,6 +76,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public static String redis_password;
 
     public static String serverName;
+    public static String serverId;
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String pluginPrefixShort = ChatColor.BLUE + "PP" + ChatColor.WHITE + "> ";
     public static String redisMessage = "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.";
@@ -85,6 +88,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         this.plugin = plugin;
 
         PermissionManagerBase.serverName = serverName;
+        serverId = serverName + (new Random()).nextInt(5000) + (new Date()).getTime();
 
         eventHandler = new PowerfulEventHandler();
 
@@ -149,9 +153,61 @@ public abstract class PermissionManagerBase implements PermissionManager {
         // Initialize Redis
         if (redis) {
             if (redis_password == null || redis_password.isEmpty())
-                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0);
+                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 20);
             else
-                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 0, redis_password);
+                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 20, redis_password);
+
+            db.scheduler.runAsync(new Runnable() {
+                public void run() {
+                    Jedis jedis = null;
+                    try {
+                        jedis = pool.getResource();
+                        subscriber = (new JedisPubSub() {
+                            @Override
+                            public void onMessage(String channel, final String msg) {
+                                db.scheduler.runAsync(new Runnable() {
+                                    public void run() {
+                                        // Reload player or groups depending on message
+                                        String[] split = msg.split(" ");
+                                        if (split.length >= 2) {
+                                            String first = split[0];
+                                            String server = split[1];
+
+                                            if (server.equals(PermissionManagerBase.serverId))
+                                                return;
+                                            if (first.equals("[groups]")) {
+                                                loadGroups();
+                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all groups.");
+                                            } else if (first.equals("[players]")) {
+                                                loadGroups();
+                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all players.");
+                                            } else if (first.equals("[ping]") && split.length >= 3) {
+                                                String sender = split[2];
+                                                Jedis temp = pool.getResource();
+                                                temp.publish("PowerfulPerms", "[pingreply]" + " " + PermissionManagerBase.serverName + " " + sender);
+                                                temp.close();
+                                            } else if (first.equals("[pingreply]") && split.length >= 3) {
+                                                String sender = split[2];
+                                                tempPlugin.sendPlayerMessage(sender, "Received Redis ping from server \"" + server + "\".");
+                                            } else {
+                                                UUID uuid = UUID.fromString(first);
+                                                loadPlayer(uuid, tempPlugin.getPlayerName(uuid), false, false);
+                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");
+                                            }
+                                        }
+                                    }
+                                }, false);
+                            }
+                        });
+                        jedis.subscribe(subscriber, "PowerfulPerms");
+                    } catch (JedisConnectionException e) {
+                        tempPlugin.getLogger().warning(redisMessage);
+                        return;
+                    }
+                    if (jedis != null)
+                        jedis.close();
+                }
+            }, false);
         }
 
         checkTimedTaskId = this.getScheduler().runRepeating(new Runnable() {
@@ -472,20 +528,27 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return listenableFuture;
     }
 
+    public JedisPool getRedis() {
+        return pool;
+    }
+
+    public Database getDatabase() {
+        return db;
+    }
+
     @Override
     public void notifyReloadGroups() {
         if (redis) {
             plugin.runTaskAsynchronously(new Runnable() {
-                @SuppressWarnings("deprecation")
                 public void run() {
                     try {
                         Jedis jedis = pool.getResource();
                         try {
-                            jedis.publish("PowerfulPerms", "[groups]" + " " + serverName);
+                            jedis.publish("PowerfulPerms", "[groups]" + " " + serverId);
                         } catch (Exception e) {
-                            pool.returnBrokenResource(jedis);
                         }
-                        pool.returnResource(jedis);
+                        if (jedis != null)
+                            jedis.close();
                     } catch (Exception e) {
                         plugin.getLogger().warning(redisMessage);
                     }
@@ -498,17 +561,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void notifyReloadPlayers() {
         if (redis) {
             plugin.runTaskAsynchronously(new Runnable() {
-                @SuppressWarnings("deprecation")
                 public void run() {
                     try {
                         Jedis jedis = pool.getResource();
                         try {
-                            jedis.publish("PowerfulPerms", "[players]" + " " + serverName);
+                            jedis.publish("PowerfulPerms", "[players]" + " " + serverId);
                         } catch (Exception e) {
-                            pool.returnBrokenResource(jedis);
                         }
-                        pool.returnResource(jedis);
-
+                        if (jedis != null)
+                            jedis.close();
                     } catch (Exception e) {
                         plugin.getLogger().warning(redisMessage);
                     }
@@ -523,16 +584,15 @@ public abstract class PermissionManagerBase implements PermissionManager {
             notifyReloadPlayers();
         } else if (redis) {
             plugin.runTaskAsynchronously(new Runnable() {
-                @SuppressWarnings("deprecation")
                 public void run() {
                     try {
                         Jedis jedis = pool.getResource();
                         try {
-                            jedis.publish("PowerfulPerms", uuid + " " + serverName);
+                            jedis.publish("PowerfulPerms", uuid + " " + serverId);
                         } catch (Exception e) {
-                            pool.returnBrokenResource(jedis);
                         }
-                        pool.returnResource(jedis);
+                        if (jedis != null)
+                            jedis.close();
                     } catch (Exception e) {
                         plugin.getLogger().warning(redisMessage);
                     }

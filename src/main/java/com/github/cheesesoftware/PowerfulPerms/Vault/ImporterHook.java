@@ -1,15 +1,15 @@
-/*package com.github.cheesesoftware.PowerfulPerms.Vault;
+package com.github.cheesesoftware.PowerfulPerms.Vault;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import org.bukkit.OfflinePlayer;
 
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import eu.taigacraft.importer.permissions.PermissionsImporter;
 
@@ -21,6 +21,8 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
         permissionManager = plugin.getPermissionManager();
         PermissionsImporter.register("PowerfulPerms", this);
     }
+
+    // Prefix
 
     @Override
     public String getPrefix(OfflinePlayer player) {
@@ -38,27 +40,14 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
 
     @Override
     public String getPrefix(OfflinePlayer player, String worldname, String ladder) {
-        try {
-            ListenableFuture<String> prefix = permissionManager.getPlayerPrefix(player.getUniqueId());
-            return prefix.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
+        if (p != null) {
+            return p.getPrefix(ladder);
         }
         return null;
     }
 
-    @Override
-    public String getRank(OfflinePlayer player) {
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
-        if (p != null) {
-            Group group = p.getGroup();
-            if (group != null)
-                return group.getName();
-        }
-        return null;
-    }
+    // Suffix
 
     @Override
     public String getSuffix(OfflinePlayer player) {
@@ -84,6 +73,17 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
     }
 
     @Override
+    public String getRank(OfflinePlayer player) {
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
+        if (p != null) {
+            Group group = p.getPrimaryGroup();
+            if (group != null)
+                return group.getName();
+        }
+        return null;
+    }
+
+    @Override
     public Boolean hasPermission(OfflinePlayer player, String permission) {
         PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
         if (p != null) {
@@ -98,20 +98,25 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
     }
 
     @Override
-    public List<String> getRanks(OfflinePlayer arg0) {
-        // TODO Auto-generated method stub
+    public List<String> getRanks(OfflinePlayer player) {
+        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
+        if (p != null) {
+            List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
+            List<String> groupNames = new ArrayList<String>();
+            for (Group group : groups)
+                groupNames.add(group.getName());
+            return groupNames;
+        }
         return null;
     }
 
     @Override
-    public void load(OfflinePlayer arg0) {
-        // TODO Auto-generated method stub
+    public void load(OfflinePlayer player) {
 
     }
 
     @Override
-    public void unload(OfflinePlayer arg0) {
-        // TODO Auto-generated method stub
+    public void unload(OfflinePlayer player) {
 
     }
-}*/
+}

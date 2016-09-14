@@ -1,7 +1,5 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
-import java.util.UUID;
-
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,7 +11,6 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.Plugin;
 
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPermissionPlayer;
@@ -24,69 +21,13 @@ import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PlayerLoadedEvent;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPubSub;
-
 public class PowerfulPermissionManager extends PermissionManagerBase implements Listener {
 
     private PermissibleBaseInjector injector;
 
     public PowerfulPermissionManager(Database database, PowerfulPerms plugin, String serverName) {
         super(database, plugin, serverName);
-
         this.injector = new PermissibleBaseInjector();
-
-        if (redis) {
-            final Plugin tempPlugin = plugin;
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-                @SuppressWarnings("deprecation")
-                public void run() {
-                    Jedis jedis = null;
-                    try {
-                        jedis = pool.getResource();
-                        subscriber = (new JedisPubSub() {
-                            @Override
-                            public void onMessage(String channel, final String msg) {
-                                Bukkit.getScheduler().runTaskAsynchronously(tempPlugin, new Runnable() {
-                                    public void run() {
-                                        // Reload player or groups depending on message
-                                        String[] split = msg.split(" ");
-                                        if (split.length == 2) {
-                                            String first = split[0];
-                                            String server = split[1];
-
-                                            if (server.equals(PermissionManagerBase.serverName))
-                                                return;
-                                            if (first.equals("[groups]")) {
-                                                loadGroups();
-                                                Bukkit.getLogger().info(consolePrefix + "Reloaded all groups.");
-                                            } else if (first.equals("[players]")) {
-                                                loadGroups();
-                                                Bukkit.getLogger().info(consolePrefix + "Reloaded all players.");
-                                            } else {
-                                                UUID uuid = UUID.fromString(first);
-                                                Player player = Bukkit.getPlayer(uuid);
-                                                if (player != null) {
-                                                    loadPlayer(player);
-                                                    Bukkit.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");
-                                                }
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                        });
-                        jedis.subscribe(subscriber, "PowerfulPerms");
-                    } catch (Exception e) {
-                        pool.returnBrokenResource(jedis);
-                        Bukkit.getLogger().warning(redisMessage);
-                        return;
-                    }
-                    pool.returnResource(jedis);
-                }
-            });
-        }
-
         loadGroups(true, true);
     }
 
@@ -180,16 +121,12 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     public void reloadPlayers() {
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (containsPermissionPlayer(p.getUniqueId())) {
-                loadPlayer(p);
+                loadPlayer(p.getUniqueId(), p.getName(), false, false);
             } else {
                 loadPlayer(p.getUniqueId(), p.getName(), true, true);
                 loadCachedPlayer(p);
             }
         }
-    }
-
-    private void loadPlayer(Player player) {
-        loadPlayer(player.getUniqueId(), player.getName(), false, false);
     }
 
     private void loadCachedPlayer(Player p) {

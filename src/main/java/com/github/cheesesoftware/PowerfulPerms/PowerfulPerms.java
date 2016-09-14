@@ -3,10 +3,13 @@ package com.github.cheesesoftware.PowerfulPerms;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -16,6 +19,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.github.cheesesoftware.PowerfulPerms.Vault.ImporterHook;
 import com.github.cheesesoftware.PowerfulPerms.Vault.VaultHook;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.Versioner;
@@ -124,6 +128,10 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         if (e.getPlugin().getName().equals("PlaceholderAPI")) {
             Bukkit.getLogger().info(consolePrefix + "Found PlaceholderAPI. Using custom chat format.");
             placeholderAPIEnabled = true;
+        } else if (e.getPlugin().getName().equals("Importer")) {
+            Bukkit.getLogger().info(consolePrefix + "Found Importer. Enabling Importer integration.");
+            ImporterHook importerHook = new ImporterHook();
+            importerHook.hook(this);
         }
     }
 
@@ -220,6 +228,27 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         if (player != null)
             return player.getName();
         return null;
+    }
+
+    @Override
+    public Map<UUID, String> getOnlinePlayers() {
+        HashMap<UUID, String> players = new HashMap<UUID, String>();
+        for (Player player : Bukkit.getOnlinePlayers())
+            players.put(player.getUniqueId(), player.getName());
+        return players;
+    }
+
+    @Override
+    public void sendPlayerMessage(String name, String message) {
+        CommandSender commandSender = null;
+        if (name.equalsIgnoreCase("console"))
+            commandSender = Bukkit.getConsoleSender();
+        else
+            commandSender = Bukkit.getPlayerExact(name);
+
+        if (commandSender != null) {
+            commandSender.sendMessage(PermissionManagerBase.pluginPrefixShort + message);
+        }
     }
 
     @Override

@@ -1,10 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPubSub;
 
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
@@ -17,7 +13,6 @@ import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
@@ -28,62 +23,6 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     public PowerfulPermissionManager(Database database, PowerfulPerms plugin, String serverName) {
         super(database, plugin, serverName);
         this.plugin = plugin;
-
-        if (redis) {
-            final String srvName = serverName;
-
-            final Plugin tempPlugin = plugin;
-            plugin.getProxy().getScheduler().runAsync(plugin, new Runnable() {
-                @SuppressWarnings("deprecation")
-                public void run() {
-                    Jedis jedis = null;
-                    try {
-                        jedis = pool.getResource();
-                        subscriber = (new JedisPubSub() {
-                            @Override
-                            public void onMessage(String channel, final String msg) {
-                                tempPlugin.getProxy().getScheduler().runAsync(tempPlugin, new Runnable() {
-                                    public void run() {
-                                        // Reload player or groups depending on message
-                                        String[] split = msg.split(" ");
-                                        if (split.length == 2) {
-                                            String first = split[0];
-
-                                            String server = split[1];
-
-                                            if (server.equals(srvName))
-                                                return;
-
-                                            if (first.equals("[groups]")) {
-                                                loadGroups();
-                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all groups.");
-                                            } else if (first.equals("[players]")) {
-                                                loadGroups();
-                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all players.");
-                                            } else {
-                                                UUID uuid = UUID.fromString(first);
-                                                ProxiedPlayer player = tempPlugin.getProxy().getPlayer(uuid);
-                                                if (player != null) {
-                                                    loadPlayer(player);
-                                                    tempPlugin.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");
-                                                }
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                        });
-                        jedis.subscribe(subscriber, "PowerfulPerms");
-                    } catch (Exception e) {
-                        pool.returnBrokenResource(jedis);
-                        tempPlugin.getLogger().warning(redisMessage);
-                        return;
-                    }
-                    pool.returnResource(jedis);
-                }
-            });
-        }
-
         loadGroups(true, true);
     }
 
@@ -137,11 +76,16 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         }
     }
 
-    /**
-     * Loads online player data from database, removes old data.
-     */
-    private void loadPlayer(ProxiedPlayer player) {
-        loadPlayer(player.getUniqueId(), player.getName(), false, false);
+    @Override
+    public void reloadPlayers() {
+        for (ProxiedPlayer p : plugin.getProxy().getPlayers()) {
+            if (containsPermissionPlayer(p.getUniqueId())) {
+                loadPlayer(p.getUniqueId(), p.getName(), false, false);
+            } else {
+                loadPlayer(p.getUniqueId(), p.getName(), true, true);
+                loadCachedPlayer(p);
+            }
+        }
     }
 
     /**
