@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -15,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.Versioner;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPerms.database.DatabaseCredentials;
 import com.github.cheesesoftware.PowerfulPerms.database.MySQLDatabase;
-import com.github.cheesesoftware.PowerfulPerms.database.SQL;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
@@ -39,7 +38,6 @@ import net.md_5.bungee.event.EventPriority;
 
 public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlugin {
 
-    private SQL sql;
     private PowerfulPermissionManager permissionManager;
     private Configuration config;
 
@@ -68,8 +66,6 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         if (oldVersion <= 0)
             oldVersion = currentVersion;
 
-        this.sql = new SQL(config.getString("host"), config.getString("database"), config.getInt("port"), config.getString("username"), config.getString("password"));
-
         PermissionManagerBase.redis = config.getBoolean("redis", true);
         PermissionManagerBase.redis_ip = config.getString("redis_ip");
         PermissionManagerBase.redis_port = config.getInt("redis_port");
@@ -84,16 +80,8 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
             serverMode = ServerMode.MIXED;
         getLogger().info("PowerfulPerms is now running on server mode " + serverMode);
 
-        try {
-            if (sql.getConnection() == null || sql.getConnection().isClosed()) {
-                getLogger().severe("Could not access the database!");
-            }
-        } catch (SQLException e2) {
-            getLogger().severe("Could not access the database!");
-            e2.printStackTrace();
-        }
-
-        Database db = new MySQLDatabase(new BungeeScheduler(this), sql, this, config.getString("prefix"));
+        DatabaseCredentials cred = new DatabaseCredentials(config.getString("host"), config.getString("database"), config.getInt("port"), config.getString("username"), config.getString("password"));
+        Database db = new MySQLDatabase(new BungeeScheduler(this), cred, this, config.getString("prefix"));
         permissionManager = new PowerfulPermissionManager(db, this, "BungeeCord");
         this.getProxy().getPluginManager().registerListener(this, this);
         this.getProxy().getPluginManager().registerListener(this, permissionManager);

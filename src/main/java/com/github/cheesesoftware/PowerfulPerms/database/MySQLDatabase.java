@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -25,14 +26,25 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 public class MySQLDatabase extends Database {
 
-    private SQL sql;
     private PowerfulPermsPlugin plugin;
+    private SQL sql;
     private Map<String, String> tables = new HashMap<String, String>();
 
-    public MySQLDatabase(IScheduler scheduler, SQL sql, PowerfulPermsPlugin plugin, String tablePrefix) {
+    public MySQLDatabase(IScheduler scheduler, DatabaseCredentials cred, PowerfulPermsPlugin plugin, String tablePrefix) {
         super(scheduler, tablePrefix);
-        this.sql = sql;
         this.plugin = plugin;
+
+        this.sql = new SQL(cred.getHost(), cred.getDatabase(), cred.getPort(), cred.getUsername(), cred.getPassword());
+        try {
+            if (sql.getConnection() == null || sql.getConnection().isClosed()) {
+                plugin.getLogger().severe("Could not connect to the database!");
+                return;
+            }
+        } catch (SQLException e2) {
+            e2.printStackTrace();
+            plugin.getLogger().severe("Could not connect to the database!");
+            return;
+        }
 
         tables.put(tblGroupParents, "CREATE TABLE `" + tblGroupParents + "` (\r\n" + "  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,\r\n" + "  `groupid` int(10) unsigned NOT NULL,\r\n"
                 + "  `parentgroupid` int(10) unsigned NOT NULL,\r\n" + "  PRIMARY KEY (`id`),\r\n" + "  UNIQUE KEY `id_UNIQUE` (`id`)\r\n" + ") ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;");
