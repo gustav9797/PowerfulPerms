@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.cheesesoftware</groupId>
   <artifactId>PowerfulPerms</artifactId>
-  <version>4.2.2</version>
+  <version>4.2.3</version>
   <build>
     <resources>
       <resource>
@@ -137,10 +137,21 @@
                   <pattern>com.sk89q.wepif</pattern>
                   <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.com.sk89q.wepif</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>org.mongodb</pattern>
+                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.mongodb</shadedPattern>
+                </relocation>
               </relocations>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-eclipse-plugin</artifactId>
+        <configuration>
+          <downloadSources>true</downloadSources>
+          <downloadJavadocs>true</downloadJavadocs>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -266,6 +277,18 @@
           <groupId>org.spigotmc</groupId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongo-java-driver</artifactId>
+      <version>2.13.3</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>bson</artifactId>
+      <version>2.13.3</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 </project>

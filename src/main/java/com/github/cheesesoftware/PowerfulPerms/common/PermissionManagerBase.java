@@ -79,7 +79,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public static String serverId;
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String pluginPrefixShort = ChatColor.BLUE + "PP" + ChatColor.WHITE + "> ";
-    public static String redisMessage = "Unable to connect to Redis server. Check your credentials in the config file. If you don't use Redis, this message is perfectly fine.";
+    public static String redisMessage = "Unable to connect to Redis server. Check your credentials in the config file.";
 
     private ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(10)); // TODO: Configurable
 
@@ -153,9 +153,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
         // Initialize Redis
         if (redis) {
             if (redis_password == null || redis_password.isEmpty())
-                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 20);
+                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 20000);
             else
-                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 20, redis_password);
+                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 20000, redis_password);
 
             db.scheduler.runAsync(new Runnable() {
                 public void run() {
@@ -201,6 +201,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         });
                         jedis.subscribe(subscriber, "PowerfulPerms");
                     } catch (JedisConnectionException e) {
+                        e.printStackTrace();
                         tempPlugin.getLogger().warning(redisMessage);
                         return;
                     }
@@ -550,6 +551,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (jedis != null)
                             jedis.close();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         plugin.getLogger().warning(redisMessage);
                     }
                 }
@@ -571,6 +573,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         if (jedis != null)
                             jedis.close();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         plugin.getLogger().warning(redisMessage);
                     }
                 }
@@ -595,6 +598,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             jedis.close();
                     } catch (Exception e) {
                         plugin.getLogger().warning(redisMessage);
+                        e.printStackTrace();
                     }
                 }
             });
