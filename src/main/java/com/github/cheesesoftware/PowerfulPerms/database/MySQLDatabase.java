@@ -805,6 +805,15 @@ public class MySQLDatabase extends Database {
         deleteGroupPermissions(groupId);
         plugin.getLogger().info("Deleting group parents...");
         deleteGroupParents(groupId);
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupParents + " WHERE `parentgroupid`=?");
+            s.setInt(1, groupId);
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            plugin.getLogger().info("Could not delete parent references.");
+        }
         plugin.getLogger().info("Deleting group prefixes...");
         deleteGroupPrefixes(groupId);
         plugin.getLogger().info("Deleting group suffixes...");
@@ -821,6 +830,7 @@ public class MySQLDatabase extends Database {
             plugin.getLogger().info("Deleted " + result.amount + " group references.");
         } catch (SQLException e) {
             e.printStackTrace();
+            plugin.getLogger().info("Could not delete group references.");
         }
         plugin.getLogger().info("Done.");
         return success2;
