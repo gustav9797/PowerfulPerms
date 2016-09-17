@@ -19,8 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
+import com.github.cheesesoftware.PowerfulPerms.Redis.RedisConnection;
 import com.github.cheesesoftware.PowerfulPerms.common.event.PowerfulEventHandler;
 import com.github.cheesesoftware.PowerfulPerms.database.DBResult;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
@@ -45,9 +44,6 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPubSub;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 
 public abstract class PermissionManagerBase implements PermissionManager {
 
@@ -59,9 +55,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
     protected HashMap<Integer, Group> groups = new HashMap<Integer, Group>();
     protected ReentrantLock groupsLock = new ReentrantLock();
 
-    protected JedisPool pool;
-    protected JedisPubSub subscriber;
-
     private final Database db;
     protected PowerfulPermsPlugin plugin;
     protected int checkTimedTaskId = -1;
@@ -70,7 +63,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     protected EventHandler eventHandler;
 
-    public static boolean redis;
+    protected RedisConnection redis;
+
+    public static boolean redisEnabled;
     public static String redis_ip;
     public static int redis_port;
     public static String redis_password;
@@ -79,9 +74,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public static String serverId;
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String pluginPrefixShort = ChatColor.BLUE + "PP" + ChatColor.WHITE + "> ";
-    public static String redisMessage = "Unable to connect to Redis server. Check your credentials in the config file.";
 
-    private ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(10)); // TODO: Configurable
+    private ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool()); // TODO: Configurable
 
     public PermissionManagerBase(Database database, PowerfulPermsPlugin plugin, String serverName) {
         this.db = database;
@@ -150,66 +144,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
             }
         }
 
-        // Initialize Redis
-        if (redis) {
-            if (redis_password == null || redis_password.isEmpty())
-                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 20000);
-            else
-                pool = new JedisPool(new GenericObjectPoolConfig(), redis_ip, redis_port, 20000, redis_password);
-
-            db.scheduler.runAsync(new Runnable() {
-                public void run() {
-                    Jedis jedis = null;
-                    try {
-                        jedis = pool.getResource();
-                        subscriber = (new JedisPubSub() {
-                            @Override
-                            public void onMessage(String channel, final String msg) {
-                                db.scheduler.runAsync(new Runnable() {
-                                    public void run() {
-                                        // Reload player or groups depending on message
-                                        String[] split = msg.split(" ");
-                                        if (split.length >= 2) {
-                                            String first = split[0];
-                                            String server = split[1];
-
-                                            if (server.equals(PermissionManagerBase.serverId))
-                                                return;
-                                            if (first.equals("[groups]")) {
-                                                loadGroups();
-                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all groups.");
-                                            } else if (first.equals("[players]")) {
-                                                loadGroups();
-                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded all players.");
-                                            } else if (first.equals("[ping]") && split.length >= 3) {
-                                                String sender = split[2];
-                                                Jedis temp = pool.getResource();
-                                                temp.publish("PowerfulPerms", "[pingreply]" + " " + PermissionManagerBase.serverName + " " + sender);
-                                                temp.close();
-                                            } else if (first.equals("[pingreply]") && split.length >= 3) {
-                                                String sender = split[2];
-                                                tempPlugin.sendPlayerMessage(sender, "Received Redis ping from server \"" + server + "\".");
-                                            } else {
-                                                UUID uuid = UUID.fromString(first);
-                                                loadPlayer(uuid, tempPlugin.getPlayerName(uuid), false, false);
-                                                tempPlugin.getLogger().info(consolePrefix + "Reloaded player \"" + first + "\".");
-                                            }
-                                        }
-                                    }
-                                }, false);
-                            }
-                        });
-                        jedis.subscribe(subscriber, "PowerfulPerms");
-                    } catch (JedisConnectionException e) {
-                        e.printStackTrace();
-                        tempPlugin.getLogger().warning(redisMessage);
-                        return;
-                    }
-                    if (jedis != null)
-                        jedis.close();
-                }
-            }, false);
-        }
+        if (redisEnabled)
+            this.redis = new RedisConnection(this, plugin, redis_ip, redis_port, redis_password);
 
         checkTimedTaskId = this.getScheduler().runRepeating(new Runnable() {
 
@@ -247,11 +183,6 @@ public abstract class PermissionManagerBase implements PermissionManager {
             }
 
         }, 60);
-    }
-
-    @Override
-    public ExecutorService getExecutor() {
-        return service;
     }
 
     protected void checkPlayerTimedGroupsAndPermissions(final UUID uuid, PermissionPlayer player) {
@@ -388,6 +319,16 @@ public abstract class PermissionManagerBase implements PermissionManager {
             return output;
         }
         return null;
+    }
+
+    @Override
+    public Jedis getRedisConnection() {
+        return redis.getConnection();
+    }
+
+    @Override
+    public ExecutorService getExecutor() {
+        return service;
     }
 
     @Override
@@ -529,30 +470,19 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return listenableFuture;
     }
 
-    public JedisPool getRedis() {
-        return pool;
-    }
-
     public Database getDatabase() {
         return db;
     }
 
     @Override
     public void notifyReloadGroups() {
-        if (redis) {
+        if (redisEnabled) {
             plugin.runTaskAsynchronously(new Runnable() {
                 public void run() {
-                    try {
-                        Jedis jedis = pool.getResource();
-                        try {
-                            jedis.publish("PowerfulPerms", "[groups]" + " " + serverId);
-                        } catch (Exception e) {
-                        }
-                        if (jedis != null)
-                            jedis.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        plugin.getLogger().warning(redisMessage);
+                    Jedis jedis = redis.getConnection();
+                    if (jedis != null) {
+                        jedis.publish("PowerfulPerms", "[groups]" + " " + serverId);
+                        jedis.close();
                     }
                 }
             });
@@ -561,20 +491,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void notifyReloadPlayers() {
-        if (redis) {
+        if (redisEnabled) {
             plugin.runTaskAsynchronously(new Runnable() {
                 public void run() {
-                    try {
-                        Jedis jedis = pool.getResource();
-                        try {
-                            jedis.publish("PowerfulPerms", "[players]" + " " + serverId);
-                        } catch (Exception e) {
-                        }
-                        if (jedis != null)
-                            jedis.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        plugin.getLogger().warning(redisMessage);
+                    Jedis jedis = redis.getConnection();
+                    if (jedis != null) {
+                        jedis.publish("PowerfulPerms", "[players]" + " " + serverId);
+                        jedis.close();
                     }
                 }
             });
@@ -585,20 +508,13 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void notifyReloadPlayer(final UUID uuid) {
         if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
             notifyReloadPlayers();
-        } else if (redis) {
+        } else if (redisEnabled) {
             plugin.runTaskAsynchronously(new Runnable() {
                 public void run() {
-                    try {
-                        Jedis jedis = pool.getResource();
-                        try {
-                            jedis.publish("PowerfulPerms", uuid + " " + serverId);
-                        } catch (Exception e) {
-                        }
-                        if (jedis != null)
-                            jedis.close();
-                    } catch (Exception e) {
-                        plugin.getLogger().warning(redisMessage);
-                        e.printStackTrace();
+                    Jedis jedis = redis.getConnection();
+                    if (jedis != null) {
+                        jedis.publish("PowerfulPerms", uuid + " " + serverId);
+                        jedis.close();
                     }
                 }
             });
@@ -715,7 +631,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
         return getPermissionPlayer(uuid);
     }
 
-    protected void loadPlayer(final UUID uuid, final String name, final boolean storeCache, final boolean sameThread) {
+    public void loadPlayer(final UUID uuid, final String name, final boolean storeCache, final boolean sameThread) {
         debug("loadPlayer begin");
         db.scheduler.runAsync(new Runnable() {
 
@@ -829,10 +745,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void onDisable() {
         if (checkTimedTaskId != -1)
             this.getScheduler().stopRepeating(checkTimedTaskId);
-        if (subscriber != null)
-            subscriber.unsubscribe();
-        if (pool != null)
-            pool.destroy();
+        redis.destroy();
         groupsLock.lock();
         try {
             if (groups != null)
@@ -859,11 +772,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
     /**
      * Loads groups from MySQL, removes old group data. Will reload all players too.
      */
-    protected void loadGroups() {
+    public void loadGroups() {
         loadGroups(false);
     }
 
-    protected void loadGroups(boolean sameThread) {
+    public void loadGroups(boolean sameThread) {
         loadGroups(sameThread, sameThread);
     }
 

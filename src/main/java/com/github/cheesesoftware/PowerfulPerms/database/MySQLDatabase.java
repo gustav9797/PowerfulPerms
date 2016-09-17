@@ -809,6 +809,19 @@ public class MySQLDatabase extends Database {
         deleteGroupPrefixes(groupId);
         plugin.getLogger().info("Deleting group suffixes...");
         deleteGroupSuffixes(groupId);
+        plugin.getLogger().info("Deleting group references...");
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblPlayerGroups + " WHERE `groupid`=?");
+            s.setInt(1, groupId);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+            plugin.getLogger().info("Deleted " + result.amount + " group references.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         plugin.getLogger().info("Done.");
         return success2;
     }

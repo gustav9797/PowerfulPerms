@@ -19,17 +19,16 @@ public class TestRedisCommand extends SubCommand {
         if (hasBasicPerms(invoker, sender, "powerfulperms.test.redis")) {
             if (args != null && args.length >= 1 && args[0].equalsIgnoreCase("redis")) {
                 final PermissionManagerBase base = (PermissionManagerBase) permissionManager;
-                if (PermissionManagerBase.redis) {
+                if (PermissionManagerBase.redisEnabled) {
                     plugin.runTaskAsynchronously(new Runnable() {
                         public void run() {
-                            try {
-                                Jedis jedis = base.getRedis().getResource();
+                            Jedis jedis = base.getRedisConnection();
+                            if (jedis != null) {
                                 sendSender(invoker, sender, "Redis ping message has been sent. If you get no reply, no other servers are connected to Redis.");
                                 jedis.publish("PowerfulPerms", "[ping]" + " " + PermissionManagerBase.serverName + " " + sender);
                                 jedis.close();
-                            } catch (Exception e) {
+                            } else
                                 sendSender(invoker, sender, "Could not connect to the Redis server.");
-                            }
                         }
                     });
                 } else

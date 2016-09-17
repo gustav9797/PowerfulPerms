@@ -66,7 +66,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         if (oldVersion <= 0)
             oldVersion = currentVersion;
 
-        PermissionManagerBase.redis = config.getBoolean("redis", true);
+        PermissionManagerBase.redisEnabled = config.getBoolean("redis", true);
         PermissionManagerBase.redis_ip = config.getString("redis_ip");
         PermissionManagerBase.redis_port = config.getInt("redis_port");
         PermissionManagerBase.redis_password = config.getString("redis_password");
