@@ -95,6 +95,7 @@ public class MongoDBDatabase extends Database {
     public boolean insertGroup(int id, String group, String ladder, int rank) {
         BasicDBObject doc = new BasicDBObject("name", "MongoDB").append("type", "database").append("count", 1).append("info", new BasicDBObject("x", 203).append("y", 102));
         WriteResult result = groups.insert(doc);
+        return false;
     }
 
     @Override
