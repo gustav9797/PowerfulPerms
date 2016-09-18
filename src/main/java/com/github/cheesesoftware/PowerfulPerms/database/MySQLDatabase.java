@@ -808,8 +808,9 @@ public class MySQLDatabase extends Database {
         try {
             PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroupParents + " WHERE `parentgroupid`=?");
             s.setInt(1, groupId);
-            s.execute();
+            amount = s.executeUpdate();
             s.close();
+            plugin.getLogger().info("Deleted " + amount + " parent references.");
         } catch (SQLException e) {
             e.printStackTrace();
             plugin.getLogger().info("Could not delete parent references.");
@@ -819,15 +820,12 @@ public class MySQLDatabase extends Database {
         plugin.getLogger().info("Deleting group suffixes...");
         deleteGroupSuffixes(groupId);
         plugin.getLogger().info("Deleting group references...");
-        DBResult result;
         try {
             PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblPlayerGroups + " WHERE `groupid`=?");
             s.setInt(1, groupId);
-            s.execute();
-            ResultSet r = s.getResultSet();
-            result = fromResultSet(r);
+            amount = s.executeUpdate();
             s.close();
-            plugin.getLogger().info("Deleted " + result.amount + " group references.");
+            plugin.getLogger().info("Deleted " + amount + " group references.");
         } catch (SQLException e) {
             e.printStackTrace();
             plugin.getLogger().info("Could not delete group references.");
