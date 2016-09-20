@@ -2,6 +2,7 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
@@ -27,7 +28,7 @@ public class UserBaseCommand extends SubCommand {
     }
 
     @Override
-    public CommandResult execute(ICommand invoker, String sender, String[] args) {
+    public CommandResult execute(ICommand invoker, String sender, String[] args) throws InterruptedException, ExecutionException {
         if (args.length >= 1 && args[0].equalsIgnoreCase("user")) {
 
             String[] newArgs = new String[args.length - 1];
@@ -40,7 +41,6 @@ public class UserBaseCommand extends SubCommand {
                     return CommandResult.success;
                 } else if (result == CommandResult.noMatch) {
                     hasSomePermission = true;
-
                 }
             }
 

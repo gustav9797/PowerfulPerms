@@ -1364,7 +1364,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             if (inserted) {
                                 reloadPlayer(uuid, true);
                                 notifyReloadPlayer(uuid);
-                                return new Response(true, "Permission added to player.");
+                                return new Response(true, "Permission \"" + permission + "\" added to player.");
                             } else
                                 return new Response(false, "Could not add permission. Check console for any errors.");
                         } else

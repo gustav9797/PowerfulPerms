@@ -1,12 +1,12 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.concurrent.ExecutionException;
+
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupRenameCommand extends SubCommand {
@@ -17,7 +17,7 @@ public class GroupRenameCommand extends SubCommand {
     }
 
     @Override
-    public CommandResult execute(final ICommand invoker, final String sender, String[] args) {
+    public CommandResult execute(final ICommand invoker, final String sender, String[] args) throws InterruptedException, ExecutionException {
         if (hasBasicPerms(invoker, sender, "powerfulperms.group.rename")) {
             if (args != null && args.length >= 2 && args[1].equalsIgnoreCase("rename")) {
                 if (args.length == 2) {
@@ -33,18 +33,7 @@ public class GroupRenameCommand extends SubCommand {
                 int groupId = group.getId();
 
                 ListenableFuture<Response> first = permissionManager.setGroupName(groupId, args[2]);
-                Futures.addCallback(first, new FutureCallback<Response>() {
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        t.printStackTrace();
-                    }
-
-                    @Override
-                    public void onSuccess(Response result) {
-                        sendSender(invoker, sender, result.getResponse());
-                    }
-                });
+                sendSender(invoker, sender, first.get().getResponse());
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

@@ -2,6 +2,7 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
@@ -25,19 +26,32 @@ public class BaseCommand extends SubCommand {
 
     @Override
     public CommandResult execute(ICommand invoker, String sender, String[] args) {
-        args = resolveArgs(args);
-        resolveSequences(invoker, sender, args);
+        plugin.getPermissionManager().getExecutor().submit(new Runnable() {
+
+            @Override
+            public void run() {
+                String[] argsTemp = resolveArgs(args);
+                resolveSequences(invoker, sender, argsTemp);
+            }
+        });
         return CommandResult.success;
     }
 
     private void continueExecute(ICommand invoker, String sender, String[] args) {
         boolean hasSomePermission = false;
         for (SubCommand subCommand : subCommands) {
-            CommandResult result = subCommand.execute(invoker, sender, args);
-            if (result == CommandResult.success)
-                return;
-            else if (result == CommandResult.noMatch)
-                hasSomePermission = true;
+            CommandResult result;
+            try {
+                result = subCommand.execute(invoker, sender, args);
+                if (result == CommandResult.success)
+                    return;
+                else if (result == CommandResult.noMatch)
+                    hasSomePermission = true;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
         }
 
         if (hasSomePermission) {
@@ -112,13 +126,12 @@ public class BaseCommand extends SubCommand {
                         temp[a] = builder.toString();
                         resolveSequences(invoker, sender, temp);
                     }
+                    return;
                 }
             }
         }
 
-        if (beginIndex == -1 && endIndex == -1) {
-            // Didn't find any more sequence
-            continueExecute(invoker, sender, args);
-        }
+        // Didn't find any more sequence
+        continueExecute(invoker, sender, args);
     }
 }

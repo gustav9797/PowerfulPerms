@@ -1,14 +1,13 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupAddPermissionCommand extends SubCommand {
@@ -54,18 +53,13 @@ public class GroupAddPermissionCommand extends SubCommand {
                 if (world.equalsIgnoreCase("all"))
                     world = "";
                 ListenableFuture<Response> first = permissionManager.addGroupPermission(groupId, permission, world, server, expires);
-                Futures.addCallback(first, new FutureCallback<Response>() {
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        t.printStackTrace();
-                    }
-
-                    @Override
-                    public void onSuccess(Response result) {
-                        sendSender(invoker, sender, result.getResponse());
-                    }
-                });
+                try {
+                    sendSender(invoker, sender, first.get().getResponse());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

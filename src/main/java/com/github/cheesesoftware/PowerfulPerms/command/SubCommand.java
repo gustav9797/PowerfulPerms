@@ -2,6 +2,7 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
@@ -18,7 +19,7 @@ public abstract class SubCommand {
         this.permissionManager = permissionManager;
     }
 
-    public abstract CommandResult execute(final ICommand invoker, final String sender, final String[] args);
+    public abstract CommandResult execute(final ICommand invoker, final String sender, final String[] args) throws InterruptedException, ExecutionException;
 
     public List<String> getUsage() {
         return usage;

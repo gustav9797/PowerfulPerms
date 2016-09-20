@@ -2,6 +2,7 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
@@ -27,7 +28,7 @@ public class GroupBaseCommand extends SubCommand {
     }
 
     @Override
-    public CommandResult execute(ICommand invoker, String sender, String[] args) {
+    public CommandResult execute(ICommand invoker, String sender, String[] args) throws InterruptedException, ExecutionException {
         if (args.length >= 1 && args[0].equalsIgnoreCase("group")) {
 
             String[] newArgs = new String[args.length - 1];
@@ -35,12 +36,12 @@ public class GroupBaseCommand extends SubCommand {
 
             boolean hasSomePermission = false;
             for (SubCommand subCommand : subCommands) {
-                CommandResult result = subCommand.execute(invoker, sender, newArgs);
+                CommandResult result;
+                result = subCommand.execute(invoker, sender, newArgs);
                 if (result == CommandResult.success) {
                     return CommandResult.success;
                 } else if (result == CommandResult.noMatch) {
                     hasSomePermission = true;
-
                 }
             }
 
