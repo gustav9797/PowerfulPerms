@@ -3,12 +3,14 @@ package com.github.cheesesoftware.PowerfulPerms.Vault;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionContainer;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
+import com.github.cheesesoftware.PowerfulPermsAPI.Response;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import net.milkbowl.vault.chat.Chat;
@@ -123,7 +125,14 @@ public class PowerfulPerms_Vault_Chat extends Chat {
         try {
             UUID uuid = first.get();
             String var = "vault.variables." + node + "." + value;
-            permissionManager.addPlayerPermission(uuid, var, world, "", null);
+            ListenableFuture<Response> second = permissionManager.addPlayerPermission(uuid, var, world, "", null);
+            try {
+                second.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -141,7 +150,14 @@ public class PowerfulPerms_Vault_Chat extends Chat {
         Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             String var = "vault.variables." + node + "." + value;
-            permissionManager.addGroupPermission(group.getId(), var, world, "", null);
+            ListenableFuture<Response> first = permissionManager.addGroupPermission(group.getId(), var, world, "", null);
+            try {
+                first.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -170,7 +186,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
         try {
             int value = Integer.parseInt(var);
             return value;
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
         }
         return defaultValue;
     }
@@ -186,7 +202,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
         try {
             double value = Double.parseDouble(var);
             return value;
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
         }
         return defaultValue;
     }
@@ -203,7 +219,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
             try {
                 boolean value = Boolean.parseBoolean(var);
                 return value;
-            } catch (NumberFormatException e) {
+            } catch (Exception e) {
             }
         }
         return defaultValue;
@@ -237,7 +253,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
         try {
             int value = Integer.parseInt(var);
             return value;
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
         }
         return defaultValue;
     }
@@ -253,7 +269,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
         try {
             double value = Double.parseDouble(var);
             return value;
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
         }
         return defaultValue;
     }
@@ -270,7 +286,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
             try {
                 boolean value = Boolean.parseBoolean(var);
                 return value;
-            } catch (NumberFormatException e) {
+            } catch (Exception e) {
             }
         }
         return defaultValue;

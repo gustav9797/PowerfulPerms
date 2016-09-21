@@ -1215,8 +1215,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
             public String call() throws Exception {
                 // If player is online, get data directly from player
                 PermissionPlayer gp = getPermissionPlayer(uuid);
-                if (gp != null)
-                    return gp.getPrefix(ladder);
+                if (gp != null) {
+                    if (ladder != null)
+                        return gp.getPrefix(ladder);
+                    return gp.getPrefix();
+                }
 
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
@@ -1246,8 +1249,11 @@ public abstract class PermissionManagerBase implements PermissionManager {
             public String call() throws Exception {
                 // If player is online, get data directly from player
                 PermissionPlayer gp = getPermissionPlayer(uuid);
-                if (gp != null)
-                    return gp.getSuffix(ladder);
+                if (gp != null) {
+                    if (ladder != null)
+                        return gp.getSuffix(ladder);
+                    return gp.getSuffix();
+                }
 
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
