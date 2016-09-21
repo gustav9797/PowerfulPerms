@@ -75,7 +75,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String pluginPrefixShort = ChatColor.BLUE + "PP" + ChatColor.WHITE + "> ";
 
-    protected ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()); // TODO: Configurable
+    // Can't use singlethreadexecutor because of nested executions
+    protected ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool()); // TODO: Configurable
 
     public PermissionManagerBase(Database database, PowerfulPermsPlugin plugin, String serverName) {
         this.db = database;
