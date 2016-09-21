@@ -1,9 +1,11 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionContainer;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
@@ -43,20 +45,22 @@ public class GroupHasPermissionCommand extends SubCommand {
                     world = args[4];
 
                 List<Permission> permissions = group.getPermissions();
+                List<String> realPermissions = new ArrayList<String>();
                 Iterator<Permission> it = permissions.iterator();
                 while (it.hasNext()) {
                     Permission p = it.next();
-                    if (!PermissionContainer.permissionApplies(p, server, world))
-                        it.remove();
+                    if (PermissionContainer.permissionApplies(p, server, world))
+                        realPermissions.add(p.getPermissionString());
                 }
                 PermissionContainer permissionContainer = new PermissionContainer(permissions);
+                permissionContainer.setRealPermissions(realPermissions);
 
                 Boolean has = permissionContainer.hasPermission(permission);
                 if (has != null) {
                     if (has)
                         sendSender(invoker, sender, "The group has the permission \"" + permission + "\".");
                     else
-                        sendSender(invoker, sender, "The group doesn't have the permission \"" + permission + "\".");
+                        sendSender(invoker, sender, "The group" + ChatColor.RED + " does not " + ChatColor.WHITE + "have the permission \"" + permission + "\".");
                 } else
                     sendSender(invoker, sender, "The permission \"" + permission + "\" is not set.");
                 return CommandResult.success;

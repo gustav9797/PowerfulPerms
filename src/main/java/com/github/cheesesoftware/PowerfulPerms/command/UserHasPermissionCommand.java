@@ -3,6 +3,7 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
@@ -41,9 +42,9 @@ public class UserHasPermissionCommand extends SubCommand {
                     Boolean has = second.get();
                     if (has != null) {
                         if (has)
-                            sendSender(invoker, sender, "The player has the permission \"" + permission + "\".");
+                            sendSender(invoker, sender, playerName + " has the permission \"" + permission + "\".");
                         else
-                            sendSender(invoker, sender, "The player doesn't have the permission \"" + permission + "\".");
+                            sendSender(invoker, sender, playerName + ChatColor.RED + " does not " + ChatColor.WHITE + "have the permission \"" + permission + "\".");
                     } else
                         sendSender(invoker, sender, "The permission \"" + permission + "\" is not set.");
                 }

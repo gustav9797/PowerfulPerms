@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.cheesesoftware</groupId>
   <artifactId>PowerfulPerms</artifactId>
-  <version>4.2.4</version>
+  <version>4.3.0</version>
   <build>
     <resources>
       <resource>
@@ -188,6 +188,10 @@
       <id>jitpack.io</id>
       <url>https://jitpack.io/</url>
     </repository>
+    <repository>
+      <id>vault-repo</id>
+      <url>http://nexus.hc.to/content/repositories/pub_releases</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>
@@ -245,7 +249,7 @@
     <dependency>
       <groupId>net.milkbowl.vault</groupId>
       <artifactId>VaultAPI</artifactId>
-      <version>1.5</version>
+      <version>1.6</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
