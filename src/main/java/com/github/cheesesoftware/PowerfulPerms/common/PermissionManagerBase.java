@@ -75,7 +75,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String pluginPrefixShort = ChatColor.BLUE + "PP" + ChatColor.WHITE + "> ";
 
-    protected ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool()); // TODO: Configurable
+    protected ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()); // TODO: Configurable
 
     public PermissionManagerBase(Database database, PowerfulPermsPlugin plugin, String serverName) {
         this.db = database;
@@ -911,6 +911,27 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     }
                 }
                 return result;
+            }
+        });
+        return listenableFuture;
+    }
+
+    @Override
+    public ListenableFuture<Group> getPlayerPrimaryGroup(UUID uuid) {
+        ListenableFuture<Group> listenableFuture = service.submit(new Callable<Group>() {
+
+            @Override
+            public Group call() throws Exception {
+                // If player is online, get data directly from player
+                PermissionPlayer gp = getPermissionPlayer(uuid);
+                if (gp != null)
+                    return gp.getPrimaryGroup();
+
+                ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> future = getPlayerCurrentGroups(uuid);
+                LinkedHashMap<String, List<CachedGroup>> result = future.get();
+                List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(serverName, result);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                return PermissionPlayerBase.getPrimaryGroup(groups);
             }
         });
         return listenableFuture;
