@@ -1,15 +1,19 @@
 package com.github.cheesesoftware.PowerfulPerms.Vault;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.bukkit.OfflinePlayer;
 
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
-import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import eu.taigacraft.importer.permissions.PermissionsImporter;
 
@@ -26,11 +30,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
 
     @Override
     public String getPrefix(OfflinePlayer player) {
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
-        if (p != null) {
-            return p.getPrefix();
-        }
-        return null;
+        return getPrefix(player, null, null);
     }
 
     @Override
@@ -40,9 +40,13 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
 
     @Override
     public String getPrefix(OfflinePlayer player, String worldname, String ladder) {
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
-        if (p != null) {
-            return p.getPrefix(ladder);
+        ListenableFuture<String> second = permissionManager.getPlayerPrefix(player.getUniqueId(), ladder);
+        try {
+            return second.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
         return null;
     }
@@ -51,11 +55,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
 
     @Override
     public String getSuffix(OfflinePlayer player) {
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
-        if (p != null) {
-            return p.getSuffix();
-        }
-        return null;
+        return getSuffix(player, null, null);
     }
 
     @Override
@@ -65,49 +65,67 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
 
     @Override
     public String getSuffix(OfflinePlayer player, String worldname, String ladder) {
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
-        if (p != null) {
-            return p.getSuffix(ladder);
+        ListenableFuture<String> second = permissionManager.getPlayerSuffix(player.getUniqueId(), ladder);
+        try {
+            return second.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
         return null;
     }
 
     @Override
     public String getRank(OfflinePlayer player) {
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
-        if (p != null) {
-            Group group = p.getPrimaryGroup();
+        ListenableFuture<Group> second = permissionManager.getPlayerPrimaryGroup(player.getUniqueId());
+        try {
+            Group group = second.get();
             if (group != null)
                 return group.getName();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
         return null;
     }
 
     @Override
     public Boolean hasPermission(OfflinePlayer player, String permission) {
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
-        if (p != null) {
-            return p.hasPermission(permission);
-        }
-        return null;
+        return hasPermission(player, permission, "");
     }
 
     @Override
-    public Boolean hasPermission(OfflinePlayer player, String permission, String worldname) {
-        return hasPermission(player, permission);
+    public Boolean hasPermission(OfflinePlayer player, String permission, String world) {
+        ListenableFuture<Boolean> second = permissionManager.playerHasPermission(player.getUniqueId(), permission, world, "");
+        try {
+            return second.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
     public List<String> getRanks(OfflinePlayer player) {
-        PermissionPlayer p = permissionManager.getPermissionPlayer(player.getUniqueId());
-        if (p != null) {
-            List<Group> groups = p.getGroups(PermissionManagerBase.serverName);
+        try {
+            ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = permissionManager.getPlayerCurrentGroups(player.getUniqueId());
+            LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
+            List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
+            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
             List<String> groupNames = new ArrayList<String>();
             for (Group group : groups)
                 groupNames.add(group.getName());
             return groupNames;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
-        return null;
+        return new ArrayList<String>();
     }
 
     @Override
@@ -118,5 +136,10 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
     @Override
     public void unload(OfflinePlayer player) {
 
+    }
+
+    @Override
+    public boolean isLoaded(OfflinePlayer arg0) {
+        return true;
     }
 }
