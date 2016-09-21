@@ -75,7 +75,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public static String consolePrefix = "[PowerfulPerms] ";
     public static String pluginPrefixShort = ChatColor.BLUE + "PP" + ChatColor.WHITE + "> ";
 
-    private ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool()); // TODO: Configurable
+    protected ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool()); // TODO: Configurable
 
     public PermissionManagerBase(Database database, PowerfulPermsPlugin plugin, String serverName) {
         this.db = database;
@@ -1380,7 +1380,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             if (inserted) {
                                 reloadPlayer(uuid, true);
                                 notifyReloadPlayer(uuid);
-                                return new Response(true, "Permission \"" + permission + "\" added to player.");
+                                return new Response(true, "Permission added to player.");
                             } else
                                 return new Response(false, "Could not add permission. Check console for any errors.");
                         } else

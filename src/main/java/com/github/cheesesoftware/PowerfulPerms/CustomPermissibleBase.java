@@ -169,18 +169,30 @@ public class CustomPermissibleBase extends PermissibleBase {
             String name = perm.getName().toLowerCase();
             temporaryPrePermissions.add(name);
             Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
-            calculatePreChildPermissions(perm.getChildren(), false);
+            calculateChildPermissions(perm.getChildren(), false, temporaryPrePermissions);
         }
 
         for (PermissionAttachment attachment : ppAttachments) {
-            calculatePostChildPermissions(attachment.getPermissions(), false);
+            calculateChildPermissions(attachment.getPermissions(), false, temporaryPostPermissions);
         }
 
         permissionsPlayer.setTemporaryPrePermissions(temporaryPrePermissions);
         permissionsPlayer.setTemporaryPostPermissions(temporaryPostPermissions);
     }
 
-    private void calculatePreChildPermissions(Map<String, Boolean> children, boolean invert) {
+    public static List<String> getTemporaryPrePermissions(boolean isOp) {
+        List<String> prePermissions = new ArrayList<String>();
+        Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp);
+
+        for (Permission perm : defaults) {
+            String name = perm.getName().toLowerCase();
+            prePermissions.add(name);
+            getChildPermissions(perm.getChildren(), false, prePermissions);
+        }
+        return prePermissions;
+    }
+
+    private void calculateChildPermissions(Map<String, Boolean> children, boolean invert, List<String> perms) {
         Set<String> keys = children.keySet();
         if (keys.size() > 0) {
             for (String name : keys) {
@@ -189,20 +201,20 @@ public class CustomPermissibleBase extends PermissibleBase {
                 String lname = name.toLowerCase();
 
                 if (value == true)
-                    temporaryPrePermissions.add(lname);
+                    perms.add(lname);
                 else if (value == false)
-                    temporaryPrePermissions.add("-" + lname);
+                    perms.add("-" + lname);
 
                 Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
 
                 if (perm != null) {
-                    calculatePreChildPermissions(perm.getChildren(), !value);
+                    calculateChildPermissions(perm.getChildren(), !value, perms);
                 }
             }
         }
     }
-    
-    private void calculatePostChildPermissions(Map<String, Boolean> children, boolean invert) {
+
+    private static void getChildPermissions(Map<String, Boolean> children, boolean invert, List<String> prePermissions) {
         Set<String> keys = children.keySet();
         if (keys.size() > 0) {
             for (String name : keys) {
@@ -211,14 +223,12 @@ public class CustomPermissibleBase extends PermissibleBase {
                 String lname = name.toLowerCase();
 
                 if (value == true)
-                    temporaryPostPermissions.add(lname);
+                    prePermissions.add(lname);
                 else if (value == false)
-                    temporaryPostPermissions.add("-" + lname);
-
-                Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
+                    prePermissions.add("-" + lname);
 
                 if (perm != null) {
-                    calculatePostChildPermissions(perm.getChildren(), !value);
+                    getChildPermissions(perm.getChildren(), !value, prePermissions);
                 }
             }
         }

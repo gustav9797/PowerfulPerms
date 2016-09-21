@@ -1,11 +1,19 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionContainer;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PlayerLoadedEvent;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.LoginEvent;
@@ -74,6 +82,25 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             PowerfulPermissionPlayer player = (PowerfulPermissionPlayer) getPermissionPlayer(e.getPlayer().getUniqueId());
             player.updatePermissions(e.getServer().getInfo());
         }
+    }
+
+    @Override
+    public ListenableFuture<Boolean> playerHasPermission(UUID uuid, String permission, String world, String server) {
+        ListenableFuture<Boolean> first = service.submit(new Callable<Boolean>() {
+
+            @Override
+            public Boolean call() throws Exception {
+                ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
+                LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
+                List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissions(uuid).get());
+                permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer));
+                // Player own permissions have been added. Permissions from player groups have been added. In relation to world and server.
+                return permissionContainer.hasPermission(permission);
+            }
+        });
+        return first;
     }
 
     @Override

@@ -62,7 +62,12 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     public void updatePermissions() {
         this.updateGroups(PermissionManagerBase.serverName);
 
-        List<String> perms = super.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName());
+        List<String> perms = PermissionPlayerBase.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName(), super.getGroups(), this);
+        List<String> realPerms = calculateRealPermissions(perms);
+        super.setRealPermissions(realPerms);
+    }
+
+    public static List<String> calculateRealPermissions(List<String> perms) {
         List<String> realPerms = new ArrayList<String>();
         for (String permString : perms) {
             boolean invert = false;
@@ -77,16 +82,10 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
             if (perm != null)
                 realPerms.addAll(calculateChildPermissions(perm.getChildren(), invert));
         }
-
-        asyncPermLock.lock();
-        try {
-            this.realPermissions = realPerms;
-        } finally {
-            asyncPermLock.unlock();
-        }
+        return realPerms;
     }
 
-    private List<String> calculateChildPermissions(Map<String, Boolean> children, boolean invert) {
+    private static List<String> calculateChildPermissions(Map<String, Boolean> children, boolean invert) {
         Set<String> keys = children.keySet();
         if (keys.size() > 0) {
             List<String> perms = new ArrayList<String>();

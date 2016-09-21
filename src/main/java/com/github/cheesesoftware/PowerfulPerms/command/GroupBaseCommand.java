@@ -25,6 +25,7 @@ public class GroupBaseCommand extends SubCommand {
         subCommands.add(new GroupSetLadderCommand(plugin, permissionManager));
         subCommands.add(new GroupSetRankCommand(plugin, permissionManager));
         subCommands.add(new GroupRenameCommand(plugin, permissionManager));
+        subCommands.add(new GroupHasPermissionCommand(plugin, permissionManager));
     }
 
     @Override

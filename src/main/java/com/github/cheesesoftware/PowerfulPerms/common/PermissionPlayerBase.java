@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -15,27 +14,22 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
-public class PermissionPlayerBase implements PermissionPlayer {
+public class PermissionPlayerBase extends PermissionContainer implements PermissionPlayer {
 
     protected LinkedHashMap<String, List<CachedGroup>> groups = new LinkedHashMap<String, List<CachedGroup>>(); // Contains -all- groups for this player.
 
     protected List<Group> currentGroups = new ArrayList<Group>();
 
-    protected List<Permission> permissions = new ArrayList<Permission>();
-    protected List<String> realPermissions = new ArrayList<String>();
-    protected List<String> temporaryPrePermissions = new ArrayList<String>();
-    protected List<String> temporaryPostPermissions = new ArrayList<String>();
     protected String prefix = "";
     protected String suffix = "";
     protected static PowerfulPermsPlugin plugin;
     protected boolean isDefault = false;
 
-    protected ReentrantLock asyncPermLock = new ReentrantLock();
     protected ReentrantLock asyncGroupLock = new ReentrantLock();
 
     public PermissionPlayerBase(LinkedHashMap<String, List<CachedGroup>> groups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin, boolean isDefault) {
+        super(permissions);
         this.groups = groups;
-        this.permissions = permissions;
         this.prefix = prefix;
         this.suffix = suffix;
         PermissionPlayerBase.plugin = plugin;
@@ -63,24 +57,6 @@ public class PermissionPlayerBase implements PermissionPlayer {
             this.groups = groups;
         } finally {
             asyncGroupLock.unlock();
-        }
-    }
-
-    public void setTemporaryPrePermissions(List<String> permissions) {
-        asyncPermLock.lock();
-        try {
-            this.temporaryPrePermissions = new ArrayList<String>(permissions);
-        } finally {
-            asyncPermLock.unlock();
-        }
-    }
-
-    public void setTemporaryPostPermissions(List<String> permissions) {
-        asyncPermLock.lock();
-        try {
-            this.temporaryPostPermissions = new ArrayList<String>(permissions);
-        } finally {
-            asyncPermLock.unlock();
         }
     }
 
@@ -180,115 +156,6 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns all permissions for this player.
-     */
-    @Override
-    public List<Permission> getPermissions() {
-        return new ArrayList<Permission>(this.permissions);
-    }
-
-    /**
-     * Returns all permissions in effect for this player.
-     */
-    @Override
-    public List<String> getPermissionsInEffect() {
-        asyncPermLock.lock();
-        try {
-            return new ArrayList<String>(this.realPermissions);
-        } finally {
-            asyncPermLock.unlock();
-        }
-    }
-
-    @Override
-    public boolean isPermissionSet(String permission) {
-        return preHasPermission(permission) != null;
-    }
-
-    private Boolean preHasPermission(String permission) {
-        Boolean has = null;
-
-        asyncPermLock.lock();
-        try {
-            if (temporaryPrePermissions != null) {
-                ListIterator<String> it = temporaryPrePermissions.listIterator(temporaryPrePermissions.size());
-                while (it.hasPrevious()) {
-                    Boolean check = internalPermissionCheck(permission, it.previous());
-                    if (check != null) {
-                        has = check;
-                        break;
-                    }
-                }
-            }
-
-            ListIterator<String> it = realPermissions.listIterator(realPermissions.size());
-            while (it.hasPrevious()) {
-                Boolean check = internalPermissionCheck(permission, it.previous());
-                if (check != null) {
-                    has = check;
-                    break;
-                }
-            }
-
-            if (temporaryPostPermissions != null) {
-                it = temporaryPostPermissions.listIterator(temporaryPostPermissions.size());
-                while (it.hasPrevious()) {
-                    Boolean check = internalPermissionCheck(permission, it.previous());
-                    if (check != null) {
-                        has = check;
-                        break;
-                    }
-                }
-            }
-        } finally {
-            asyncPermLock.unlock();
-        }
-
-        return has;
-    }
-
-    private Boolean internalPermissionCheck(String toCheck, String ownPermission) {
-        Boolean has = null;
-        if (ownPermission.equalsIgnoreCase(toCheck)) {
-            has = true;
-        } else if (ownPermission.equalsIgnoreCase("-" + toCheck)) {
-            has = false;
-        } else if (ownPermission.endsWith("*")) {
-
-            boolean ownNegated = ownPermission.startsWith("-");
-            int ownOffset = (ownNegated ? 1 : 0);
-            int i = 0;
-            for (; i + ownOffset < ownPermission.length() && i < toCheck.length();) {
-                if (ownPermission.charAt(i + ownOffset) == toCheck.charAt(i)) {
-                    // plugin.debug(ownPermission.charAt(i + ownOffset) + " " + toCheck.charAt(i) + " " + i + " + 1");
-                    ++i;
-                } else
-                    break;
-            }
-
-            // plugin.debug("ownPermission " + ownPermission);
-            // plugin.debug("toCheck " + toCheck);
-            // plugin.debug("ownPermission " + ownPermission.length());
-            // plugin.debug("toCheck " + toCheck.length());
-            // plugin.debug("i " + i);
-
-            if (ownPermission.charAt(i + ownOffset) == '*') {
-                has = !ownNegated;
-                // plugin.debug("wildcard perm check: has = " + has + " ownPermission = " + ownPermission);
-            }
-        }
-        return has;
-    }
-
-    /**
-     * Check if this player has the specified permission.
-     */
-    @Override
-    public Boolean hasPermission(String permission) {
-        return preHasPermission(permission);
-    }
-
-    /**
      * Returns the player's group on a specific ladder.
      */
     @Override
@@ -309,12 +176,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
         return null;
     }
 
-    /**
-     * Returns the group with highest rank value across all ladders of the player.
-     */
-    @Override
-    public Group getPrimaryGroup() {
-        List<Group> input = getGroups();
+    public static Group getPrimaryGroup(List<Group> input) {
         TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
 
         for (Group group : input) {
@@ -336,6 +198,14 @@ public class PermissionPlayerBase implements PermissionPlayer {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns the group with highest rank value across all ladders of the player.
+     */
+    @Override
+    public Group getPrimaryGroup() {
+        return getPrimaryGroup(getGroups());
     }
 
     public static String getPrefix(String ladder, List<Group> input) {
@@ -460,12 +330,11 @@ public class PermissionPlayerBase implements PermissionPlayer {
         return suffix;
     }
 
-    protected List<String> calculatePermissions(String playerServer, String playerWorld) {
+    public static List<String> calculatePermissions(String playerServer, String playerWorld, List<Group> input, PermissionContainer out) {
         ArrayList<Permission> unprocessedPerms = new ArrayList<Permission>();
 
         // Add permissions from groups in normal order.
-        plugin.debug("current groups count " + currentGroups.size());
-        List<Group> input = getGroups();
+        plugin.debug("groups count " + input.size());
         TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
 
         // Insert groups by rank value
@@ -489,12 +358,12 @@ public class PermissionPlayerBase implements PermissionPlayer {
         }
 
         // Add own permissions.
-        unprocessedPerms.addAll(this.permissions);
+        unprocessedPerms.addAll(out.permissions);
 
         List<String> output = new ArrayList<String>();
 
         for (Permission e : unprocessedPerms) {
-            if (permissionApplies(e, playerServer, playerWorld)) {
+            if (PermissionContainer.permissionApplies(e, playerServer, playerWorld)) {
                 output.add(e.getPermissionString());
             }
         }
@@ -508,24 +377,6 @@ public class PermissionPlayerBase implements PermissionPlayer {
         }
 
         return output;
-    }
-
-    /**
-     * Checks if permission applies for server and world.
-     */
-    private static boolean permissionApplies(Permission e, String playerServer, String playerWorld) {
-        boolean isSameServer = false;
-        boolean isSameWorld = false;
-
-        if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || playerServer == null || e.getServer().equals(playerServer))
-            isSameServer = true;
-
-        if (e.getWorld().isEmpty() || e.getWorld().equalsIgnoreCase("ALL") || playerWorld == null || e.getWorld().equals(playerWorld))
-            isSameWorld = true;
-
-        if (isSameServer && isSameWorld)
-            return true;
-        return false;
     }
 
     @Override

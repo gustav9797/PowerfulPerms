@@ -1,6 +1,12 @@
 package com.github.cheesesoftware.PowerfulPerms;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -15,11 +21,15 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPermissionPlayer;
 import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionContainer;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
+import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PlayerLoadedEvent;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class PowerfulPermissionManager extends PermissionManagerBase implements Listener {
 
@@ -115,6 +125,34 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             PowerfulPermissionPlayer permissionPlayer = (PowerfulPermissionPlayer) getPermissionPlayer(p.getUniqueId());
             permissionPlayer.updatePermissions();
         }
+    }
+
+    @Override
+    public ListenableFuture<Boolean> playerHasPermission(UUID uuid, String permission, String world, String server) {
+        ListenableFuture<Boolean> first = service.submit(new Callable<Boolean>() {
+
+            @Override
+            public Boolean call() throws Exception {
+                ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
+                LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
+                List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissions(uuid).get());
+                List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer);
+                // Player own permissions have been added. Permissions from player groups have been added. In relation to world and server.
+
+                List<String> realPerms = PowerfulPermissionPlayer.calculateRealPermissions(perms);
+                permissionContainer.setRealPermissions(realPerms);
+                // Child permissions have been added.
+
+                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+                permissionContainer.setTemporaryPrePermissions(CustomPermissibleBase.getTemporaryPrePermissions((offlinePlayer != null ? offlinePlayer.isOp() : false)));
+                // Default Bukkit permissions have been added.
+
+                return permissionContainer.hasPermission(permission);
+            }
+        });
+        return first;
     }
 
     @Override
