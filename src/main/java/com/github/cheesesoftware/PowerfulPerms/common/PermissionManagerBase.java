@@ -1186,7 +1186,38 @@ public abstract class PermissionManagerBase implements PermissionManager {
     }
 
     @Override
+    public ListenableFuture<String> getPlayerPrefix(final UUID uuid, final String ladder) {
+        ListenableFuture<String> first = service.submit(new Callable<String>() {
+
+            @Override
+            public String call() throws Exception {
+                // If player is online, get data directly from player
+                PermissionPlayer gp = getPermissionPlayer(uuid);
+                if (gp != null)
+                    return gp.getPrefix(ladder);
+
+                ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
+                LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
+                List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(serverName, currentGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                String prefix = "";
+                if (ladder != null)
+                    prefix = PermissionPlayerBase.getPrefix(ladder, groups);
+                else
+                    prefix = PermissionPlayerBase.getPrefix(groups, getPlayerOwnPrefix(uuid).get());
+                return prefix;
+            }
+        });
+        return first;
+    }
+
+    @Override
     public ListenableFuture<String> getPlayerPrefix(final UUID uuid) {
+        return getPlayerPrefix(uuid, null);
+    }
+
+    @Override
+    public ListenableFuture<String> getPlayerSuffix(final UUID uuid, final String ladder) {
         ListenableFuture<String> listenableFuture = service.submit(new Callable<String>() {
 
             @Override
@@ -1194,15 +1225,18 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 // If player is online, get data directly from player
                 PermissionPlayer gp = getPermissionPlayer(uuid);
                 if (gp != null)
-                    return gp.getPrefix();
+                    return gp.getSuffix(ladder);
 
-                // TODO: this is player own prefix...
-                DBResult result = db.getPlayer(uuid);
-                if (result.hasNext()) {
-                    DBDocument row = result.next();
-                    return row.getString("prefix");
-                }
-                return null;
+                ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
+                LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
+                List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(serverName, currentGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                String suffix = "";
+                if (ladder != null)
+                    suffix = PermissionPlayerBase.getSuffix(ladder, groups);
+                else
+                    suffix = PermissionPlayerBase.getSuffix(groups, getPlayerOwnSuffix(uuid).get());
+                return suffix;
             }
         });
         return listenableFuture;
@@ -1210,25 +1244,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public ListenableFuture<String> getPlayerSuffix(final UUID uuid) {
-        ListenableFuture<String> listenableFuture = service.submit(new Callable<String>() {
-
-            @Override
-            public String call() throws Exception {
-                // If player is online, get data directly from player
-                PermissionPlayer gp = getPermissionPlayer(uuid);
-                if (gp != null)
-                    return gp.getSuffix();
-
-                // TODO: this is player own suffix...
-                DBResult result = db.getPlayer(uuid);
-                if (result.hasNext()) {
-                    DBDocument row = result.next();
-                    return row.getString("suffix");
-                }
-                return null;
-            }
-        });
-        return listenableFuture;
+        return getPlayerSuffix(uuid, null);
     }
 
     @Override

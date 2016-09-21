@@ -27,7 +27,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     protected List<String> temporaryPostPermissions = new ArrayList<String>();
     protected String prefix = "";
     protected String suffix = "";
-    protected PowerfulPermsPlugin plugin;
+    protected static PowerfulPermsPlugin plugin;
     protected boolean isDefault = false;
 
     protected ReentrantLock asyncPermLock = new ReentrantLock();
@@ -38,7 +38,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
         this.permissions = permissions;
         this.prefix = prefix;
         this.suffix = suffix;
-        this.plugin = plugin;
+        PermissionPlayerBase.plugin = plugin;
         this.isDefault = isDefault;
     }
 
@@ -103,40 +103,41 @@ public class PermissionPlayerBase implements PermissionPlayer {
         return output;
     }
 
+    public static List<CachedGroup> getCachedGroups(String server, LinkedHashMap<String, List<CachedGroup>> groups) {
+        List<CachedGroup> tempGroups = new ArrayList<CachedGroup>();
+
+        // Get server specific groups and add them
+        List<CachedGroup> serverGroupsTemp = groups.get(server);
+        if (serverGroupsTemp != null)
+            tempGroups.addAll(serverGroupsTemp);
+
+        // Get groups that apply on all servers and add them
+        if (!server.isEmpty()) {
+            List<CachedGroup> all = groups.get("");
+            if (all != null)
+                tempGroups.addAll(all);
+        }
+
+        return tempGroups;
+    }
+
     /**
      * Returns a list of cached groups which apply to a specific server.
      */
     @Override
     public List<CachedGroup> getCachedGroups(String server) {
-        List<CachedGroup> tempGroups = new ArrayList<CachedGroup>();
         asyncGroupLock.lock();
         try {
-            // Get server specific groups and add them
-            List<CachedGroup> serverGroupsTemp = groups.get(server);
-            if (serverGroupsTemp != null)
-                tempGroups.addAll(serverGroupsTemp);
-
-            // Get groups that apply on all servers and add them
-            if (!server.isEmpty()) {
-                List<CachedGroup> all = groups.get("");
-                if (all != null)
-                    tempGroups.addAll(all);
-            }
+            return getCachedGroups(server, this.groups);
         } finally {
             asyncGroupLock.unlock();
         }
-        return tempGroups;
     }
 
-    /**
-     * Returns a list of groups which apply to a specific server. Removes negated groups.
-     */
-    @Override
-    public List<Group> getGroups(String server) {
-        List<CachedGroup> tempGroups = getCachedGroups(server);
+    public static List<Group> getGroups(List<CachedGroup> groups) {
         List<Group> output = new ArrayList<Group>();
 
-        Iterator<CachedGroup> it1 = tempGroups.iterator();
+        Iterator<CachedGroup> it1 = groups.iterator();
         while (it1.hasNext()) {
             CachedGroup cachedGroup = it1.next();
             if (!cachedGroup.isNegated()) {
@@ -149,7 +150,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
         }
 
         // Remaining groups are negated
-        for (CachedGroup cachedGroup : tempGroups) {
+        for (CachedGroup cachedGroup : groups) {
             Iterator<Group> it2 = output.iterator();
             while (it2.hasNext()) {
                 Group temp = it2.next();
@@ -160,6 +161,14 @@ public class PermissionPlayerBase implements PermissionPlayer {
             }
         }
         return output;
+    }
+
+    /**
+     * Returns a list of groups which apply to a specific server. Removes negated groups.
+     */
+    @Override
+    public List<Group> getGroups(String server) {
+        return getGroups(getCachedGroups(server));
     }
 
     /**
@@ -329,12 +338,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
         return null;
     }
 
-    /**
-     * Returns the player's prefix on a specific ladder.
-     */
-    @Override
-    public String getPrefix(String ladder) {
-        List<Group> input = getGroups();
+    public static String getPrefix(String ladder, List<Group> input) {
         TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
 
         // Insert groups by rank value
@@ -364,11 +368,14 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
-     * Returns the player's suffix on a specific ladder.
+     * Returns the player's prefix on a specific ladder.
      */
     @Override
-    public String getSuffix(String ladder) {
-        List<Group> input = getGroups();
+    public String getPrefix(String ladder) {
+        return getPrefix(ladder, getGroups());
+    }
+
+    public static String getSuffix(String ladder, List<Group> input) {
         TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
 
         // Insert groups by rank value
@@ -398,13 +405,33 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     /**
+     * Returns the player's suffix on a specific ladder.
+     */
+    @Override
+    public String getSuffix(String ladder) {
+        return getSuffix(ladder, getGroups());
+    }
+
+    public static String getPrefix(List<Group> input, String ownPrefix) {
+        if (!ownPrefix.isEmpty())
+            return ownPrefix;
+        return getPrefix(null, input);
+    }
+
+    /**
      * Returns the player's prefix from the group with highest rank across all ladders.
      */
     @Override
     public String getPrefix() {
         if (!prefix.isEmpty())
             return prefix;
-        return getPrefix(null);
+        return getPrefix(null, getGroups());
+    }
+
+    public static String getSuffix(List<Group> input, String ownSuffix) {
+        if (!ownSuffix.isEmpty())
+            return ownSuffix;
+        return getSuffix(null, input);
     }
 
     /**
@@ -414,7 +441,7 @@ public class PermissionPlayerBase implements PermissionPlayer {
     public String getSuffix() {
         if (!suffix.isEmpty())
             return suffix;
-        return getSuffix(null);
+        return getSuffix(null, getGroups());
     }
 
     /**
