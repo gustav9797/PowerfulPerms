@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -28,7 +29,9 @@ public class PermissionPlayerBase implements PermissionPlayer {
     protected String suffix = "";
     protected PowerfulPermsPlugin plugin;
     protected boolean isDefault = false;
+
     protected ReentrantLock asyncPermLock = new ReentrantLock();
+    protected ReentrantLock asyncGroupLock = new ReentrantLock();
 
     public PermissionPlayerBase(LinkedHashMap<String, List<CachedGroup>> groups, List<Permission> permissions, String prefix, String suffix, PowerfulPermsPlugin plugin, boolean isDefault) {
         this.groups = groups;
@@ -55,7 +58,12 @@ public class PermissionPlayerBase implements PermissionPlayer {
     }
 
     public void setGroups(LinkedHashMap<String, List<CachedGroup>> groups) {
-        this.groups = groups;
+        asyncGroupLock.lock();
+        try {
+            this.groups = groups;
+        } finally {
+            asyncGroupLock.unlock();
+        }
     }
 
     public void setTemporaryPrePermissions(List<String> permissions) {
@@ -81,7 +89,18 @@ public class PermissionPlayerBase implements PermissionPlayer {
      */
     @Override
     public LinkedHashMap<String, List<CachedGroup>> getCachedGroups() {
-        return new LinkedHashMap<String, List<CachedGroup>>(this.groups);
+        LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
+        asyncGroupLock.lock();
+        try {
+            Iterator<Entry<String, List<CachedGroup>>> it = this.groups.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<String, List<CachedGroup>> entry = it.next();
+                output.put(entry.getKey(), new ArrayList<CachedGroup>(entry.getValue()));
+            }
+        } finally {
+            asyncGroupLock.unlock();
+        }
+        return output;
     }
 
     /**
@@ -90,19 +109,22 @@ public class PermissionPlayerBase implements PermissionPlayer {
     @Override
     public List<CachedGroup> getCachedGroups(String server) {
         List<CachedGroup> tempGroups = new ArrayList<CachedGroup>();
+        asyncGroupLock.lock();
+        try {
+            // Get server specific groups and add them
+            List<CachedGroup> serverGroupsTemp = groups.get(server);
+            if (serverGroupsTemp != null)
+                tempGroups.addAll(serverGroupsTemp);
 
-        // Get server specific groups and add them
-        List<CachedGroup> serverGroupsTemp = groups.get(server);
-        if (serverGroupsTemp != null)
-            tempGroups.addAll(serverGroupsTemp);
-
-        // Get groups that apply on all servers and add them
-        if (!server.isEmpty()) {
-            List<CachedGroup> all = groups.get("");
-            if (all != null)
-                tempGroups.addAll(all);
+            // Get groups that apply on all servers and add them
+            if (!server.isEmpty()) {
+                List<CachedGroup> all = groups.get("");
+                if (all != null)
+                    tempGroups.addAll(all);
+            }
+        } finally {
+            asyncGroupLock.unlock();
         }
-
         return tempGroups;
     }
 

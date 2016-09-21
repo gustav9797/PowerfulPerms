@@ -1749,7 +1749,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             while (it2.hasNext()) {
                                 final CachedGroup current = it2.next();
                                 final Group currentGroup = getGroup(current.getGroupId());
-                                if (currentGroup.getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
+                                if (currentGroup.getLadder().equalsIgnoreCase(ladder) && !current.willExpire() && !current.isNegated()) {
                                     if (toUse == null) {
                                         toUse = currentGroup;
                                         toPromoteTo = getHigherGroup(toUse, groupsClone);
@@ -1826,7 +1826,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                             while (it2.hasNext()) {
                                 final CachedGroup current = it2.next();
                                 final Group currentGroup = getGroup(current.getGroupId());
-                                if (currentGroup.getLadder().equals(ladder) && !current.willExpire() && !current.isNegated()) {
+                                if (currentGroup.getLadder().equalsIgnoreCase(ladder) && !current.willExpire() && !current.isNegated()) {
                                     if (toUse == null) {
                                         toUse = currentGroup;
                                         toDemoteTo = getLowerGroup(toUse, groupsClone);
