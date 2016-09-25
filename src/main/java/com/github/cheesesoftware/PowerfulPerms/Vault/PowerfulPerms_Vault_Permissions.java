@@ -229,7 +229,10 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         try {
             ListenableFuture<Boolean> second = permissionManager.playerHasPermission(first.get(), permission, world, PermissionManagerBase.serverName);
             try {
-                return second.get();
+                Boolean has = second.get();
+                if (has == null)
+                    return false;
+                return has;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {
