@@ -38,7 +38,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
 
     public void update(PermissionPlayerBase base) {
         this.groups = base.groups;
-        this.permissions = base.permissions;
+        this.ownPermissions = base.ownPermissions;
         this.prefix = base.prefix;
         this.suffix = base.suffix;
         this.isDefault = base.isDefault;
@@ -358,7 +358,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         }
 
         // Add own permissions.
-        unprocessedPerms.addAll(out.permissions);
+        unprocessedPerms.addAll(out.ownPermissions);
 
         List<String> output = new ArrayList<String>();
 

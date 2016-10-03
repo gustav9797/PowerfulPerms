@@ -746,7 +746,8 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void onDisable() {
         if (checkTimedTaskId != -1)
             this.getScheduler().stopRepeating(checkTimedTaskId);
-        redis.destroy();
+        if (redis != null)
+            redis.destroy();
         groupsLock.lock();
         try {
             if (groups != null)

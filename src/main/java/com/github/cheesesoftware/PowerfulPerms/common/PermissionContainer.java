@@ -9,7 +9,7 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 
 public class PermissionContainer {
 
-    protected List<Permission> permissions = new ArrayList<Permission>();
+    protected List<Permission> ownPermissions = new ArrayList<Permission>();
     protected List<String> realPermissions = new ArrayList<String>();
     protected List<String> temporaryPrePermissions = new ArrayList<String>();
     protected List<String> temporaryPostPermissions = new ArrayList<String>();
@@ -17,7 +17,7 @@ public class PermissionContainer {
     protected ReentrantLock asyncPermLock = new ReentrantLock();
 
     public PermissionContainer(List<Permission> ownPermissions) {
-        this.permissions = ownPermissions;
+        this.ownPermissions = ownPermissions;
     }
 
     protected Boolean preHasPermission(String permission) {
@@ -117,7 +117,7 @@ public class PermissionContainer {
      * Returns all permissions for this player.
      */
     public List<Permission> getPermissions() {
-        return new ArrayList<Permission>(this.permissions);
+        return new ArrayList<Permission>(this.ownPermissions);
     }
 
     /**

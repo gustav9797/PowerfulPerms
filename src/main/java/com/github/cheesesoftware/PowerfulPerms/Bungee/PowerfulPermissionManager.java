@@ -12,6 +12,7 @@ import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PlayerLoadedEvent;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -90,6 +91,14 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
 
             @Override
             public Boolean call() throws Exception {
+                PermissionPlayer player = getPermissionPlayer(uuid);
+                if (player != null) {
+                    if ((world == null || world.isEmpty() || world.equalsIgnoreCase("all")) && (server == null || server.isEmpty() || server.equalsIgnoreCase("all")))
+                        return player.hasPermission(permission);
+                    PermissionContainer permissionContainer = new PermissionContainer(player.getPermissions());
+                    permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer));
+                    return permissionContainer.hasPermission(permission);
+                }
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
