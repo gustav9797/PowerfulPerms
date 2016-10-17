@@ -358,7 +358,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     return plugin.getPlayerUUID(playerName);
 
                 // If player UUID exists in database, use that
-                DBResult result = db.getPlayers(playerName);
+                DBResult result;
+                if (plugin.getServerMode() == ServerMode.ONLINE)
+                    result = db.getPlayersNonCaseSensitive(playerName);
+                else
+                    result = db.getPlayers(playerName);
+                
                 if (result.hasNext()) {
                     final DBDocument row = result.next();
                     if (row != null) {

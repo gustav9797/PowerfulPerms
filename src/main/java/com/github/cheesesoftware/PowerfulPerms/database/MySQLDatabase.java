@@ -437,6 +437,23 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public DBResult getPlayersNonCaseSensitive(final String name) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");
+            s.setString(1, name);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
+    }
+
+    @Override
     public boolean setPlayerName(final UUID uuid, final String name) {
         boolean success = true;
         try {

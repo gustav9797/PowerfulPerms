@@ -23,6 +23,8 @@ public interface IDatabase {
 
     public DBResult getPlayers(String name);
 
+    public DBResult getPlayersNonCaseSensitive(String name);
+
     public boolean setPlayerName(UUID uuid, String name);
 
     public boolean setPlayerUUID(String name, UUID uuid);
