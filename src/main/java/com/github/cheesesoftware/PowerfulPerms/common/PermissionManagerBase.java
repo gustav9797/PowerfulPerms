@@ -1669,51 +1669,50 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> result = second.get();
                 if (result != null) {
-                    if (!result.isEmpty()) {
-                        ListenableFuture<Response> third = copyDefaultGroupsIfDefault(uuid);
-                        third.get();
+                    ListenableFuture<Response> third = copyDefaultGroupsIfDefault(uuid);
+                    third.get();
 
-                        Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
-                        boolean changed = false;
-                        Group toUse = null;
-                        while (it.hasNext()) {
-                            Entry<String, List<CachedGroup>> next = it.next();
-                            final String server = next.getKey();
-                            List<CachedGroup> playerCurrentGroups = next.getValue();
-                            Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
-                            while (it2.hasNext()) {
-                                final CachedGroup current = it2.next();
-                                final Group currentGroup = getGroup(current.getGroupId());
-                                if (currentGroup.getLadder().equals(group.getLadder()) && current.getExpirationDate() == null) {
-                                    if (toUse == null)
-                                        toUse = currentGroup;
-                                    // Replace with new group if they are on the same ladder and if toUse and current is the same group
-                                    if (toUse.getId() == currentGroup.getId()) {
-                                        boolean deleted = db.deletePlayerGroup(uuid, currentGroup.getId(), server, current.isNegated(), null);
-                                        debug("(setrank) removed group " + currentGroup.getId());
-                                        if (!deleted)
-                                            return new Response(false, "Could not remove group with ID " + currentGroup.getId() + ".");
-                                        else {
-                                            boolean inserted = db.insertPlayerGroup(uuid, groupId, server, current.isNegated(), null);
-                                            debug("(setrank) added group " + groupId);
-                                            if (!inserted)
-                                                return new Response(false, "Could not add group with ID " + groupId + ".");
-                                        }
-                                        changed = true;
+                    Iterator<Entry<String, List<CachedGroup>>> it = result.entrySet().iterator();
+                    boolean changed = false;
+                    Group toUse = null;
+                    while (it.hasNext()) {
+                        Entry<String, List<CachedGroup>> next = it.next();
+                        final String server = next.getKey();
+                        List<CachedGroup> playerCurrentGroups = next.getValue();
+                        Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
+                        while (it2.hasNext()) {
+                            final CachedGroup current = it2.next();
+                            final Group currentGroup = getGroup(current.getGroupId());
+                            if (currentGroup.getLadder().equals(group.getLadder()) && current.getExpirationDate() == null) {
+                                if (toUse == null)
+                                    toUse = currentGroup;
+                                // Replace with new group if they are on the same ladder and if toUse and current is the same group
+                                if (toUse.getId() == currentGroup.getId()) {
+                                    boolean deleted = db.deletePlayerGroup(uuid, currentGroup.getId(), server, current.isNegated(), null);
+                                    debug("(setrank) removed group " + currentGroup.getId());
+                                    if (!deleted)
+                                        return new Response(false, "Could not remove group with ID " + currentGroup.getId() + ".");
+                                    else {
+                                        boolean inserted = db.insertPlayerGroup(uuid, groupId, server, current.isNegated(), null);
+                                        debug("(setrank) added group " + groupId);
+                                        if (!inserted)
+                                            return new Response(false, "Could not add group with ID " + groupId + ".");
                                     }
+                                    changed = true;
                                 }
                             }
                         }
+                    }
 
-                        if (!changed) {
-                            return new Response(false, "Player has no groups on the specified ladder.");
-                        } else {
-                            reloadPlayer(uuid, true);
-                            notifyReloadPlayer(uuid);
-                            return new Response(true, "Player rank set on ladder \"" + group.getLadder() + "\".");
-                        }
-                    } else
-                        return new Response(false, "Player has no groups.");
+                    if (!changed) {
+                        boolean inserted = db.insertPlayerGroup(uuid, groupId, "", false, null);
+                        debug("(setrank) added group " + groupId + ". had no groups in ladder");
+                        if (!inserted)
+                            return new Response(false, "Could not add group with ID " + groupId + ".");
+                    }
+                    reloadPlayer(uuid, true);
+                    notifyReloadPlayer(uuid);
+                    return new Response(true, "Player rank set on ladder \"" + group.getLadder() + "\".");
                 } else
                     return new Response(false, "Player does not exist.");
             }
