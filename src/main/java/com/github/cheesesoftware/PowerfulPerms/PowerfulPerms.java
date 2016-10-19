@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerChatTabCompleteEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -93,7 +94,9 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
             vaultHook.hook(this);
         }
 
-        this.getCommand("powerfulperms").setExecutor(new PermissionCommandExecutor(permissionManager));
+        PermissionCommandExecutor executor = new PermissionCommandExecutor(permissionManager);
+        this.getCommand("powerfulperms").setExecutor(executor);
+        this.getCommand("powerfulperms").setTabCompleter(executor);
 
         if (Bukkit.getOnlinePlayers().size() > 0) { // Admin used /reload command
             debug("Reload used. Reloaded all online players. " + Bukkit.getOnlinePlayers().size() + " players.");

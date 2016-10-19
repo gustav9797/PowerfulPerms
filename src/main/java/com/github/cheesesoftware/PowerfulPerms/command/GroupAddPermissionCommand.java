@@ -1,6 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
@@ -65,6 +67,16 @@ public class GroupAddPermissionCommand extends SubCommand {
                 return CommandResult.noMatch;
         } else
             return CommandResult.noPermission;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        if ("add".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("add");
+            return output;
+        }
+        return null;
     }
 
 }

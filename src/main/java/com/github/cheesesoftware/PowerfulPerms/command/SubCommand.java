@@ -21,6 +21,8 @@ public abstract class SubCommand {
 
     public abstract CommandResult execute(final ICommand invoker, final String sender, final String[] args) throws InterruptedException, ExecutionException;
 
+    public abstract Iterable<String> tabComplete(final ICommand invoker, final String sender, final String[] args);
+
     public List<String> getUsage() {
         return usage;
     }

@@ -69,4 +69,14 @@ public class GroupHasPermissionCommand extends SubCommand {
         } else
             return CommandResult.noPermission;
     }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        if ("haspermission".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("haspermission");
+            return output;
+        }
+        return null;
+    }
 }

@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -35,6 +36,17 @@ public class BaseCommand extends SubCommand {
             }
         });
         return CommandResult.success;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        List<String> output = new ArrayList<String>();
+        for (SubCommand subCommand : subCommands) {
+            Iterable<String> out = subCommand.tabComplete(invoker, sender, args);
+            if (out != null)
+                output.addAll((Collection<? extends String>) out);
+        }
+        return output;
     }
 
     private void continueExecute(ICommand invoker, String sender, String[] args) {
@@ -103,6 +115,9 @@ public class BaseCommand extends SubCommand {
         return output.toArray(new String[output.size()]);
     }
 
+    /*
+     * Runs command for every sequence in command.
+     */
     private void resolveSequences(ICommand invoker, String sender, String[] args) {
         int beginIndex = -1;
         int endIndex = -1;
@@ -134,4 +149,5 @@ public class BaseCommand extends SubCommand {
         // Didn't find any more sequence
         continueExecute(invoker, sender, args);
     }
+
 }

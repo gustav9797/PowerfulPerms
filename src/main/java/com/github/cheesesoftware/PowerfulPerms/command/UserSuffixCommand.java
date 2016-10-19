@@ -1,5 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -69,5 +71,22 @@ public class UserSuffixCommand extends SubCommand {
                 return CommandResult.noMatch;
         } else
             return CommandResult.noPermission;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        if (args.length == 1 && "suffix".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("suffix");
+            return output;
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("suffix")) {
+            List<String> output = new ArrayList<String>();
+            if ("set".startsWith(args[1].toLowerCase()))
+                output.add("set");
+            if ("remove".startsWith(args[1].toLowerCase()))
+                output.add("remove");
+            return output;
+        }
+        return null;
     }
 }

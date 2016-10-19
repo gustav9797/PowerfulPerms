@@ -20,7 +20,7 @@ public class ShowLaddersCommand extends SubCommand {
     public CommandResult execute(ICommand invoker, String sender, String[] args) {
         if (hasBasicPerms(invoker, sender, "powerfulperms.ladders")) {
             if (args != null && args.length == 1 && args[0].equalsIgnoreCase("ladders")) {
-                
+
                 List<String> ladders = new ArrayList<String>();
                 Map<Integer, Group> groups = permissionManager.getGroups();
                 String s = "";
@@ -39,6 +39,16 @@ public class ShowLaddersCommand extends SubCommand {
             return CommandResult.noMatch;
         }
         return CommandResult.noPermission;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        if ("ladders".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("ladders");
+            return output;
+        }
+        return null;
     }
 
 }

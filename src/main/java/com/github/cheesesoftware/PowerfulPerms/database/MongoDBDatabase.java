@@ -117,6 +117,12 @@ public class MongoDBDatabase extends Database {
     }
 
     @Override
+    public DBResult getPlayersCaseInsensitive(String name) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public boolean setPlayerName(UUID uuid, String name) {
         // TODO Auto-generated method stub
         return false;

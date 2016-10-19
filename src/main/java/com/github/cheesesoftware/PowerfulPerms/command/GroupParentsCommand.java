@@ -1,5 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
@@ -67,5 +69,29 @@ public class GroupParentsCommand extends SubCommand {
                 return CommandResult.noMatch;
         } else
             return CommandResult.noPermission;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        if (args.length == 1 && "parents".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("parents");
+            return output;
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("parents")) {
+            List<String> output = new ArrayList<String>();
+            if ("add".startsWith(args[1].toLowerCase()))
+                output.add("add");
+            if ("remove".startsWith(args[1].toLowerCase()))
+                output.add("remove");
+            return output;
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("parents")) {
+            List<String> output = new ArrayList<String>();
+            for (Group group : permissionManager.getGroups().values()) {
+                if (group.getName().toLowerCase().startsWith(args[2].toLowerCase()))
+                    output.add(group.getName());
+            }
+            return output;
+        }
+        return null;
     }
 }

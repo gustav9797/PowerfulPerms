@@ -1,10 +1,12 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
@@ -55,6 +57,34 @@ public class GroupBaseCommand extends SubCommand {
             return CommandResult.noPermission;
         else
             return CommandResult.noMatch;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        List<String> output = new ArrayList<String>();
+        if (args.length == 1 && "group".startsWith(args[0].toLowerCase())) {
+            // Tabcomplete "group"
+            output.add("group");
+            return output;
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("group")) {
+            // Tabcomplete "group <name>"
+            for (Group group : permissionManager.getGroups().values()) {
+                if (group.getName().toLowerCase().startsWith(args[1]))
+                    output.add(group.getName());
+            }
+            return output;
+        } else if (args.length > 2 && args[0].equalsIgnoreCase("group")) {
+            // Tabcomplete "group <name> <something>"
+            String[] newArgs = new String[args.length - 2];
+            System.arraycopy(args, 2, newArgs, 0, args.length - 2);
+            for (SubCommand subCommand : subCommands) {
+                Iterable<String> out = subCommand.tabComplete(invoker, sender, newArgs);
+                if (out != null)
+                    output.addAll((Collection<? extends String>) out);
+            }
+            return output;
+        }
+        return null;
     }
 
     @Override

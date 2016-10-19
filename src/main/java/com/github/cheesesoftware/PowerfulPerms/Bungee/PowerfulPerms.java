@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.Versioner;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
@@ -22,10 +23,8 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.ServerMode;
 import com.google.common.io.ByteStreams;
 
-import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PermissionCheckEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -254,10 +253,8 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         else
             commandSender = ProxyServer.getInstance().getPlayer(name);
 
-        if (commandSender != null) {
-            TextComponent text = new TextComponent(PermissionManagerBase.pluginPrefixShort + message);
-            commandSender.sendMessage(text);
-        }
+        if (commandSender != null)
+            commandSender.sendMessage(PermissionManagerBase.pluginPrefixShort + message);
     }
 
     @Override

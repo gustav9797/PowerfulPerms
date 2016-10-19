@@ -360,10 +360,10 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 // If player UUID exists in database, use that
                 DBResult result;
                 if (plugin.getServerMode() == ServerMode.ONLINE)
-                    result = db.getPlayersNonCaseSensitive(playerName);
+                    result = db.getPlayersCaseInsensitive(playerName);
                 else
                     result = db.getPlayers(playerName);
-                
+
                 if (result.hasNext()) {
                     final DBDocument row = result.next();
                     if (row != null) {
@@ -435,12 +435,14 @@ public abstract class PermissionManagerBase implements PermissionManager {
                         UUIDFetcher fetcher = new UUIDFetcher(list);
                         try {
                             Map<String, UUID> result2 = fetcher.call();
-                            if (result2 != null && result2.containsKey(playerName)) {
-                                UUID uuid = result2.get(playerName);
-                                debug("Retrieved UUID " + uuid);
-                                return uuid;
-                            } else
-                                return null;
+                            if (result2 != null) {
+                                for (Entry<String, UUID> e : result2.entrySet()) {
+                                    if (e.getKey().equalsIgnoreCase(playerName)) {
+                                        debug("Retrieved UUID " + e.getValue());
+                                        return e.getValue();
+                                    }
+                                }
+                            }
 
                         } catch (Exception e) {
                             e.printStackTrace();

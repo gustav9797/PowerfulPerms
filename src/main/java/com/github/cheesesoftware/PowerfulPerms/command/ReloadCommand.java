@@ -1,5 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
@@ -31,4 +34,17 @@ public class ReloadCommand extends SubCommand {
         return CommandResult.noPermission;
     }
 
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        if ("reload".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("reload");
+            return output;
+        } else if ("globalreload".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("globalreload");
+            return output;
+        }
+        return null;
+    }
 }

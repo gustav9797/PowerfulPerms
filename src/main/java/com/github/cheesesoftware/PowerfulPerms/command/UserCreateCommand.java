@@ -1,5 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -37,5 +39,15 @@ public class UserCreateCommand extends SubCommand {
                 return CommandResult.noMatch;
         } else
             return CommandResult.noPermission;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        if ("create".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("create");
+            return output;
+        }
+        return null;
     }
 }

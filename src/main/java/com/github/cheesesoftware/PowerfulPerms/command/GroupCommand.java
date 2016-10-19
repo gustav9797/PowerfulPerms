@@ -76,4 +76,9 @@ public class GroupCommand extends SubCommand {
         return CommandResult.noPermission;
     }
 
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        return null;
+    }
+
 }

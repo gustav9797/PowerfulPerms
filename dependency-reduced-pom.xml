@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.cheesesoftware</groupId>
   <artifactId>PowerfulPerms</artifactId>
-  <version>4.3.3</version>
+  <version>4.4.0</version>
   <build>
     <resources>
       <resource>
@@ -192,6 +192,10 @@
       <id>vault-repo</id>
       <url>http://nexus.hc.to/content/repositories/pub_releases</url>
     </repository>
+    <repository>
+      <id>bungeecord-repo</id>
+      <url>https://oss.sonatype.org/content/groups/public</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>
@@ -225,7 +229,7 @@
     <dependency>
       <groupId>net.md-5</groupId>
       <artifactId>bungeecord-api</artifactId>
-      <version>1.8-SNAPSHOT</version>
+      <version>1.10-SNAPSHOT</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>

@@ -437,7 +437,7 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
-    public DBResult getPlayersNonCaseSensitive(final String name) {
+    public DBResult getPlayersCaseInsensitive(final String name) {
         DBResult result;
         try {
             PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayers + " WHERE `name`=?");

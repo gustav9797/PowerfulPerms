@@ -6,7 +6,7 @@ import java.util.UUID;
 public interface IDatabase {
 
     public void applyPatches();
-    
+
     public boolean ping();
 
     public boolean tableExists(String table);
@@ -23,7 +23,7 @@ public interface IDatabase {
 
     public DBResult getPlayers(String name);
 
-    public DBResult getPlayersNonCaseSensitive(String name);
+    public DBResult getPlayersCaseInsensitive(String name);
 
     public boolean setPlayerName(UUID uuid, String name);
 

@@ -1,6 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -20,7 +22,7 @@ public class UserRemoveGroupCommand extends SubCommand {
 
     @Override
     public CommandResult execute(final ICommand invoker, final String sender, final String[] args) throws InterruptedException, ExecutionException {
-        if (hasBasicPerms(invoker, sender, "powerfulperms.user.removegroup")) {
+        if (hasBasicPerms(invoker, sender, "powerfulperms.user.removegroup") || (args != null && args.length >= 3 && hasPermission(invoker, sender, "powerfulperms.user.removegroup." + args[2]))) {
             if (args != null && args.length >= 2 && args[1].equalsIgnoreCase("removegroup")) {
                 if (args.length < 3) {
                     sendSender(invoker, sender, getUsage());
@@ -63,5 +65,23 @@ public class UserRemoveGroupCommand extends SubCommand {
                 return CommandResult.noMatch;
         } else
             return CommandResult.noPermission;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        if (args.length == 1 && "removegroup".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("removegroup");
+            return output;
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("removegroup")) {
+            // TODO: only suggest groups that the user has
+            List<String> output = new ArrayList<String>();
+            for (Group group : permissionManager.getGroups().values()) {
+                if (group.getName().toLowerCase().startsWith(args[1].toLowerCase()))
+                    output.add(group.getName());
+            }
+            return output;
+        }
+        return null;
     }
 }

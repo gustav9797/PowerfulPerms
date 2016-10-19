@@ -156,4 +156,9 @@ public class UserCommand extends SubCommand {
         } else
             return CommandResult.noPermission;
     }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        return null;
+    }
 }

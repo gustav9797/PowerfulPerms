@@ -1,6 +1,8 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
@@ -52,7 +54,7 @@ public class GroupRemovePermissionCommand extends SubCommand {
                     server = "";
                 if (world.equalsIgnoreCase("all"))
                     world = "";
-                
+
                 ListenableFuture<Response> first = permissionManager.removeGroupPermission(groupId, permission, world, server, expires);
                 sendSender(invoker, sender, first.get().getResponse());
                 return CommandResult.success;
@@ -60,5 +62,16 @@ public class GroupRemovePermissionCommand extends SubCommand {
                 return CommandResult.noMatch;
         } else
             return CommandResult.noPermission;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        if ("remove".startsWith(args[0].toLowerCase())) {
+            List<String> output = new ArrayList<String>();
+            output.add("remove");
+            return output;
+        }
+        // TODO: suggest permission + world + server that the group has
+        return null;
     }
 }

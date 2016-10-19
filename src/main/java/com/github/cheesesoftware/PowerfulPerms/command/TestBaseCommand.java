@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -44,6 +45,27 @@ public class TestBaseCommand extends SubCommand {
             return CommandResult.noPermission;
         else
             return CommandResult.noMatch;
+    }
+
+    @Override
+    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+        List<String> output = new ArrayList<String>();
+        if (args.length == 1 && "test".startsWith(args[0].toLowerCase())) {
+            // Tabcomplete "group"
+            output.add("test");
+            return output;
+        } else if (args.length > 1 && args[0].equalsIgnoreCase("test")) {
+            // Tabcomplete "group <name> <something>"
+            String[] newArgs = new String[args.length - 1];
+            System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+            for (SubCommand subCommand : subCommands) {
+                Iterable<String> out = subCommand.tabComplete(invoker, sender, newArgs);
+                if (out != null)
+                    output.addAll((Collection<? extends String>) out);
+            }
+            return output;
+        }
+        return null;
     }
 
     @Override
