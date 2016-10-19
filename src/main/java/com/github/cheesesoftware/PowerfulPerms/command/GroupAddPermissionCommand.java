@@ -70,7 +70,7 @@ public class GroupAddPermissionCommand extends SubCommand {
     }
 
     @Override
-    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+    public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if ("add".startsWith(args[0].toLowerCase())) {
             List<String> output = new ArrayList<String>();
             output.add("add");

@@ -1,5 +1,7 @@
 package com.github.cheesesoftware.PowerfulPerms.Bungee;
 
+import java.util.List;
+
 import com.github.cheesesoftware.PowerfulPerms.command.BaseCommand;
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
@@ -22,7 +24,15 @@ public class PermissionCommandExecutor extends Command implements ICommand {
     public void execute(CommandSender sender, String[] args) {
         cmd.execute(this, sender.getName(), args);
     }
-    
+
+    public List<String> onTabComplete(CommandSender sender, String[] args) {
+        if (sender.hasPermission("powerfulperms.admin") || sender.hasPermission("powerfulperms.tabcomplete")) {
+            args = BaseCommand.resolveArgs(args);
+            return this.cmd.tabComplete(this, sender.getName(), args);
+        }
+        return null;
+    }
+
     @Override
     public boolean hasPermission(String name, String permission) {
         if (name.equalsIgnoreCase("console"))

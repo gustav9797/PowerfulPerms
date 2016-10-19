@@ -1,7 +1,6 @@
 package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -39,12 +38,12 @@ public class BaseCommand extends SubCommand {
     }
 
     @Override
-    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+    public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         List<String> output = new ArrayList<String>();
         for (SubCommand subCommand : subCommands) {
-            Iterable<String> out = subCommand.tabComplete(invoker, sender, args);
+            List<String> out = subCommand.tabComplete(invoker, sender, args);
             if (out != null)
-                output.addAll((Collection<? extends String>) out);
+                output.addAll(out);
         }
         return output;
     }

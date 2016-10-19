@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +28,7 @@ import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PermissionCheckEvent;
+import net.md_5.bungee.api.event.TabCompleteEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
@@ -39,6 +41,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
 
     private PowerfulPermissionManager permissionManager;
     private Configuration config;
+    private PermissionCommandExecutor commandExecutor;
 
     private File customConfigFile = null;
     private Configuration customConfig = null;
@@ -85,7 +88,8 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         this.getProxy().getPluginManager().registerListener(this, this);
         this.getProxy().getPluginManager().registerListener(this, permissionManager);
 
-        getProxy().getPluginManager().registerCommand(this, new PermissionCommandExecutor(permissionManager));
+        this.commandExecutor = new PermissionCommandExecutor(permissionManager);
+        getProxy().getPluginManager().registerCommand(this, commandExecutor);
 
         if (getCustomConfig().getInt("oldversion", -1) == -1 || oldVersion != currentVersion) {
             getCustomConfig().set("oldversion", currentVersion);
@@ -97,6 +101,37 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     public void onDisable() {
         if (permissionManager != null)
             permissionManager.onDisable();
+    }
+
+    @EventHandler
+    public void onTab(TabCompleteEvent e) {
+        if (e.getSender() instanceof ProxiedPlayer) {
+            ProxiedPlayer player = (ProxiedPlayer) e.getSender();
+            String[] args = e.getCursor().split(" ");
+            if (args != null && args.length > 0 && args[0].startsWith("/"))
+                args[0] = args[0].substring(1);
+            boolean isPowerfulPerms = false;
+            for (String alias : this.commandExecutor.getAliases()) {
+                if (alias.equalsIgnoreCase(args[0])) {
+                    isPowerfulPerms = true;
+                    break;
+                }
+            }
+            if (isPowerfulPerms || this.commandExecutor.getName().equalsIgnoreCase(args[0])) {
+                String[] newArgs = new String[args.length - 1];
+                System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+                if (newArgs.length <= 0 || e.getCursor().endsWith(" ")) {
+                    String[] newArgsTemp = new String[newArgs.length + 1];
+                    System.arraycopy(args, 0, newArgsTemp, 0, newArgs.length);
+                    newArgsTemp[newArgs.length] = " ";
+                    newArgs = newArgsTemp;
+                }
+                List<String> out = this.commandExecutor.onTabComplete(player, newArgs);
+                if (out != null)
+                    e.getSuggestions().addAll(out);
+            }
+        }
+
     }
 
     public void reloadCustomConfig() {

@@ -52,7 +52,7 @@ public class UserSetRankCommand extends SubCommand {
     }
 
     @Override
-    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+    public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "setrank".startsWith(args[0].toLowerCase())) {
             List<String> output = new ArrayList<String>();
             output.add("setrank");

@@ -52,7 +52,7 @@ public class ShowGroupsCommand extends SubCommand {
     }
 
     @Override
-    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+    public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "groups".startsWith(args[0].toLowerCase())) {
             List<String> output = new ArrayList<String>();
             output.add("groups");

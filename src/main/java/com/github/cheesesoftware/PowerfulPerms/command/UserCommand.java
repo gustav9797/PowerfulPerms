@@ -158,7 +158,7 @@ public class UserCommand extends SubCommand {
     }
 
     @Override
-    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+    public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         return null;
     }
 }

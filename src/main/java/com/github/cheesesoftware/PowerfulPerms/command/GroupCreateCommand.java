@@ -54,7 +54,7 @@ public class GroupCreateCommand extends SubCommand {
     }
 
     @Override
-    public Iterable<String> tabComplete(ICommand invoker, String sender, String[] args) {
+    public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "create".startsWith(args[0].toLowerCase())) {
             List<String> output = new ArrayList<String>();
             output.add("create");
