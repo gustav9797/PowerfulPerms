@@ -1594,7 +1594,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     for (Entry<String, List<CachedGroup>> e : result.entrySet()) {
                         if (any || e.getKey().equalsIgnoreCase(serverFinal)) {
                             for (CachedGroup cachedGroup : e.getValue()) {
-                                if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires))
+                                if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated && Utils.dateApplies(cachedGroup.getExpirationDate(), expires))
                                     ++amountToDelete;
                             }
                         }
@@ -1612,7 +1612,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     for (Entry<String, List<CachedGroup>> e : result.entrySet()) {
                         if (any || e.getKey().equalsIgnoreCase(serverFinal)) {
                             for (CachedGroup cachedGroup : e.getValue()) {
-                                if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
+                                if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated && Utils.dateApplies(cachedGroup.getExpirationDate(), expires)) {
                                     if (db.deletePlayerGroup(uuid, cachedGroup.getGroupId(), e.getKey(), cachedGroup.isNegated(), cachedGroup.getExpirationDate()))
                                         ++amount;
                                 }
@@ -1688,7 +1688,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                                     return new Response(true, "Group expiration changed.");
                                 }
                             }
-                        } else if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires))
+                        } else if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated && Utils.dateApplies(cachedGroup.getExpirationDate(), expires))
                             return new Response(false, "Player already has this group.");
                     }
 
