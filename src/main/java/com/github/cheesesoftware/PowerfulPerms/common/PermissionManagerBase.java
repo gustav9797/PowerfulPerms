@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.github.cheesesoftware.PowerfulPerms.Redis.RedisConnection;
+import com.github.cheesesoftware.PowerfulPerms.command.Utils;
 import com.github.cheesesoftware.PowerfulPerms.common.event.PowerfulEventHandler;
 import com.github.cheesesoftware.PowerfulPerms.database.DBResult;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
@@ -1440,14 +1441,54 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
             @Override
             public Response call() throws Exception {
-                DBResult result = db.deletePlayerPermission(uuid, permission, world, server, expires);
-                if (result.booleanValue()) {
-                    int amount = result.rowsChanged();
+                boolean anyServer = false;
+                if (server.equalsIgnoreCase("any"))
+                    anyServer = true;
+                String tempServer = server;
+                if (server.equalsIgnoreCase("all"))
+                    tempServer = "";
+
+                boolean anyWorld = false;
+                if (world.equalsIgnoreCase("any"))
+                    anyWorld = true;
+                String tempWorld = world;
+                if (world.equalsIgnoreCase("all"))
+                    tempWorld = "";
+
+                ListenableFuture<List<Permission>> first = getPlayerOwnPermissions(uuid);
+                List<Permission> result = first.get();
+                if (result != null) {
+                    List<Permission> toDelete = new ArrayList<Permission>();
+                    for (Permission e : result) {
+                        if (e.getPermissionString().equalsIgnoreCase(permission)) {
+                            if (anyServer || e.getServer().equalsIgnoreCase(tempServer)) {
+                                if (anyWorld || e.getWorld().equalsIgnoreCase(tempWorld)) {
+                                    if (Utils.dateApplies(e.getExpirationDate(), expires)) {
+                                        toDelete.add(e);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (toDelete.isEmpty())
+                        return new Response(false, "Player does not have this permission.");
+
+                    int deleted = 0;
+                    for (Permission e : toDelete) {
+                        DBResult dbresult = db.deletePlayerPermission(uuid, e.getPermissionString(), e.getWorld(), e.getServer(), e.getExpirationDate());
+                        if (dbresult.booleanValue())
+                            deleted += dbresult.rowsChanged();
+                    }
+
                     reloadPlayer(uuid, true);
                     notifyReloadPlayer(uuid);
-                    return new Response(true, "Removed " + amount + " permissions from the player.");
+                    if (deleted > 0)
+                        return new Response(true, "Removed " + deleted + " of " + toDelete.size() + " player permissions.");
+                    else
+                        return new Response(false, "Removed " + deleted + " of " + toDelete.size() + " player permissions.");
                 } else
-                    return new Response(false, "Player does not have the specified permission.");
+                    return new Response(false, "Player does not exist.");
             }
         });
         return listenableFuture;
@@ -1534,6 +1575,9 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 String tempServer = server;
                 if (server.equalsIgnoreCase("all"))
                     tempServer = "";
+                boolean any = false;
+                if (server.equalsIgnoreCase("any"))
+                    any = true;
 
                 final String serverFinal = tempServer;
 
@@ -1544,35 +1588,44 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> first = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> result = first.get();
                 if (result != null) {
-                    boolean removed = false;
-                    List<CachedGroup> groupList = result.get(serverFinal);
-                    if (groupList == null)
-                        groupList = new ArrayList<CachedGroup>();
-                    Iterator<CachedGroup> it = groupList.iterator();
-                    while (it.hasNext()) {
-                        CachedGroup cachedGroup = it.next();
-                        debug("Check " + cachedGroup.getGroupId());
-                        debug("plus " + (expires == null) + " - " + (cachedGroup.getExpirationDate() == null));
-                        debug("plus " + negated + " - " + cachedGroup.isNegated());
-                        debug("plus " + groupId + " - " + cachedGroup.getGroupId());
-                        if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
-                            it.remove();
-                            removed = true;
+
+                    // Calc amount to see if there are any to remove at all.
+                    int amountToDelete = 0;
+                    for (Entry<String, List<CachedGroup>> e : result.entrySet()) {
+                        if (any || e.getKey().equalsIgnoreCase(serverFinal)) {
+                            for (CachedGroup cachedGroup : e.getValue()) {
+                                if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires))
+                                    ++amountToDelete;
+                            }
                         }
                     }
 
-                    if (!removed)
+                    if (amountToDelete == 0)
                         return new Response(false, "Player does not have this group.");
 
+                    // Important: copy default groups
                     ListenableFuture<Response> second = copyDefaultGroupsIfDefault(uuid);
                     second.get();
-                    boolean deleted = db.deletePlayerGroup(uuid, groupId, serverFinal, negated, expires);
-                    if (deleted) {
-                        reloadPlayer(uuid, true);
-                        notifyReloadPlayer(uuid);
-                        return new Response(true, "Player group removed.");
-                    } else
-                        return new Response(false, "Could not remove player group. Check console for errors.");
+
+                    // Reset amount and actually remove.
+                    int amount = 0;
+                    for (Entry<String, List<CachedGroup>> e : result.entrySet()) {
+                        if (any || e.getKey().equalsIgnoreCase(serverFinal)) {
+                            for (CachedGroup cachedGroup : e.getValue()) {
+                                if (CachedGroup.isSimilar(cachedGroup, groupId, negated, expires)) {
+                                    if (db.deletePlayerGroup(uuid, cachedGroup.getGroupId(), e.getKey(), cachedGroup.isNegated(), cachedGroup.getExpirationDate()))
+                                        ++amount;
+                                }
+                            }
+                        }
+                    }
+
+                    reloadPlayer(uuid, true);
+                    notifyReloadPlayer(uuid);
+                    if (amount > 0)
+                        return new Response(true, "Removed " + amount + " of " + amountToDelete + " player groups.");
+                    else
+                        return new Response(false, "Removed " + amount + " of " + amountToDelete + " player groups.");
                 } else
                     return new Response(false, "Player does not exist.");
             }
@@ -1616,9 +1669,12 @@ public abstract class PermissionManagerBase implements PermissionManager {
                     final Iterator<CachedGroup> it = groupList.iterator();
                     while (it.hasNext()) {
                         CachedGroup cachedGroup = it.next();
-                        if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated && cachedGroup.willExpire()) {
+                        if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated) {
                             // Update expiration date instead
-                            final Date newExpiry = new Date(cachedGroup.getExpirationDate().getTime() + (expires.getTime() - now.getTime()));
+                            final Date newExpiry = (expires == null || cachedGroup.getExpirationDate() == null ? expires
+                                    : new Date(cachedGroup.getExpirationDate().getTime() + (expires.getTime() - now.getTime())));
+                            if (newExpiry == cachedGroup.getExpirationDate() || (newExpiry != null && newExpiry.equals(cachedGroup.getExpirationDate())))
+                                return new Response(false, "Player already has this group.");
                             boolean deleted = db.deletePlayerGroup(uuid, cachedGroup.getGroupId(), serverFinal, cachedGroup.isNegated(), cachedGroup.getExpirationDate());
                             if (!deleted) {
                                 return new Response(false, "Could not update player group expiration date. Check console for any errors.");
@@ -2050,13 +2106,52 @@ public abstract class PermissionManagerBase implements PermissionManager {
             public Response call() throws Exception {
                 Group group = getGroup(groupId);
                 if (group != null) {
-                    DBResult result = db.deleteGroupPermission(groupId, permission, world, server, expires);
-                    if (result.booleanValue()) {
-                        loadGroups(true);
-                        notifyReloadGroups();
-                        return new Response(true, "Removed " + result.rowsChanged() + " permissions from the group.");
-                    } else
-                        return new Response(false, "Group does not have the specified permission.");
+
+                    boolean anyServer = false;
+                    if (server.equalsIgnoreCase("any"))
+                        anyServer = true;
+                    String tempServer = server;
+                    if (server.equalsIgnoreCase("all"))
+                        tempServer = "";
+
+                    boolean anyWorld = false;
+                    if (world.equalsIgnoreCase("any"))
+                        anyWorld = true;
+                    String tempWorld = world;
+                    if (world.equalsIgnoreCase("all"))
+                        tempWorld = "";
+
+                    List<Permission> groupPermissions = group.getOwnPermissions();
+                    List<Permission> toDelete = new ArrayList<Permission>();
+                    for (Permission e : groupPermissions) {
+                        if (e.getPermissionString().equalsIgnoreCase(permission)) {
+                            if (anyServer || e.getServer().equalsIgnoreCase(tempServer)) {
+                                if (anyWorld || e.getWorld().equalsIgnoreCase(tempWorld)) {
+                                    if (Utils.dateApplies(e.getExpirationDate(), expires)) {
+                                        toDelete.add(e);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (toDelete.isEmpty())
+                        return new Response(false, "The group does not have this permission.");
+
+                    int deleted = 0;
+                    for (Permission e : toDelete) {
+                        DBResult result = db.deleteGroupPermission(groupId, e.getPermissionString(), e.getWorld(), e.getServer(), e.getExpirationDate());
+                        if (result.booleanValue())
+                            deleted += result.rowsChanged();
+                    }
+
+                    loadGroups(true);
+                    notifyReloadGroups();
+                    if (deleted > 0)
+                        return new Response(true, "Removed " + deleted + " of " + toDelete.size() + " group permissions.");
+                    else
+                        return new Response(false, "Removed " + deleted + " of " + toDelete.size() + " group permissions.");
+
                 } else
                     return new Response(false, "Group does not exist.");
             }

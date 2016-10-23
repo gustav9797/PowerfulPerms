@@ -42,8 +42,11 @@ public class UserRemovePermissionCommand extends SubCommand {
                         server = args[3];
                     if (args.length >= 5)
                         world = args[4];
-                    if (args.length >= 6) {
-                        expires = Utils.getDate(args[5]);
+                    if (args.length >= 6 && !args[5].equalsIgnoreCase("NONE")) {
+                        if (args[5].equalsIgnoreCase("ANY"))
+                            expires = Utils.getAnyDate();
+                        else
+                            expires = Utils.getDate(args[5]);
                         if (expires == null) {
                             sendSender(invoker, sender, "Invalid expiration format.");
                             return CommandResult.success;

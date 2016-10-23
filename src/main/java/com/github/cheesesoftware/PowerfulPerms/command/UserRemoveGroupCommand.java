@@ -49,8 +49,11 @@ public class UserRemoveGroupCommand extends SubCommand {
                     Date expires = null;
                     if (args.length >= 4)
                         server = args[3];
-                    if (args.length >= 5) {
-                        expires = Utils.getDate(args[4]);
+                    if (args.length >= 5 && !args[4].equalsIgnoreCase("NONE")) {
+                        if (args[4].equalsIgnoreCase("ANY"))
+                            expires = Utils.getAnyDate();
+                        else
+                            expires = Utils.getDate(args[4]);
                         if (expires == null) {
                             sendSender(invoker, sender, "Invalid expiration format.");
                             return CommandResult.success;

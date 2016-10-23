@@ -4,7 +4,7 @@ import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 
-class Utils {
+public class Utils {
 
     public static Date getDate(String date) {
         java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -71,5 +71,23 @@ class Utils {
             return null;
         java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return dateFormat.format(expires);
+    }
+
+    public static boolean isAny(Date expires) {
+        return expires != null && expires.getTime() == 0;
+    }
+
+    public static Date getAnyDate() {
+        return new Date(0);
+    }
+
+    public static boolean dateApplies(Date date, Date input) {
+        if (date == null && input == null)
+            return true;
+        else if (Utils.isAny(input))
+            return true;
+        else if (date == null || input == null)
+            return false;
+        return date.equals(input);
     }
 }
