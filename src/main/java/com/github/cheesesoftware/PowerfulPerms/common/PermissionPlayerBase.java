@@ -110,7 +110,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         }
     }
 
-    public static List<Group> getGroups(List<CachedGroup> groups) {
+    public static List<Group> getGroups(List<CachedGroup> groups, PowerfulPermsPlugin plugin) {
         List<Group> output = new ArrayList<Group>();
 
         Iterator<CachedGroup> it1 = groups.iterator();
@@ -144,7 +144,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
      */
     @Override
     public List<Group> getGroups(String server) {
-        return getGroups(getCachedGroups(server));
+        return getGroups(getCachedGroups(server), plugin);
     }
 
     /**
@@ -330,7 +330,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         return suffix;
     }
 
-    public static List<String> calculatePermissions(String playerServer, String playerWorld, List<Group> input, PermissionContainer out) {
+    public static List<String> calculatePermissions(String playerServer, String playerWorld, List<Group> input, PermissionContainer out, PowerfulPermsPlugin plugin) {
         ArrayList<Permission> unprocessedPerms = new ArrayList<Permission>();
 
         // Add permissions from groups in normal order.

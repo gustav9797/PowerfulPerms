@@ -62,12 +62,12 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     public void updatePermissions() {
         this.updateGroups(PermissionManagerBase.serverName);
 
-        List<String> perms = PermissionPlayerBase.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName(), super.getGroups(), this);
-        List<String> realPerms = calculateRealPermissions(perms);
+        List<String> perms = PermissionPlayerBase.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName(), super.getGroups(), this, plugin);
+        List<String> realPerms = calculateRealPermissions(perms, plugin);
         super.setRealPermissions(realPerms);
     }
 
-    public static List<String> calculateRealPermissions(List<String> perms) {
+    public static List<String> calculateRealPermissions(List<String> perms, PowerfulPermsPlugin plugin) {
         List<String> realPerms = new ArrayList<String>();
         for (String permString : perms) {
             boolean invert = false;
@@ -80,12 +80,12 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
                 realPerms.add(permString);
             org.bukkit.permissions.Permission perm = Bukkit.getPluginManager().getPermission(permString);
             if (perm != null)
-                realPerms.addAll(calculateChildPermissions(perm.getChildren(), invert));
+                realPerms.addAll(calculateChildPermissions(perm.getChildren(), invert, plugin));
         }
         return realPerms;
     }
 
-    private static List<String> calculateChildPermissions(Map<String, Boolean> children, boolean invert) {
+    private static List<String> calculateChildPermissions(Map<String, Boolean> children, boolean invert, PowerfulPermsPlugin plugin) {
         Set<String> keys = children.keySet();
         if (keys.size() > 0) {
             List<String> perms = new ArrayList<String>();
@@ -103,7 +103,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
                 plugin.debug("added perm " + lname + " value " + value);
 
                 if (perm != null) {
-                    perms.addAll(calculateChildPermissions(perm.getChildren(), !value));
+                    perms.addAll(calculateChildPermissions(perm.getChildren(), !value, plugin));
                 }
             }
 

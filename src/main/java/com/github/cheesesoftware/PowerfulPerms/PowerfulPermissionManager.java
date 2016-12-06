@@ -138,8 +138,8 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                     if ((world == null || world.isEmpty() || world.equalsIgnoreCase("all")) && (server == null || server.isEmpty() || server.equalsIgnoreCase("all")))
                         return player.hasPermission(permission);
                     PermissionContainer permissionContainer = new PermissionContainer(player.getPermissions());
-                    List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer);
-                    List<String> realPerms = PowerfulPermissionPlayer.calculateRealPermissions(perms);
+                    List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer, plugin);
+                    List<String> realPerms = PowerfulPermissionPlayer.calculateRealPermissions(perms, plugin);
                     permissionContainer.setRealPermissions(realPerms);
                     OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
                     permissionContainer.setTemporaryPrePermissions(CustomPermissibleBase.getTemporaryPrePermissions((offlinePlayer != null ? offlinePlayer.isOp() : false)));
@@ -149,12 +149,12 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
-                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
                 PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissions(uuid).get());
-                List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer);
+                List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer, plugin);
                 // Player own permissions have been added. Permissions from player groups have been added. In relation to world and server.
 
-                List<String> realPerms = PowerfulPermissionPlayer.calculateRealPermissions(perms);
+                List<String> realPerms = PowerfulPermissionPlayer.calculateRealPermissions(perms, plugin);
                 permissionContainer.setRealPermissions(realPerms);
                 // Child permissions have been added.
 

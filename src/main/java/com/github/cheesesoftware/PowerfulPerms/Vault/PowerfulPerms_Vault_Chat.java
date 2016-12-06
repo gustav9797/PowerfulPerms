@@ -141,6 +141,8 @@ public class PowerfulPerms_Vault_Chat extends Chat {
     public String getGroupVaultVariable(String groupName, String node, String world) {
         Group group = permissionManager.getGroup(groupName);
         if (group != null) {
+            if (node.equalsIgnoreCase("rank"))
+                return group.getRank() + "";
             return getVaultVariable(group.getOwnPermissions(), node, world);
         }
         return null;

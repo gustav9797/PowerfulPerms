@@ -191,14 +191,14 @@
 			<id>jitpack.io</id>
 			<url>https://jitpack.io/</url>
 		</repository>
-        <repository>
-            <id>vault-repo</id>
-            <url>http://nexus.hc.to/content/repositories/pub_releases</url>
-        </repository>
-        <repository>
-            <id>bungeecord-repo</id>
-            <url>https://oss.sonatype.org/content/groups/public</url>
-        </repository>
+		<repository>
+			<id>vault-repo</id>
+			<url>http://nexus.hc.to/content/repositories/pub_releases</url>
+		</repository>
+		<repository>
+			<id>bungeecord-repo</id>
+			<url>https://oss.sonatype.org/content/groups/public</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
@@ -210,13 +210,13 @@
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
-			<version>1.10.2-R0.1-SNAPSHOT</version>
+			<version>1.11-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>net.md-5</groupId>
 			<artifactId>bungeecord-api</artifactId>
-			<version>1.10-SNAPSHOT</version>
+			<version>1.11-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -268,5 +268,5 @@
 			<version>2.13.3</version>
 		</dependency>
 	</dependencies>
-	<version>4.4.0</version>
+	<version>4.4.1</version>
 </project>

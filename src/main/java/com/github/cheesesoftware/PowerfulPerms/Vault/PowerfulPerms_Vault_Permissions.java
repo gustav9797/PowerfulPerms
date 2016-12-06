@@ -53,7 +53,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
             ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = permissionManager.getPlayerCurrentGroups(uuid);
             LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
             List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
-            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
             List<String> groupNames = new ArrayList<String>();
             for (Group group : groups)
                 groupNames.add(group.getName());
@@ -72,7 +72,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
             ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = permissionManager.getPlayerCurrentGroups(uuid);
             LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
             List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
-            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
             Group group = PermissionPlayerBase.getPrimaryGroup(groups);
             if (group != null)
                 return group.getName();

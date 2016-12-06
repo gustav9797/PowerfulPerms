@@ -940,7 +940,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> future = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> result = future.get();
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(serverName, result);
-                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
                 return PermissionPlayerBase.getPrimaryGroup(groups);
             }
         });
@@ -1233,7 +1233,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(serverName, currentGroups);
-                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
                 String prefix = "";
                 if (ladder != null)
                     prefix = PermissionPlayerBase.getPrefix(ladder, groups);
@@ -1267,7 +1267,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(serverName, currentGroups);
-                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
                 String suffix = "";
                 if (ladder != null)
                     suffix = PermissionPlayerBase.getSuffix(ladder, groups);

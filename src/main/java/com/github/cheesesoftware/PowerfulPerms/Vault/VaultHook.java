@@ -16,7 +16,7 @@ public class VaultHook {
         Plugin vault = Bukkit.getPluginManager().getPlugin("Vault");
         PowerfulPerms_Vault_Permissions vaultPermsHook = new PowerfulPerms_Vault_Permissions(plugin);
         PowerfulPerms_Vault_Chat vaultChatHook = new PowerfulPerms_Vault_Chat(vaultPermsHook, plugin);
-        Bukkit.getServicesManager().register(net.milkbowl.vault.permission.Permission.class, vaultPermsHook, vault, ServicePriority.Normal);
-        Bukkit.getServicesManager().register(net.milkbowl.vault.chat.Chat.class, vaultChatHook, vault, ServicePriority.Normal);
+        Bukkit.getServicesManager().register(net.milkbowl.vault.permission.Permission.class, vaultPermsHook, vault, ServicePriority.High);
+        Bukkit.getServicesManager().register(net.milkbowl.vault.chat.Chat.class, vaultChatHook, vault, ServicePriority.High);
     }
 }

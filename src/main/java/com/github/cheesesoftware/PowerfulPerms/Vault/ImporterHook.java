@@ -18,10 +18,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import eu.taigacraft.importer.permissions.PermissionsImporter;
 
 public class ImporterHook implements eu.taigacraft.importer.permissions.PermissionsImporter {
-
+    
+    PowerfulPermsPlugin plugin;
     PermissionManager permissionManager;
 
     public void hook(PowerfulPermsPlugin plugin) {
+        this.plugin = plugin;
         permissionManager = plugin.getPermissionManager();
         PermissionsImporter.register("PowerfulPerms", this);
     }
@@ -115,7 +117,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
             ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = permissionManager.getPlayerCurrentGroups(player.getUniqueId());
             LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
             List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
-            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
             List<String> groupNames = new ArrayList<String>();
             for (Group group : groups)
                 groupNames.add(group.getName());

@@ -96,15 +96,15 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                     if ((world == null || world.isEmpty() || world.equalsIgnoreCase("all")) && (server == null || server.isEmpty() || server.equalsIgnoreCase("all")))
                         return player.hasPermission(permission);
                     PermissionContainer permissionContainer = new PermissionContainer(player.getPermissions());
-                    permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer));
+                    permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer, plugin));
                     return permissionContainer.hasPermission(permission);
                 }
                 ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
                 LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
-                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
                 PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissions(uuid).get());
-                permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer));
+                permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer, plugin));
                 // Player own permissions have been added. Permissions from player groups have been added. In relation to world and server.
                 return permissionContainer.hasPermission(permission);
             }
