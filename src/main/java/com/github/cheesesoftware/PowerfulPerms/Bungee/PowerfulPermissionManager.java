@@ -27,11 +27,11 @@ import net.md_5.bungee.event.EventPriority;
 
 public class PowerfulPermissionManager extends PermissionManagerBase implements Listener {
 
-    private PowerfulPerms plugin;
+    private PowerfulPerms bungeePlugin;
 
     public PowerfulPermissionManager(Database database, PowerfulPerms plugin, String serverName) {
         super(database, plugin, serverName);
-        this.plugin = plugin;
+        this.bungeePlugin = plugin;
         loadGroups(true, true);
     }
 
@@ -49,14 +49,14 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
         debug("LoginEvent " + e.getConnection().getName());
 
         if (!e.isCancelled()) {
-            e.registerIntent(plugin);
-            plugin.getProxy().getScheduler().schedule(plugin, new Runnable() {
+            e.registerIntent(bungeePlugin);
+            bungeePlugin.getProxy().getScheduler().schedule(bungeePlugin, new Runnable() {
 
                 @Override
                 public void run() {
                     loadPlayer(e.getConnection().getUniqueId(), e.getConnection().getName(), true, true);
                     debug("LoginEvent uuid " + e.getConnection().getUniqueId().toString());
-                    e.completeIntent(plugin);
+                    e.completeIntent(bungeePlugin);
                 }
             }, 0, TimeUnit.MILLISECONDS);
         } else
@@ -114,12 +114,14 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
 
     @Override
     public void reloadPlayers() {
-        for (ProxiedPlayer p : plugin.getProxy().getPlayers()) {
-            if (containsPermissionPlayer(p.getUniqueId())) {
-                loadPlayer(p.getUniqueId(), p.getName(), false, false);
-            } else {
-                loadPlayer(p.getUniqueId(), p.getName(), true, true);
-                loadCachedPlayer(p);
+        if (bungeePlugin != null) {
+            for (ProxiedPlayer p : bungeePlugin.getProxy().getPlayers()) {
+                if (containsPermissionPlayer(p.getUniqueId())) {
+                    loadPlayer(p.getUniqueId(), p.getName(), false, false);
+                } else {
+                    loadPlayer(p.getUniqueId(), p.getName(), true, true);
+                    loadCachedPlayer(p);
+                }
             }
         }
     }

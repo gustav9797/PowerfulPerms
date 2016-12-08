@@ -24,10 +24,8 @@ public class RedisConnection {
 
     private JedisPool pool;
     private JedisPubSub subscriber;
-    private Jedis subscriberJedis;
-    private boolean needsSubscription = true;
-
-    private static String redisMessage = "Unable to connect to your Redis server. Make sure the config is correct.";
+    private Jedis jedis;
+    private boolean isSubscribing = false;
 
     private int taskId;
 
@@ -52,10 +50,12 @@ public class RedisConnection {
     }
 
     private void setupPool() {
+        GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+        config.setTestOnBorrow(true);
         if (password == null || password.isEmpty())
-            pool = new JedisPool(new GenericObjectPoolConfig(), ip, port, timeout);
+            pool = new JedisPool(config, ip, port, timeout);
         else
-            pool = new JedisPool(new GenericObjectPoolConfig(), ip, port, timeout, password);
+            pool = new JedisPool(config, ip, port, timeout, password);
     }
 
     private void setupSubscriber() {
@@ -95,55 +95,79 @@ public class RedisConnection {
                     }
                 }, false);
             }
+
+            @Override
+            public void onSubscribe(String channel, int subscribedChannels) {
+                isSubscribing = false;
+            }
+
+            @Override
+            public void onUnsubscribe(String channel, int subscribedChannels) {
+                isSubscribing = false;
+            }
         });
     }
 
     private void subscribeSubscriber() {
-        permissionManager.getScheduler().runAsync(new Runnable() {
-            public void run() {
-                try {
-                    subscriberJedis = new Jedis(ip, port);
-                    if (password != null && !password.isEmpty())
-                        subscriberJedis.auth(password);
-                    needsSubscription = false;
-                    subscriberJedis.subscribe(subscriber, "PowerfulPerms");
-                } catch (JedisConnectionException e) {
-                    if (pool != null)
-                        pool.destroy();
-                    needsSubscription = true;
-                    e.printStackTrace();
-                    plugin.getLogger().warning(redisMessage);
-                } finally {
-                    if (subscriberJedis != null)
-                        subscriberJedis.close();
+        try {
+            jedis = new Jedis(ip, port);
+            if (password != null && !password.isEmpty())
+                jedis.auth(password);
+            isSubscribing = true;
+            permissionManager.getScheduler().runAsync(new Runnable() {
+                public void run() {
+                    try {
+                        if (subscriber != null && subscriber.isSubscribed())
+                            subscriber.unsubscribe();
+                        setupSubscriber();
+                        jedis.subscribe(subscriber, "PowerfulPerms");
+                    } catch (JedisConnectionException e) {
+                        isSubscribing = false;
+                        plugin.getLogger().warning("Redis connection failed: " + e.getMessage());
+                    } finally {
+                        if (jedis != null)
+                            jedis.close();
+                        subscriber = null;
+                        if (pool != null)
+                            pool.close();
+                    }
                 }
-            }
-        }, false);
+            }, false);
+
+        } catch (JedisConnectionException e) {
+            isSubscribing = false;
+            if (jedis != null)
+                jedis.close();
+            subscriber = null;
+            if (pool != null)
+                pool.close();
+            plugin.getLogger().warning("Could not connect to your Redis server: " + e.getMessage());
+        }
     }
 
     public Jedis getConnection() {
         if (pool == null || pool.isClosed()) {
+            if (pool != null)
+                pool.destroy();
             plugin.getLogger().info("Setting up Redis pool.");
             setupPool();
-        } else if (subscriber == null) {
+        }
+        if (subscriber == null) {
             plugin.getLogger().info("Setting up Redis subscriber.");
             setupSubscriber();
         }
+        if (subscriber != null && !subscriber.isSubscribed() && !isSubscribing)
+            subscribeSubscriber();
 
         Jedis jedis = null;
         try {
             jedis = pool.getResource();
-            if (!subscriber.isSubscribed() || needsSubscription) {
-                subscribeSubscriber();
-            }
         } catch (JedisConnectionException e) {
             if (jedis != null)
                 jedis.close();
             if (pool != null)
-                pool.destroy();
-            needsSubscription = true;
-            e.printStackTrace();
-            plugin.getLogger().severe(redisMessage);
+                pool.close();
+            plugin.getLogger().warning("Could not connect to your Redis server: " + e.getMessage());
         }
         return jedis;
     }
@@ -152,7 +176,7 @@ public class RedisConnection {
         if (subscriber != null)
             subscriber.unsubscribe();
         if (pool != null)
-            pool.destroy();
+            pool.close();
         permissionManager.getScheduler().stopRepeating(taskId);
     }
 }

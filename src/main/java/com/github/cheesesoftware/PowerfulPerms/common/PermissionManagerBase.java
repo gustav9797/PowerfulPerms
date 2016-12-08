@@ -485,7 +485,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void notifyReloadGroups() {
-        if (redisEnabled) {
+        if (redisEnabled && redis != null) {
             plugin.runTaskAsynchronously(new Runnable() {
                 public void run() {
                     Jedis jedis = redis.getConnection();
@@ -500,7 +500,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
 
     @Override
     public void notifyReloadPlayers() {
-        if (redisEnabled) {
+        if (redisEnabled && redis != null) {
             plugin.runTaskAsynchronously(new Runnable() {
                 public void run() {
                     Jedis jedis = redis.getConnection();
@@ -517,7 +517,7 @@ public abstract class PermissionManagerBase implements PermissionManager {
     public void notifyReloadPlayer(final UUID uuid) {
         if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
             notifyReloadPlayers();
-        } else if (redisEnabled) {
+        } else if (redisEnabled && redis != null) {
             plugin.runTaskAsynchronously(new Runnable() {
                 public void run() {
                     Jedis jedis = redis.getConnection();
