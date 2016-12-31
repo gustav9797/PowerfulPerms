@@ -11,6 +11,7 @@ public class PermissionContainer {
 
     protected List<Permission> ownPermissions = new ArrayList<Permission>();
     protected List<String> realPermissions = new ArrayList<String>();
+    protected List<Permission> allPermissions = new ArrayList<Permission>();
     protected List<String> temporaryPrePermissions = new ArrayList<String>();
     protected List<String> temporaryPostPermissions = new ArrayList<String>();
 
@@ -102,10 +103,10 @@ public class PermissionContainer {
         boolean isSameServer = false;
         boolean isSameWorld = false;
 
-        if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || playerServer == null || e.getServer().equals(playerServer))
+        if (e.getServer().isEmpty() || e.getServer().equalsIgnoreCase("ALL") || playerServer == null || e.getServer().equalsIgnoreCase(playerServer))
             isSameServer = true;
 
-        if (e.getWorld().isEmpty() || e.getWorld().equalsIgnoreCase("ALL") || playerWorld == null || e.getWorld().equals(playerWorld))
+        if (e.getWorld().isEmpty() || e.getWorld().equalsIgnoreCase("ALL") || playerWorld == null || e.getWorld().equalsIgnoreCase(playerWorld))
             isSameWorld = true;
 
         if (isSameServer && isSameWorld)
@@ -132,6 +133,18 @@ public class PermissionContainer {
         }
     }
 
+    /**
+     * Returns all permissions for this player.
+     */
+    public List<Permission> getAllPermissions() {
+        asyncPermLock.lock();
+        try {
+            return new ArrayList<Permission>(this.allPermissions);
+        } finally {
+            asyncPermLock.unlock();
+        }
+    }
+
     public boolean isPermissionSet(String permission) {
         return preHasPermission(permission) != null;
     }
@@ -147,6 +160,15 @@ public class PermissionContainer {
         asyncPermLock.lock();
         try {
             this.realPermissions = new ArrayList<String>(permissions);
+        } finally {
+            asyncPermLock.unlock();
+        }
+    }
+
+    public void setAllPermissions(List<Permission> permissions) {
+        asyncPermLock.lock();
+        try {
+            this.allPermissions = new ArrayList<Permission>(permissions);
         } finally {
             asyncPermLock.unlock();
         }

@@ -62,9 +62,11 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     public void updatePermissions() {
         this.updateGroups(PermissionManagerBase.serverName);
 
-        List<String> perms = PermissionPlayerBase.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName(), super.getGroups(), this, plugin);
+        List<Permission> allPerms = PermissionPlayerBase.getAllPermissions(super.getGroups(), this, plugin);
+        List<String> perms = PermissionPlayerBase.calculatePermissions(PermissionManagerBase.serverName, player.getWorld().getName(), super.getGroups(), this, allPerms, plugin);
         List<String> realPerms = calculateRealPermissions(perms, plugin);
         super.setRealPermissions(realPerms);
+        super.setAllPermissions(allPerms);
     }
 
     public static List<String> calculateRealPermissions(List<String> perms, PowerfulPermsPlugin plugin) {

@@ -86,6 +86,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         Database db = new MySQLDatabase(scheduler, cred, this, getConfig().getString("prefix"));
         String serverName = getConfig().getString("servername");
         permissionManager = new PowerfulPermissionManager(db, this, serverName);
+        permissionManager.loadGroups(true);
         Bukkit.getPluginManager().registerEvents(permissionManager, this);
 
         if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {

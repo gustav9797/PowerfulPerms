@@ -32,7 +32,6 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     public PowerfulPermissionManager(Database database, PowerfulPerms plugin, String serverName) {
         super(database, plugin, serverName);
         this.bungeePlugin = plugin;
-        loadGroups(true, true);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -63,7 +62,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
             debug("LoginEvent player not allowed");
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = Byte.MIN_VALUE)
     public void onPostLogin(final PostLoginEvent e) {
         debug("player server name: \"" + e.getPlayer().getServer() + "\"");
         debug("PostLoginEvent " + e.getPlayer().getName() + " uuid " + e.getPlayer().getUniqueId().toString());

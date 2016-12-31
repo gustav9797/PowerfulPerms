@@ -330,7 +330,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         return suffix;
     }
 
-    public static List<String> calculatePermissions(String playerServer, String playerWorld, List<Group> input, PermissionContainer out, PowerfulPermsPlugin plugin) {
+    public static List<Permission> getAllPermissions(List<Group> input, PermissionContainer out, PowerfulPermsPlugin plugin) {
         ArrayList<Permission> unprocessedPerms = new ArrayList<Permission>();
 
         // Add permissions from groups in normal order.
@@ -359,7 +359,15 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
 
         // Add own permissions.
         unprocessedPerms.addAll(out.ownPermissions);
+        return unprocessedPerms;
+    }
 
+    public static List<String> calculatePermissions(String playerServer, String playerWorld, List<Group> input, PermissionContainer out, PowerfulPermsPlugin plugin) {
+        return calculatePermissions(playerServer, playerWorld, input, out, getAllPermissions(input, out, plugin), plugin);
+    }
+
+    public static List<String> calculatePermissions(String playerServer, String playerWorld, List<Group> input, PermissionContainer out, List<Permission> unprocessedPerms,
+            PowerfulPermsPlugin plugin) {
         List<String> output = new ArrayList<String>();
 
         for (Permission e : unprocessedPerms) {

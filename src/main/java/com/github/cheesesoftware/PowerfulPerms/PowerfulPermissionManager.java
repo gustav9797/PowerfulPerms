@@ -38,7 +38,6 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
     public PowerfulPermissionManager(Database database, PowerfulPerms plugin, String serverName) {
         super(database, plugin, serverName);
         this.injector = new PermissibleBaseInjector();
-        loadGroups(true, true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

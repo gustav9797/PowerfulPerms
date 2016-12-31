@@ -85,6 +85,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         DatabaseCredentials cred = new DatabaseCredentials(config.getString("host"), config.getString("database"), config.getInt("port"), config.getString("username"), config.getString("password"));
         Database db = new MySQLDatabase(new BungeeScheduler(this), cred, this, config.getString("prefix"));
         permissionManager = new PowerfulPermissionManager(db, this, "BungeeCord");
+        permissionManager.loadGroups(true);
         this.getProxy().getPluginManager().registerListener(this, this);
         this.getProxy().getPluginManager().registerListener(this, permissionManager);
 

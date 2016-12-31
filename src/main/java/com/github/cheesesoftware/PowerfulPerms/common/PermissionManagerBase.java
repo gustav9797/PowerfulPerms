@@ -26,6 +26,7 @@ import com.github.cheesesoftware.PowerfulPerms.database.DBResult;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
+import com.github.cheesesoftware.PowerfulPermsAPI.DefaultPermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.EventHandler;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.GroupPermissionExpiredEvent;
