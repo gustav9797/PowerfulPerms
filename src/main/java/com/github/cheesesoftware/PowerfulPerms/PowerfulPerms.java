@@ -65,7 +65,6 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         PermissionManagerBase.redis_port = getConfig().getInt("redis_port");
         PermissionManagerBase.redis_password = getConfig().getString("redis_password");
 
-        debug = getConfig().getBoolean("debug");
         if (getConfig().getBoolean("onlinemode", false) == true)
             serverMode = ServerMode.ONLINE;
         else if (getConfig().getBoolean("onlinemode", true) == false)
@@ -74,11 +73,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
             serverMode = ServerMode.MIXED;
         getLogger().info("PowerfulPerms is now running on server mode " + serverMode);
 
-        useChatFormat = getConfig().getBoolean("use_chatformat", false);
-        chatFormat = getConfig().getString("chatformat", "");
-        disableChatFormat = getConfig().getBoolean("disable_chatformat", false);
-        vaultIsLocal = getConfig().getString("vault_assumption", "local").equals("local") ? true : false;
-        vault_offline = getConfig().getBoolean("vault_offline", false);
+        loadConfig();
 
         DatabaseCredentials cred = new DatabaseCredentials(getConfig().getString("host"), getConfig().getString("database"), getConfig().getInt("port"), getConfig().getString("username"),
                 getConfig().getString("password"));
@@ -259,5 +254,16 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     @Override
     public String getVersion() {
         return this.getDescription().getVersion();
+    }
+
+    @Override
+    public void loadConfig() {
+        reloadConfig();
+        debug = getConfig().getBoolean("debug");
+        useChatFormat = getConfig().getBoolean("use_chatformat", false);
+        chatFormat = getConfig().getString("chatformat", "");
+        disableChatFormat = getConfig().getBoolean("disable_chatformat", false);
+        vaultIsLocal = getConfig().getString("vault_assumption", "local").equals("local") ? true : false;
+        vault_offline = getConfig().getBoolean("vault_offline", false);
     }
 }

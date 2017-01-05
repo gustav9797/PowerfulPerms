@@ -73,7 +73,6 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         PermissionManagerBase.redis_port = config.getInt("redis_port");
         PermissionManagerBase.redis_password = config.getString("redis_password");
 
-        debug = config.getBoolean("debug");
         if (config.getBoolean("onlinemode", false) == true)
             serverMode = ServerMode.ONLINE;
         else if (config.getBoolean("onlinemode", true) == false)
@@ -81,6 +80,8 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
         else if (config.getString("onlinemode", "default").equalsIgnoreCase("mixed"))
             serverMode = ServerMode.MIXED;
         getLogger().info("PowerfulPerms is now running on server mode " + serverMode);
+
+        loadConfig();
 
         DatabaseCredentials cred = new DatabaseCredentials(config.getString("host"), config.getString("database"), config.getInt("port"), config.getString("username"), config.getString("password"));
         Database db = new MySQLDatabase(new BungeeScheduler(this), cred, this, config.getString("prefix"));
@@ -307,5 +308,19 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
     @Override
     public String getVersion() {
         return this.getDescription().getVersion();
+    }
+
+    @Override
+    public void loadConfig() {
+        this.saveDefaultConfig();
+        saveDefaultCustomConfig();
+        try {
+            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File(getDataFolder(), "config.yml"));
+
+        } catch (IOException e3) {
+            e3.printStackTrace();
+        }
+
+        debug = config.getBoolean("debug");
     }
 }

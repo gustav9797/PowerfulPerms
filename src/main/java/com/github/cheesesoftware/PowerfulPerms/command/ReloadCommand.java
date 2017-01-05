@@ -19,8 +19,9 @@ public class ReloadCommand extends SubCommand {
         if (hasBasicPerms(invoker, sender, "powerfulperms.reload")) {
             if (args != null && args.length == 1) {
                 if (args[0].equalsIgnoreCase("reload")) {
+                    plugin.loadConfig();
                     permissionManager.reloadGroups();
-                    sendSender(invoker, sender, "Groups and players have been reloaded.");
+                    sendSender(invoker, sender, "Groups, players and config.yml have been reloaded.");
                     return CommandResult.success;
                 } else if (args[0].equalsIgnoreCase("globalreload")) {
                     permissionManager.reloadGroups();
