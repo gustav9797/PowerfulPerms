@@ -2,14 +2,12 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupCreateCommand extends SubCommand {
 
@@ -38,14 +36,8 @@ public class GroupCreateCommand extends SubCommand {
                     }
                 }
 
-                ListenableFuture<Response> first = permissionManager.createGroup(groupName, ladder, rank);
-                try {
-                    sendSender(invoker, sender, first.get().getResponse());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
+                Response response = permissionManager.createGroupBase(groupName, ladder, rank);
+                sendSender(invoker, sender, response.getResponse());
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

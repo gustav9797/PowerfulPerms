@@ -9,7 +9,6 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class UserCreateCommand extends SubCommand {
 
@@ -25,13 +24,12 @@ public class UserCreateCommand extends SubCommand {
 
                 final String playerName = args[0];
 
-                ListenableFuture<UUID> first = permissionManager.getConvertUUID(playerName);
-                final UUID uuid = first.get();
+                UUID uuid = permissionManager.getConvertUUIDBase(playerName);
                 if (uuid == null) {
                     sendSender(invoker, sender, "Could not find player UUID.");
                 } else {
-                    final ListenableFuture<Response> second = permissionManager.createPlayer(playerName, uuid);
-                    sendSender(invoker, sender, second.get().getResponse());
+                    final Response response = permissionManager.createPlayerBase(playerName, uuid);
+                    sendSender(invoker, sender, response.getResponse());
                 }
 
                 return CommandResult.success;

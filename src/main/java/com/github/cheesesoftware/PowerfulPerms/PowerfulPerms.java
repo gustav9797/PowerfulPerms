@@ -15,7 +15,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerChatTabCompleteEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -48,6 +47,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
     public static String chatFormat;
     public static boolean vaultIsLocal;
     public static boolean disableChatFormat;
+    public static boolean vault_offline;
 
     @Override
     public void onEnable() {
@@ -78,6 +78,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         chatFormat = getConfig().getString("chatformat", "");
         disableChatFormat = getConfig().getBoolean("disable_chatformat", false);
         vaultIsLocal = getConfig().getString("vault_assumption", "local").equals("local") ? true : false;
+        vault_offline = getConfig().getBoolean("vault_offline", false);
 
         DatabaseCredentials cred = new DatabaseCredentials(getConfig().getString("host"), getConfig().getString("database"), getConfig().getInt("port"), getConfig().getString("username"),
                 getConfig().getString("password"));

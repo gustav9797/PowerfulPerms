@@ -22,7 +22,7 @@ import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPermissionPlayer;
 import com.github.cheesesoftware.PowerfulPerms.common.ChatColor;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionContainer;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerMiddle;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
@@ -31,7 +31,7 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PlayerLoadedEvent;
 import com.google.common.util.concurrent.ListenableFuture;
 
-public class PowerfulPermissionManager extends PermissionManagerBase implements Listener {
+public class PowerfulPermissionManager extends PermissionManagerMiddle implements Listener {
 
     private PermissibleBaseInjector injector;
 
@@ -145,8 +145,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                     return permissionContainer.hasPermission(permission);
                 }
 
-                ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
-                LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
+                LinkedHashMap<String, List<CachedGroup>> currentGroups = getPlayerCurrentGroupsBase(uuid);
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
                 List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
                 PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissions(uuid).get());

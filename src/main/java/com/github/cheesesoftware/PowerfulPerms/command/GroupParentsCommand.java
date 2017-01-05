@@ -9,7 +9,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupParentsCommand extends SubCommand {
 
@@ -42,8 +41,8 @@ public class GroupParentsCommand extends SubCommand {
                         return CommandResult.success;
                     }
                     int parentId = parentGroup.getId();
-                    ListenableFuture<Response> first = permissionManager.addGroupParent(groupId, parentId);
-                    sendSender(invoker, sender, first.get().getResponse());
+                    Response response = permissionManager.addGroupParentBase(groupId, parentId);
+                    sendSender(invoker, sender, response.getResponse());
                 } else if (args.length >= 4 && args[2].equalsIgnoreCase("remove")) {
                     String parent = args[3];
                     final Group parentGroup = permissionManager.getGroup(parent);
@@ -52,8 +51,8 @@ public class GroupParentsCommand extends SubCommand {
                         return CommandResult.success;
                     }
                     int parentId = parentGroup.getId();
-                    ListenableFuture<Response> first = permissionManager.removeGroupParent(groupId, parentId);
-                    sendSender(invoker, sender, first.get().getResponse());
+                    Response response = permissionManager.removeGroupParentBase(groupId, parentId);
+                    sendSender(invoker, sender, response.getResponse());
                 } else {
                     // List parents
                     sendSender(invoker, sender, "Listing parents for group " + groupName + ":");

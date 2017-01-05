@@ -9,7 +9,6 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class UserPrefixCommand extends SubCommand {
 
@@ -28,8 +27,7 @@ public class UserPrefixCommand extends SubCommand {
                 }
                 final String playerName = args[0];
 
-                ListenableFuture<UUID> first = permissionManager.getConvertUUID(playerName);
-                final UUID uuid = first.get();
+                UUID uuid = permissionManager.getConvertUUIDBase(playerName);
                 if (uuid == null) {
                     sendSender(invoker, sender, "Could not find player UUID.");
                 } else {
@@ -55,15 +53,15 @@ public class UserPrefixCommand extends SubCommand {
                         } else
                             prefix = args[3];
 
-                        ListenableFuture<Response> second = permissionManager.setPlayerPrefix(uuid, prefix);
-                        sendSender(invoker, sender, second.get().getResponse());
+                        Response response = permissionManager.setPlayerPrefixBase(uuid, prefix);
+                        sendSender(invoker, sender, response.getResponse());
 
                     } else if (args.length >= 3 && args[2].equalsIgnoreCase("remove")) {
-                        ListenableFuture<Response> second = permissionManager.setPlayerPrefix(uuid, "");
-                        sendSender(invoker, sender, second.get().getResponse());
+                        Response response = permissionManager.setPlayerPrefixBase(uuid, "");
+                        sendSender(invoker, sender, response.getResponse());
                     } else {
-                        ListenableFuture<String> second = permissionManager.getPlayerOwnPrefix(uuid);
-                        sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (second.get() != null ? second.get() : "") + "\"");
+                        String ownPrefix = permissionManager.getPlayerOwnPrefixBase(uuid);
+                        sendSender(invoker, sender, "Prefix for player(non-inherited) " + playerName + ": \"" + (ownPrefix != null ? ownPrefix : "") + "\"");
                     }
                 }
                 return CommandResult.success;

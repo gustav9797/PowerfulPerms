@@ -17,12 +17,12 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.DBDocument;
 import com.github.cheesesoftware.PowerfulPermsAPI.IScheduler;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.google.common.base.Charsets;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class MySQLDatabase extends Database {
 
@@ -278,11 +278,10 @@ public class MySQLDatabase extends Database {
                                 plugin.getLogger().warning("Couldn't add group permission " + permission + " to group " + groupname);
                         } else if (uuid != null || playername != null) {
                             if (uuid == null) {
-                                ListenableFuture<UUID> first = plugin.getPermissionManager().getConvertUUID(playername);
+                                UUID resultUUID = ((PermissionManagerBase) plugin.getPermissionManager()).getConvertUUIDBase(playername);
                                 try {
-                                    UUID result2 = first.get();
-                                    if (result2 != null) {
-                                        insertPlayerPermission(result2, permission, world, server, null);
+                                    if (resultUUID != null) {
+                                        insertPlayerPermission(resultUUID, permission, world, server, null);
                                         plugin.getLogger().info("Inserted permission " + permission + " for player " + playername);
                                     }
                                 } catch (Exception e) {

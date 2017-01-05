@@ -5,18 +5,21 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
 public abstract class SubCommand {
     protected List<SubCommand> subCommands = new ArrayList<SubCommand>();
     protected PowerfulPermsPlugin plugin;
-    protected PermissionManager permissionManager;
+    protected PermissionManagerBase permissionManager;
+    protected PermissionManager _permissionManager;
     protected List<String> usage = new ArrayList<String>();
 
     public SubCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         this.plugin = plugin;
-        this.permissionManager = permissionManager;
+        this.permissionManager = (PermissionManagerBase) permissionManager;
+        this._permissionManager = permissionManager;
     }
 
     public abstract CommandResult execute(final ICommand invoker, final String sender, final String[] args) throws InterruptedException, ExecutionException;

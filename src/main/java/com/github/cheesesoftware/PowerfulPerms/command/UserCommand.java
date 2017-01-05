@@ -19,7 +19,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Pair;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class UserCommand extends SubCommand {
 
@@ -49,8 +48,7 @@ public class UserCommand extends SubCommand {
 
                 final String playerName = args[0];
 
-                ListenableFuture<UUID> first = permissionManager.getConvertUUID(playerName);
-                final UUID uuid = first.get();
+                UUID uuid = permissionManager.getConvertUUIDBase(playerName);
                 if (uuid == null) {
                     sendSender(invoker, sender, "Could not find player UUID.");
                 } else {
@@ -58,20 +56,17 @@ public class UserCommand extends SubCommand {
                     final Queue<String> rows = new java.util.ArrayDeque<String>();
                     rows.add(ChatColor.BLUE + "Listing permissions for player " + playerName + ".");
 
-                    final ListenableFuture<DBDocument> second = permissionManager.getPlayerData(uuid);
                     String tempUUID = "empty";
                     DBDocument row;
-                    row = second.get();
-                    if (second.get() != null)
+                    row = permissionManager.getPlayerDataBase(uuid);
+                    if (row != null)
                         tempUUID = row.getString("uuid");
                     rows.add(ChatColor.GREEN + "UUID" + ChatColor.WHITE + ": " + tempUUID);
 
-                    final ListenableFuture<Boolean> third = permissionManager.isPlayerDefault(uuid);
-                    if (third.get())
+                    if (permissionManager.isPlayerDefaultBase(uuid))
                         rows.add("This player has no groups and is using [default] groups.");
 
-                    final ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> fourth = permissionManager.getPlayerCurrentGroups(uuid);
-                    Map<String, List<CachedGroup>> groups = fourth.get();
+                    Map<String, List<CachedGroup>> groups = permissionManager.getPlayerCurrentGroupsBase(uuid);
                     if (groups == null)
                         groups = new LinkedHashMap<String, List<CachedGroup>>();
 
@@ -124,9 +119,7 @@ public class UserCommand extends SubCommand {
                     } else
                         rows.add("Player has no groups.");
 
-                    final ListenableFuture<List<Permission>> fifth = permissionManager.getPlayerOwnPermissions(uuid);
-                    List<Permission> playerPerms;
-                    playerPerms = fifth.get();
+                    List<Permission> playerPerms = permissionManager.getPlayerOwnPermissionsBase(uuid);
                     if (playerPerms != null && playerPerms.size() > 0)
                         for (Permission e : playerPerms) {
                             boolean s = !e.getServer().isEmpty();

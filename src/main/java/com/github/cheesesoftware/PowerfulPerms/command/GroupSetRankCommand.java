@@ -9,7 +9,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupSetRankCommand extends SubCommand {
 
@@ -36,8 +35,8 @@ public class GroupSetRankCommand extends SubCommand {
 
                 try {
                     int rank = Integer.parseInt(args[2]);
-                    ListenableFuture<Response> first = permissionManager.setGroupRank(groupId, rank);
-                    sendSender(invoker, sender, first.get().getResponse());
+                    Response response = permissionManager.setGroupRankBase(groupId, rank);
+                    sendSender(invoker, sender, response.getResponse());
                 } catch (NumberFormatException e) {
                     sendSender(invoker, sender, "Rank must be a number.");
                 }

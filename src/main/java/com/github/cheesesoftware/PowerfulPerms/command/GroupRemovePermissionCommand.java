@@ -10,7 +10,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupRemovePermissionCommand extends SubCommand {
 
@@ -58,8 +57,8 @@ public class GroupRemovePermissionCommand extends SubCommand {
                 if (world.equalsIgnoreCase("all"))
                     world = "";
 
-                ListenableFuture<Response> first = permissionManager.removeGroupPermission(groupId, permission, world, server, expires);
-                sendSender(invoker, sender, first.get().getResponse());
+                Response response = permissionManager.removeGroupPermissionBase(groupId, permission, world, server, expires);
+                sendSender(invoker, sender, response.getResponse());
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

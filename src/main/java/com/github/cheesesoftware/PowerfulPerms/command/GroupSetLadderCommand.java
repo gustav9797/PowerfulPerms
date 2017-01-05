@@ -9,7 +9,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupSetLadderCommand extends SubCommand {
 
@@ -35,8 +34,8 @@ public class GroupSetLadderCommand extends SubCommand {
                 int groupId = group.getId();
 
                 String ladder = args[2];
-                ListenableFuture<Response> first = permissionManager.setGroupLadder(groupId, ladder);
-                sendSender(invoker, sender, first.get().getResponse());
+                Response response = permissionManager.setGroupLadderBase(groupId, ladder);
+                sendSender(invoker, sender, response.getResponse());
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

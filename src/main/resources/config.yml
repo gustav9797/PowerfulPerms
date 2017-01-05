@@ -36,3 +36,7 @@ disable_chatformat: false
 # global. For example, if you add a permission through Vault and this is set to "local" it will be added only for the current server. (See the command reference)
 # This is not used Bungee-side.
 vault_assumption: local
+
+# Should Vault support offline player checks?
+# Will cause heavy lag on server main thread.
+vault_offline: false

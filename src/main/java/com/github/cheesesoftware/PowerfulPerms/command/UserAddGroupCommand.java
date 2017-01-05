@@ -11,7 +11,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class UserAddGroupCommand extends SubCommand {
 
@@ -40,8 +39,7 @@ public class UserAddGroupCommand extends SubCommand {
                 }
                 final int groupId = group.getId();
 
-                ListenableFuture<UUID> first = permissionManager.getConvertUUID(playerName);
-                final UUID uuid = first.get();
+                UUID uuid = permissionManager.getConvertUUIDBase(playerName);
                 if (uuid == null) {
                     sendSender(invoker, sender, "Could not find player UUID.");
                 } else {
@@ -56,8 +54,8 @@ public class UserAddGroupCommand extends SubCommand {
                             return CommandResult.success;
                         }
                     }
-                    ListenableFuture<Response> second = permissionManager.addPlayerGroup(uuid, groupId, server, negated, expires);
-                    sendSender(invoker, sender, second.get().getResponse());
+                    Response response = permissionManager.addPlayerGroupBase(uuid, groupId, server, negated, expires);
+                    sendSender(invoker, sender, response.getResponse());
                 }
                 return CommandResult.success;
             } else

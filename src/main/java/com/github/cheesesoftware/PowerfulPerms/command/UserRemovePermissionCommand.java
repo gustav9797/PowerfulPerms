@@ -10,7 +10,6 @@ import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class UserRemovePermissionCommand extends SubCommand {
 
@@ -30,8 +29,7 @@ public class UserRemovePermissionCommand extends SubCommand {
                 final String playerName = args[0];
                 final String permission = args[2];
 
-                ListenableFuture<UUID> first = permissionManager.getConvertUUID(playerName);
-                final UUID uuid = first.get();
+                UUID uuid = permissionManager.getConvertUUIDBase(playerName);
                 if (uuid == null) {
                     sendSender(invoker, sender, "Could not find player UUID.");
                 } else {
@@ -57,8 +55,8 @@ public class UserRemovePermissionCommand extends SubCommand {
                     if (world.equalsIgnoreCase("all"))
                         world = "";
 
-                    ListenableFuture<Response> second = permissionManager.removePlayerPermission(uuid, permission, world, server, expires);
-                    sendSender(invoker, sender, second.get().getResponse());
+                    Response response = permissionManager.removePlayerPermissionBase(uuid, permission, world, server, expires);
+                    sendSender(invoker, sender, response.getResponse());
                 }
                 return CommandResult.success;
             } else

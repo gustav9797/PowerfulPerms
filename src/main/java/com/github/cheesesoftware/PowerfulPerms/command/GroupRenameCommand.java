@@ -9,7 +9,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupRenameCommand extends SubCommand {
 
@@ -34,8 +33,8 @@ public class GroupRenameCommand extends SubCommand {
                 }
                 int groupId = group.getId();
 
-                ListenableFuture<Response> first = permissionManager.setGroupName(groupId, args[2]);
-                sendSender(invoker, sender, first.get().getResponse());
+                Response response = permissionManager.setGroupNameBase(groupId, args[2]);
+                sendSender(invoker, sender, response.getResponse());
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

@@ -7,7 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionContainer;
-import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
+import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerMiddle;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPerms.database.Database;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
@@ -25,7 +25,7 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-public class PowerfulPermissionManager extends PermissionManagerBase implements Listener {
+public class PowerfulPermissionManager extends PermissionManagerMiddle implements Listener {
 
     private PowerfulPerms bungeePlugin;
 
@@ -98,8 +98,7 @@ public class PowerfulPermissionManager extends PermissionManagerBase implements 
                     permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer, plugin));
                     return permissionContainer.hasPermission(permission);
                 }
-                ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = getPlayerCurrentGroups(uuid);
-                LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
+                LinkedHashMap<String, List<CachedGroup>> currentGroups = getPlayerCurrentGroupsBase(uuid);
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
                 List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
                 PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissions(uuid).get());

@@ -13,6 +13,7 @@ import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
 import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
+import com.github.cheesesoftware.PowerfulPermsAPI.PermissionPlayer;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -22,12 +23,14 @@ import net.milkbowl.vault.permission.Permission;
 public class PowerfulPerms_Vault_Permissions extends Permission {
 
     private PowerfulPermsPlugin plugin;
-    private PermissionManager permissionManager;
+    private PermissionManagerBase permissionManager;
+    private PermissionManager _permissionManager;
     private String server;
 
-    public PowerfulPerms_Vault_Permissions(PowerfulPermsPlugin plugin) {
+    public PowerfulPerms_Vault_Permissions(PowerfulPerms plugin) {
         this.plugin = plugin;
-        this.permissionManager = plugin.getPermissionManager();
+        this.permissionManager = (PermissionManagerBase) plugin.getPermissionManager();
+        this._permissionManager = plugin.getPermissionManager();
         this.server = PowerfulPerms.vaultIsLocal ? PermissionManagerBase.serverName : "";
     }
 
@@ -47,37 +50,53 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public String[] getPlayerGroups(String world, String player) {
-        ListenableFuture<UUID> first = permissionManager.getConvertUUID(player);
-        try {
-            UUID uuid = first.get();
-            ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = permissionManager.getPlayerCurrentGroups(uuid);
-            LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
-            List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
-            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
-            List<String> groupNames = new ArrayList<String>();
-            for (Group group : groups)
-                groupNames.add(group.getName());
-            return groupNames.toArray(new String[groupNames.size()]);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (PowerfulPerms.vault_offline) {
+            UUID uuid = permissionManager.getConvertUUIDBase(player);
+            try {
+                LinkedHashMap<String, List<CachedGroup>> currentGroups = permissionManager.getPlayerCurrentGroupsBase(uuid);
+                List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
+                List<String> groupNames = new ArrayList<String>();
+                for (Group group : groups)
+                    groupNames.add(group.getName());
+                return groupNames.toArray(new String[groupNames.size()]);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            PermissionPlayer p = permissionManager.getPermissionPlayer(player);
+            if (p != null) {
+                List<Group> groups = p.getGroups();
+                List<String> groupNames = new ArrayList<String>();
+                for (Group group : groups)
+                    groupNames.add(group.getName());
+                return groupNames.toArray(new String[groupNames.size()]);
+            }
         }
         return null;
     }
 
     @Override
     public String getPrimaryGroup(String world, String player) {
-        ListenableFuture<UUID> first = permissionManager.getConvertUUID(player);
-        try {
-            UUID uuid = first.get();
-            ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> second = permissionManager.getPlayerCurrentGroups(uuid);
-            LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
-            List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
-            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
-            Group group = PermissionPlayerBase.getPrimaryGroup(groups);
-            if (group != null)
-                return group.getName();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (PowerfulPerms.vault_offline) {
+            UUID uuid = permissionManager.getConvertUUIDBase(player);
+            try {
+                LinkedHashMap<String, List<CachedGroup>> currentGroups = permissionManager.getPlayerCurrentGroupsBase(uuid);
+                List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
+                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
+                Group group = PermissionPlayerBase.getPrimaryGroup(groups);
+                if (group != null)
+                    return group.getName();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            PermissionPlayer p = permissionManager.getPermissionPlayer(player);
+            if (p != null) {
+                Group group = p.getPrimaryGroup();
+                if (group != null)
+                    return group.getName();
+            }
         }
         return null;
     }
@@ -87,15 +106,8 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            ListenableFuture<Response> first = permissionManager.addGroupPermission(groupId, permission, (world != null ? world : ""), server, null);
-            try {
-                Response response = first.get();
-                return response.succeeded();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+            Response response = permissionManager.addGroupPermissionBase(groupId, permission, (world != null ? world : ""), server, null);
+            return response.succeeded();
         }
         return false;
     }
@@ -119,15 +131,8 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            ListenableFuture<Response> first = permissionManager.removeGroupPermission(groupId, permission, (world != null ? world : ""), server, null);
-            try {
-                Response response = first.get();
-                return response.succeeded();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+            Response response = permissionManager.removeGroupPermissionBase(groupId, permission, (world != null ? world : ""), server, null);
+            return response.succeeded();
         }
         return false;
     }
@@ -149,16 +154,11 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerAdd(String world, String player, String permission) {
-        ListenableFuture<Response> first = permissionManager.addPlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, null);
-        try {
-            Response response = first.get();
-            return response.succeeded();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-        return false;
+        UUID uuid = permissionManager.getConvertUUIDBase(player);
+        if (uuid == null)
+            return false;
+        Response response = permissionManager.addPlayerPermissionBase(uuid, permission, (world != null ? world : ""), server, null);
+        return response.succeeded();
     }
 
     @Override
@@ -166,15 +166,11 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            ListenableFuture<Response> first = permissionManager.addPlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, null);
-            try {
-                Response response = first.get();
-                return response.succeeded();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+            UUID uuid = permissionManager.getConvertUUIDBase(player);
+            if (uuid == null)
+                return false;
+            Response response = permissionManager.addPlayerGroupBase(uuid, groupId, server, false, null);
+            return response.succeeded();
         }
         return false;
     }
@@ -193,16 +189,11 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerRemove(String world, String player, String permission) {
-        ListenableFuture<Response> first = permissionManager.removePlayerPermission(plugin.getPlayerUUID(player), permission, (world != null ? world : ""), server, null);
-        try {
-            Response response = first.get();
-            return response.succeeded();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-        return false;
+        UUID uuid = permissionManager.getConvertUUIDBase(player);
+        if (uuid == null)
+            return false;
+        Response response = permissionManager.removePlayerPermissionBase(uuid, permission, (world != null ? world : ""), server, null);
+        return response.succeeded();
     }
 
     @Override
@@ -210,24 +201,20 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
         final Group group = permissionManager.getGroup(groupName);
         if (group != null) {
             int groupId = group.getId();
-            ListenableFuture<Response> first = permissionManager.removePlayerGroup(plugin.getPlayerUUID(player), groupId, server, false, null);
-            try {
-                Response response = first.get();
-                return response.succeeded();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+            UUID uuid = permissionManager.getConvertUUIDBase(player);
+            if (uuid == null)
+                return false;
+            Response response = permissionManager.removePlayerGroupBase(uuid, groupId, server, false, null);
+            return response.succeeded();
         }
         return false;
     }
 
     @Override
     public boolean playerHas(String world, String player, String permission) {
-        ListenableFuture<UUID> first = permissionManager.getConvertUUID(player);
+        UUID uuid = permissionManager.getConvertUUIDBase(player);
         try {
-            ListenableFuture<Boolean> second = permissionManager.playerHasPermission(first.get(), permission, world, PermissionManagerBase.serverName);
+            ListenableFuture<Boolean> second = _permissionManager.playerHasPermission(uuid, permission, world, PermissionManagerBase.serverName);
             try {
                 Boolean has = second.get();
                 if (has == null)

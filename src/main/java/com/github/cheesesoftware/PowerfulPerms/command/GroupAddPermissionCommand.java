@@ -3,14 +3,12 @@ package com.github.cheesesoftware.PowerfulPerms.command;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import com.github.cheesesoftware.PowerfulPerms.common.ICommand;
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupAddPermissionCommand extends SubCommand {
 
@@ -54,14 +52,8 @@ public class GroupAddPermissionCommand extends SubCommand {
                     server = "";
                 if (world.equalsIgnoreCase("all"))
                     world = "";
-                ListenableFuture<Response> first = permissionManager.addGroupPermission(groupId, permission, world, server, expires);
-                try {
-                    sendSender(invoker, sender, first.get().getResponse());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
+                Response response = permissionManager.addGroupPermissionBase(groupId, permission, world, server, expires);
+                sendSender(invoker, sender, response.getResponse());
                 return CommandResult.success;
             } else
                 return CommandResult.noMatch;

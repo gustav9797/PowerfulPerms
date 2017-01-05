@@ -13,7 +13,6 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 import com.github.cheesesoftware.PowerfulPermsAPI.Response;
-import com.google.common.util.concurrent.ListenableFuture;
 
 public class GroupPrefixCommand extends SubCommand {
 
@@ -76,11 +75,11 @@ public class GroupPrefixCommand extends SubCommand {
                     } else
                         prefix = args[3];
 
-                    ListenableFuture<Response> first = permissionManager.setGroupPrefix(groupId, prefix, server);
-                    sendSender(invoker, sender, first.get().getResponse());
+                    Response response = permissionManager.setGroupPrefixBase(groupId, prefix, server);
+                    sendSender(invoker, sender, response.getResponse());
                 } else if (args.length >= 3 && args[2].equalsIgnoreCase("remove")) {
-                    ListenableFuture<Response> first = permissionManager.setGroupPrefix(groupId, "", (args.length >= 4 ? args[3] : ""));
-                    sendSender(invoker, sender, first.get().getResponse());
+                    Response response = permissionManager.setGroupPrefixBase(groupId, "", (args.length >= 4 ? args[3] : ""));
+                    sendSender(invoker, sender, response.getResponse());
                 } else {
                     HashMap<String, String> prefix = permissionManager.getGroupServerPrefix(groupId);
                     if (prefix != null) {

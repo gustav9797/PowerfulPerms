@@ -35,20 +35,35 @@ public class UserHasPermissionCommand extends SubCommand {
                 if (args.length >= 5)
                     world = args[4];
 
-                ListenableFuture<UUID> first = permissionManager.getConvertUUID(playerName);
-                final UUID uuid = first.get();
+                final String serverFinal = server;
+                final String worldFinal = world;
+
+                UUID uuid = permissionManager.getConvertUUIDBase(playerName);
                 if (uuid == null) {
                     sendSender(invoker, sender, "Could not find player UUID.");
                 } else {
-                    ListenableFuture<Boolean> second = permissionManager.playerHasPermission(uuid, permission, world, server);
-                    Boolean has = second.get();
-                    if (has != null) {
-                        if (has)
-                            sendSender(invoker, sender, playerName + " has the permission \"" + permission + "\".");
-                        else
-                            sendSender(invoker, sender, playerName + ChatColor.RED + " does not " + ChatColor.WHITE + "have the permission \"" + permission + "\".");
-                    } else
-                        sendSender(invoker, sender, "The permission \"" + permission + "\" is not set.");
+                    permissionManager.getScheduler().runAsync(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            ListenableFuture<Boolean> second = _permissionManager.playerHasPermission(uuid, permission, worldFinal, serverFinal);
+                            Boolean has;
+                            try {
+                                has = second.get();
+                                if (has != null) {
+                                    if (has)
+                                        sendSender(invoker, sender, playerName + " has the permission \"" + permission + "\".");
+                                    else
+                                        sendSender(invoker, sender, playerName + ChatColor.RED + " does not " + ChatColor.WHITE + "have the permission \"" + permission + "\".");
+                                } else
+                                    sendSender(invoker, sender, "The permission \"" + permission + "\" is not set.");
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, false);
                 }
                 return CommandResult.success;
             } else
