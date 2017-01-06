@@ -419,6 +419,27 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public DBResult getPlayersInGroup(int groupId, int limit, int offset) {
+        DBResult result;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblPlayerGroups + " INNER JOIN " + tblPlayers + " ON " + tblPlayers + ".uuid=" + tblPlayerGroups
+                    + ".playeruuid WHERE `groupid`=? AND `negated`=? LIMIT ? OFFSET ?");
+            s.setInt(1, groupId);
+            s.setInt(2, 0);
+            s.setInt(3, limit);
+            s.setInt(4, offset);
+            s.execute();
+            ResultSet r = s.getResultSet();
+            result = fromResultSet(r);
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result = new DBResult(false);
+        }
+        return result;
+    }
+
+    @Override
     public DBResult getPlayers(final String name) {
         DBResult result;
         try {

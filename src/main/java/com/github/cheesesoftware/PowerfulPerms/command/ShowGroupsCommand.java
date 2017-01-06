@@ -33,17 +33,17 @@ public class ShowGroupsCommand extends SubCommand {
                     ladderGroups.put(group.getLadder(), temp);
                 }
 
-                String s = "";
+                sendSender(invoker, sender, ChatColor.BLUE + "Listing groups.");
                 for (Entry<String, List<Group>> e : ladderGroups.entrySet()) {
-                    s += "Ladder \"" + ChatColor.GREEN + e.getKey() + ChatColor.WHITE + "\":";
+                    String out = "On ladder \"" + ChatColor.GREEN + e.getKey() + ChatColor.WHITE + "\": ";
                     for (Group group : e.getValue()) {
-                        s += group.getName() + ", ";
+                        out += group.getName() + ", ";
                     }
+                    if (out.length() > 0 && ladderGroups.entrySet().size() > 0)
+                        out = out.substring(0, out.length() - 2);
+                    sendSender(invoker, sender, out);
                 }
-                if (s.length() > 0 && groups.size() > 0) {
-                    s = s.substring(0, s.length() - 2);
-                }
-                sendSender(invoker, sender, "Groups: " + s);
+
                 return CommandResult.success;
             }
             return CommandResult.noMatch;

@@ -21,6 +21,8 @@ public interface IDatabase {
 
     public DBResult getPlayer(UUID uuid);
 
+    public DBResult getPlayersInGroup(int groupId, int limit, int offset);
+
     public DBResult getPlayers(String name);
 
     public DBResult getPlayersCaseInsensitive(String name);

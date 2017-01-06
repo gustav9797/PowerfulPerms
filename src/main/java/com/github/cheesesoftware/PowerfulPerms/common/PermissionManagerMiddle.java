@@ -22,10 +22,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 public class PermissionManagerMiddle extends PermissionManagerBase implements PermissionManager {
 
-    // Can't use singlethreadexecutor because of nested executions
-    protected ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()); // TODO: Configurable
-    // protected ListeningExecutorService sameThreadService = MoreExecutors.sameThreadExecutor(); // TODO: Configurable
-    // protected ListeningExecutorService servicee = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()); // TODO: Configurable
+    protected ListeningExecutorService service = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
+    // protected ListeningExecutorService sameThreadService = MoreExecutors.sameThreadExecutor();
 
     public PermissionManagerMiddle(Database database, PowerfulPermsPlugin plugin, String serverName) {
         super(database, plugin, serverName);

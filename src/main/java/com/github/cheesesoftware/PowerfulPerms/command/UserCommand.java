@@ -44,7 +44,6 @@ public class UserCommand extends SubCommand {
                 if (page <= 0)
                     page = 1;
                 page--;
-                final int pageCopy = page;
 
                 final String playerName = args[0];
 
@@ -134,10 +133,10 @@ public class UserCommand extends SubCommand {
                         rows.add("Player has no permissions.");
 
                     List<List<String>> list = Paginator.createList(rows, 19);
-                    sendSender(invoker, sender, ChatColor.BLUE + "Page " + (pageCopy + 1) + " of " + list.size());
+                    sendSender(invoker, sender, ChatColor.BLUE + "Page " + (page + 1) + " of " + list.size());
 
-                    if (pageCopy < list.size()) {
-                        for (String s : list.get(pageCopy))
+                    if (page < list.size()) {
+                        for (String s : list.get(page))
                             sendSender(invoker, sender, s);
                     } else
                         sendSender(invoker, sender, "Invalid page. Page too high. ");
