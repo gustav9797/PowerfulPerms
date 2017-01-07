@@ -1640,6 +1640,17 @@ public abstract class PermissionManagerBase {
             return new Response(false, "Player does not exist.");
     }
 
+    public Response deletePlayerBase(UUID uuid) {
+        DBResult result = db.deletePlayer(uuid);
+        if (result.rowsChanged() > 0) {
+            reloadPlayer(uuid, true);
+            notifyReloadPlayer(uuid);
+            return new Response(true, "Deleted " + result.rowsChanged() + " player" + (result.rowsChanged() > 1 ? "s" : "") + ".");
+        } else
+            return new Response(false, "Player does not exist.");
+
+    }
+
     // -------------------------------------------------------------------//
     // //
     // ------------GROUP PERMISSION MODIFYING FUNCTIONS BELOW-------------//

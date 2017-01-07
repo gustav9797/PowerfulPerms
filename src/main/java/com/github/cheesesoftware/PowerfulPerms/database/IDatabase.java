@@ -21,6 +21,8 @@ public interface IDatabase {
 
     public DBResult getPlayer(UUID uuid);
 
+    public DBResult deletePlayer(UUID uuid);
+
     public DBResult getPlayersInGroup(int groupId, int limit, int offset);
 
     public DBResult getPlayers(String name);
@@ -60,6 +62,8 @@ public interface IDatabase {
     public boolean insertPlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires);
 
     public boolean deletePlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires);
+
+    public boolean deletePlayerGroups(UUID uuid);
 
     public DBResult getPlayerGroups(UUID uuid);
 

@@ -345,6 +345,18 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
     }
 
     @Override
+    public ListenableFuture<Response> deletePlayer(UUID uuid) {
+        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
+
+            @Override
+            public Response call() throws Exception {
+                return deletePlayerBase(uuid);
+            }
+        });
+        return listenableFuture;
+    }
+
+    @Override
     public ListenableFuture<Response> createGroup(String name, String ladder, int rank) {
         ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
 

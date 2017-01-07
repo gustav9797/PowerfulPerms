@@ -69,11 +69,11 @@ public class GroupMembersCommand extends SubCommand {
 
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
-        if (args.length == 1 && "create".startsWith(args[0].toLowerCase())) {
+        if (args.length == 1 && "members".startsWith(args[0].toLowerCase())) {
             List<String> output = new ArrayList<String>();
-            output.add("create");
+            output.add("members");
             return output;
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("create")) {
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("members")) {
             List<String> output = new ArrayList<String>();
             for (Group group : permissionManager.getGroups().values()) {
                 if (group.getLadder().toLowerCase().startsWith(args[1].toLowerCase()) && !output.contains(group.getLadder()))

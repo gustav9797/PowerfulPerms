@@ -419,6 +419,30 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public DBResult deletePlayer(final UUID uuid) {
+        boolean success = true;
+        int amount = 0;
+
+        plugin.getLogger().info("Deleting player " + uuid + "...");
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM `" + tblPlayers + "` WHERE `uuid`=?");
+            s.setString(1, uuid.toString());
+            amount = s.executeUpdate();
+            if (amount <= 0)
+                success = false;
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        plugin.getLogger().info("Deleting player permissions...");
+        this.deletePlayerPermissions(uuid);
+        plugin.getLogger().info("Deleting player groups...");
+        this.deletePlayerGroups(uuid);
+        return new DBResult(success, amount);
+    }
+
+    @Override
     public DBResult getPlayersInGroup(int groupId, int limit, int offset) {
         DBResult result;
         try {
@@ -803,6 +827,21 @@ public class MySQLDatabase extends Database {
     }
 
     @Override
+    public boolean deletePlayerGroups(final UUID uuid) {
+        boolean success = true;
+        try {
+            PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblPlayerGroups + " WHERE `playeruuid`=?");
+            s.setString(1, uuid.toString());
+            s.execute();
+            s.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            success = false;
+        }
+        return success;
+    }
+
+    @Override
     public DBResult getPlayerGroups(final UUID uuid) {
         DBResult result;
         try {
@@ -824,6 +863,7 @@ public class MySQLDatabase extends Database {
         boolean success = true;
         int amount = 0;
 
+        plugin.getLogger().info("Deleting group " + groupId + "...");
         try {
             PreparedStatement s = sql.getConnection().prepareStatement("DELETE FROM " + tblGroups + " WHERE `id`=?;");
             s.setInt(1, groupId);
@@ -836,9 +876,7 @@ public class MySQLDatabase extends Database {
             success = false;
         }
 
-        final boolean success2 = success;
-
-        plugin.getLogger().info("Deleting group " + groupId + "...");
+        plugin.getLogger().info("Deleting group permissions...");
         deleteGroupPermissions(groupId);
         plugin.getLogger().info("Deleting group parents...");
         deleteGroupParents(groupId);
@@ -868,7 +906,7 @@ public class MySQLDatabase extends Database {
             plugin.getLogger().info("Could not delete group references.");
         }
         plugin.getLogger().info("Done.");
-        return success2;
+        return success;
     }
 
     @Override

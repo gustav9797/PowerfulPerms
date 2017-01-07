@@ -22,6 +22,7 @@ public class UserBaseCommand extends SubCommand {
         subCommands.add(new UserAddPermissionCommand(plugin, permissionManager));
         subCommands.add(new UserRemovePermissionCommand(plugin, permissionManager));
         subCommands.add(new UserClearPermissionsCommand(plugin, permissionManager));
+        subCommands.add(new UserDeleteCommand(plugin, permissionManager));
         subCommands.add(new UserCreateCommand(plugin, permissionManager));
         subCommands.add(new UserPrefixCommand(plugin, permissionManager));
         subCommands.add(new UserSuffixCommand(plugin, permissionManager));
