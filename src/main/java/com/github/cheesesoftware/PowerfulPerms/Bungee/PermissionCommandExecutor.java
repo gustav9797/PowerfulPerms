@@ -35,7 +35,7 @@ public class PermissionCommandExecutor extends Command implements ICommand {
 
     @Override
     public boolean hasPermission(String name, String permission) {
-        if (name.equalsIgnoreCase("console"))
+        if (name.equalsIgnoreCase("console") && ProxyServer.getInstance().getPlayer("console") == null)
             return true;
         ProxiedPlayer player = ProxyServer.getInstance().getPlayer(name);
         if (player != null && player.hasPermission(permission))

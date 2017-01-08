@@ -44,7 +44,7 @@ public class PermissionCommandExecutor implements ICommand, CommandExecutor, Tab
 
     @Override
     public boolean hasPermission(String name, String permission) {
-        if (name.equalsIgnoreCase("console") || name.equalsIgnoreCase("rcon"))
+        if ((name.equalsIgnoreCase("console") && Bukkit.getPlayer("console") == null) || (name.equalsIgnoreCase("rcon") && Bukkit.getPlayer("rcon") == null))
             return true;
         Player player = Bukkit.getPlayerExact(name);
         if (player != null && player.hasPermission(permission))
