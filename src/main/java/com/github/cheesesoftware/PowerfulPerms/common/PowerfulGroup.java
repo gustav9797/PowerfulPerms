@@ -2,7 +2,9 @@ package com.github.cheesesoftware.PowerfulPerms.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.TreeMap;
 
 import com.github.cheesesoftware.PowerfulPermsAPI.Group;
 import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
@@ -92,16 +94,46 @@ public class PowerfulGroup implements Group {
 
     @Override
     public ArrayList<Permission> getPermissions() {
-        ArrayList<Permission> temp = new ArrayList<Permission>();
-        for (Integer parent : this.parents) {
-            Group parentGroup = plugin.getPermissionManager().getGroup(parent);
-            if (parentGroup != null)
-                temp.addAll(parentGroup.getPermissions());
-            else
-                plugin.debug("Could not use parent group " + parent + " to group " + this.id);
+        ArrayList<Permission> output = new ArrayList<Permission>();
+
+        if (this.parents.size() > 1) {
+            // Sort parents
+            TreeMap<Integer, List<Group>> sortedParents = new TreeMap<Integer, List<Group>>();
+            for (Integer parent : this.parents) {
+                Group group = plugin.getPermissionManager().getGroup(parent);
+                if (group != null) {
+                    List<Group> temp = sortedParents.get(group.getRank());
+                    if (temp == null)
+                        temp = new ArrayList<Group>();
+                    temp.add(group);
+                    sortedParents.put(group.getRank(), temp);
+                } else
+                    plugin.debug("Could not use parent group " + parent + " to group " + this.id);
+            }
+
+            // Add permissions from sorted parents
+            Iterator<List<Group>> it = sortedParents.values().iterator();
+            while (it.hasNext()) {
+                List<Group> tempGroups = it.next();
+                Iterator<Group> it2 = tempGroups.iterator();
+                while (it2.hasNext()) {
+                    Group group = it2.next();
+                    output.addAll(group.getPermissions());
+                }
+            }
+        } else {
+            // Add permissions from parents
+            for (Integer parent : this.parents) {
+                Group parentGroup = plugin.getPermissionManager().getGroup(parent);
+                if (parentGroup != null)
+                    output.addAll(parentGroup.getPermissions());
+                else
+                    plugin.debug("Could not use parent group " + parent + " to group " + this.id);
+            }
         }
-        temp.addAll(permissions);
-        return temp;
+        // Add own permissions
+        output.addAll(permissions);
+        return output;
     }
 
     @Override
