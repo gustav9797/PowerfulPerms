@@ -266,4 +266,9 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
         vaultIsLocal = getConfig().getString("vault_assumption", "local").equals("local") ? true : false;
         vault_offline = getConfig().getBoolean("vault_offline", false);
     }
+
+    @Override
+    public boolean isBungeeCord() {
+        return false;
+    }
 }

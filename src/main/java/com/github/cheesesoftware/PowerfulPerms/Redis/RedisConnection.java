@@ -85,7 +85,8 @@ public class RedisConnection {
                                 temp.close();
                             } else if (first.equals("[pingreply]") && split.length >= 3) {
                                 String sender = split[2];
-                                plugin.sendPlayerMessage(sender, "Received Redis ping from server \"" + server + "\".");
+                                if (!plugin.isBungeeCord() || sender.equalsIgnoreCase("console"))
+                                    plugin.sendPlayerMessage(sender, "Received Redis ping from server \"" + server + "\".");
                             } else {
                                 UUID uuid = UUID.fromString(first);
                                 permissionManager.loadPlayer(uuid, plugin.getPlayerName(uuid), false, false);

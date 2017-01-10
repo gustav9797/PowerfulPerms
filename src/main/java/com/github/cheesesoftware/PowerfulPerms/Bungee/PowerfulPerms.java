@@ -323,4 +323,9 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
 
         debug = config.getBoolean("debug");
     }
+    
+    @Override
+    public boolean isBungeeCord() {
+        return true;
+    }
 }
