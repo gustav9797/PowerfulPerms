@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+
 import com.github.cheesesoftware.PowerfulPerms.PowerfulPerms;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionManagerBase;
 import com.github.cheesesoftware.PowerfulPerms.common.PermissionPlayerBase;
@@ -212,21 +215,27 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
 
     @Override
     public boolean playerHas(String world, String player, String permission) {
-        UUID uuid = permissionManager.getConvertUUIDBase(player);
-        try {
-            ListenableFuture<Boolean> second = _permissionManager.playerHasPermission(uuid, permission, world, PermissionManagerBase.serverName);
+        if (PowerfulPerms.vault_offline) {
+            UUID uuid = permissionManager.getConvertUUIDBase(player);
             try {
-                Boolean has = second.get();
-                if (has == null)
-                    return false;
-                return has;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
+                ListenableFuture<Boolean> second = _permissionManager.playerHasPermission(uuid, permission, world, PermissionManagerBase.serverName);
+                try {
+                    Boolean has = second.get();
+                    if (has == null)
+                        return false;
+                    return has;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } else {
+            Player p = Bukkit.getPlayer(player);
+            if (p != null)
+                return p.hasPermission(permission);
         }
         return false;
     }
