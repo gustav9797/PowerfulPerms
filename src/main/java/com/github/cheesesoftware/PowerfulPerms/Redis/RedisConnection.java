@@ -89,7 +89,7 @@ public class RedisConnection {
                                     plugin.sendPlayerMessage(sender, "Received Redis ping from server \"" + server + "\".");
                             } else {
                                 UUID uuid = UUID.fromString(first);
-                                permissionManager.loadPlayer(uuid, plugin.getPlayerName(uuid), false, false);
+                                permissionManager.reloadPlayer(uuid);
                                 plugin.getLogger().info(PermissionManagerBase.consolePrefix + "Reloaded player \"" + first + "\".");
                             }
                         }
