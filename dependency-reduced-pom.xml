@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.cheesesoftware</groupId>
   <artifactId>PowerfulPerms</artifactId>
-  <version>4.5.1</version>
+  <version>4.5.2</version>
   <build>
     <resources>
       <resource>
@@ -110,6 +110,7 @@
                   <include>com.github.cheesesoftware:PowerfulPermsAPI</include>
                   <include>com.googlecode.json-simple:json-simple</include>
                   <include>com.sk89q:worldedit</include>
+                  <include>org.spongepowered:spongeapi</include>
                 </includes>
               </artifactSet>
               <filters>
@@ -140,6 +141,10 @@
                 <relocation>
                   <pattern>org.mongodb</pattern>
                   <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.mongodb</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.spongepowered</pattern>
+                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.spongepowered</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -196,6 +201,10 @@
       <id>bungeecord-repo</id>
       <url>https://oss.sonatype.org/content/groups/public</url>
     </repository>
+    <repository>
+      <id>sponge</id>
+      <url>https://repo.spongepowered.org/maven</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>
@@ -209,16 +218,8 @@
           <groupId>commons-lang</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>gson</artifactId>
-          <groupId>com.google.code.gson</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>ebean</artifactId>
           <groupId>org.avaje</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>snakeyaml</artifactId>
-          <groupId>org.yaml</groupId>
         </exclusion>
         <exclusion>
           <artifactId>bungeecord-chat</artifactId>

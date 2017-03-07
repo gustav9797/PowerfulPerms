@@ -111,6 +111,7 @@
 									<include>com.github.cheesesoftware:PowerfulPermsAPI</include>
 									<include>com.googlecode.json-simple:json-simple</include>
 									<include>com.sk89q:worldedit</include>
+									<include>org.spongepowered:spongeapi</include>
 								</includes>
 							</artifactSet>
 							<filters>
@@ -141,6 +142,10 @@
 								<relocation>
 									<pattern>org.mongodb</pattern>
 									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.mongodb</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.spongepowered</pattern>
+									<shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.spongepowered</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
@@ -198,6 +203,10 @@
 		<repository>
 			<id>bungeecord-repo</id>
 			<url>https://oss.sonatype.org/content/groups/public</url>
+		</repository>
+		<repository>
+			<id>sponge</id>
+			<url>https://repo.spongepowered.org/maven</url>
 		</repository>
 	</repositories>
 
@@ -266,6 +275,11 @@
 			<groupId>org.mongodb</groupId>
 			<artifactId>bson</artifactId>
 			<version>2.13.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.spongepowered</groupId>
+			<artifactId>spongeapi</artifactId>
+			<version>5.1.0</version>
 		</dependency>
 	</dependencies>
 	<version>4.5.2</version>
