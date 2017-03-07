@@ -90,7 +90,6 @@ public class RedisConnection {
                             } else {
                                 UUID uuid = UUID.fromString(first);
                                 permissionManager.reloadPlayer(uuid);
-                                plugin.getLogger().info(PermissionManagerBase.consolePrefix + "Reloaded player \"" + first + "\".");
                             }
                         }
                     }

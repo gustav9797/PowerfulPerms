@@ -416,9 +416,11 @@ public abstract class PermissionManagerBase {
             String name = plugin.getPlayerName(uuid);
             if (name != null) {
                 this.loadPlayer(uuid, name, false, sameThread);
+                plugin.debug("Reloaded player \"" + uuid + "\".");
             }
         } else if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
             reloadDefaultPlayers(sameThread);
+            plugin.debug("Changes to default player found, players reloaded");
         }
     }
 
@@ -1443,7 +1445,8 @@ public abstract class PermissionManagerBase {
                                     return new Response(false, "Could not add group with ID " + groupId + ".");
                             }
                             changed = true;
-                        }
+                        } else // Prevents multiple different groups in the same ladder
+                            db.deletePlayerGroup(uuid, currentGroup.getId(), server, current.isNegated(), null);
                     }
                 }
             }
@@ -1461,7 +1464,15 @@ public abstract class PermissionManagerBase {
             return new Response(false, "Player does not exist.");
     }
 
-    public Group getHigherGroup(Group group, List<Group> groups) {
+    public Group getHigherGroup(Group group) {
+        List<Group> groups;
+        groupsLock.lock();
+        try {
+            groups = new ArrayList<Group>(this.groups.values());
+        } finally {
+            groupsLock.unlock();
+        }
+
         TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
         for (Group current : groups) {
             if (current.getLadder().equals(group.getLadder()))
@@ -1484,7 +1495,15 @@ public abstract class PermissionManagerBase {
         return null;
     }
 
-    public Group getLowerGroup(Group group, List<Group> groups) {
+    public Group getLowerGroup(Group group) {
+        List<Group> groups;
+        groupsLock.lock();
+        try {
+            groups = new ArrayList<Group>(this.groups.values());
+        } finally {
+            groupsLock.unlock();
+        }
+
         TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>(Collections.reverseOrder());
         for (Group current : groups) {
             if (current.getLadder().equals(group.getLadder()))
@@ -1509,14 +1528,6 @@ public abstract class PermissionManagerBase {
     }
 
     public Response promotePlayerBase(final UUID uuid, final String ladder) {
-        List<Group> tempGroupsClone;
-        groupsLock.lock();
-        try {
-            tempGroupsClone = new ArrayList<Group>(groups.values());
-        } finally {
-            groupsLock.unlock();
-        }
-        final List<Group> groupsClone = tempGroupsClone;
         LinkedHashMap<String, List<CachedGroup>> result = getPlayerCurrentGroupsBase(uuid);
         copyDefaultGroupsIfDefault(uuid);
         if (result != null) {
@@ -1537,7 +1548,7 @@ public abstract class PermissionManagerBase {
                         if (currentGroup.getLadder().equalsIgnoreCase(ladder) && !current.willExpire() && !current.isNegated()) {
                             if (toUse == null) {
                                 toUse = currentGroup;
-                                toPromoteTo = getHigherGroup(toUse, groupsClone);
+                                toPromoteTo = getHigherGroup(toUse);
                                 if (toPromoteTo == null)
                                     return new Response(false, "There is no group on this ladder with a higher rank.");
                             }
@@ -1576,14 +1587,6 @@ public abstract class PermissionManagerBase {
     }
 
     public Response demotePlayerBase(final UUID uuid, final String ladder) {
-        List<Group> tempGroupsClone;
-        groupsLock.lock();
-        try {
-            tempGroupsClone = new ArrayList<Group>(groups.values());
-        } finally {
-            groupsLock.unlock();
-        }
-        final List<Group> groupsClone = tempGroupsClone;
         LinkedHashMap<String, List<CachedGroup>> result = getPlayerCurrentGroupsBase(uuid);
         copyDefaultGroupsIfDefault(uuid);
         if (result != null) {
@@ -1604,7 +1607,7 @@ public abstract class PermissionManagerBase {
                         if (currentGroup.getLadder().equalsIgnoreCase(ladder) && !current.willExpire() && !current.isNegated()) {
                             if (toUse == null) {
                                 toUse = currentGroup;
-                                toDemoteTo = getLowerGroup(toUse, groupsClone);
+                                toDemoteTo = getLowerGroup(toUse);
                                 if (toDemoteTo == null)
                                     return new Response(false, "There is no group on this ladder with a lower rank.");
                             }
