@@ -148,7 +148,7 @@ public class PowerfulPermissionManager extends PermissionManagerMiddle implement
                 LinkedHashMap<String, List<CachedGroup>> currentGroups = getPlayerCurrentGroupsBase(uuid);
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
                 List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
-                PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissions(uuid).get());
+                PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissionsBase(uuid));
                 List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer, plugin);
                 // Player own permissions have been added. Permissions from player groups have been added. In relation to world and server.
 
