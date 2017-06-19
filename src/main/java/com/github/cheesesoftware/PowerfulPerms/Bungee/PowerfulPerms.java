@@ -26,6 +26,7 @@ import com.google.common.io.ByteStreams;
 
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PermissionCheckEvent;
 import net.md_5.bungee.api.event.TabCompleteEvent;
@@ -291,7 +292,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
             commandSender = ProxyServer.getInstance().getPlayer(name);
 
         if (commandSender != null)
-            commandSender.sendMessage(PermissionManagerBase.pluginPrefixShort + message);
+            commandSender.sendMessage(TextComponent.fromLegacyText(PermissionManagerBase.pluginPrefixShort + message));
     }
 
     @Override
