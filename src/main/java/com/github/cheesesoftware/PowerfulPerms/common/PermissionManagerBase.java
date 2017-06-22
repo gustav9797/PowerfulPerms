@@ -151,40 +151,31 @@ public abstract class PermissionManagerBase {
         if (redisEnabled)
             this.redis = new RedisConnection(this, plugin, redis_ip, redis_port, redis_password);
 
-        checkTimedTaskId = this.getScheduler().runRepeating(new Runnable() {
-
-            @Override
-            public void run() {
-                List<Group> tempTempGroups;
-                groupsLock.lock();
-                try {
-                    tempTempGroups = new ArrayList<>(groups.values());
-                } finally {
-                    groupsLock.unlock();
-                }
-                final List<Group> tempGroups = tempTempGroups;
-
-                HashMap<UUID, PermissionPlayer> tempTempPlayers;
-                playersLock.lock();
-                try {
-                    tempTempPlayers = new HashMap<>(players);
-                } finally {
-                    playersLock.unlock();
-                }
-                final HashMap<UUID, PermissionPlayer> tempPlayers = tempTempPlayers;
-
-                getScheduler().runAsync(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        for (Entry<UUID, PermissionPlayer> e : tempPlayers.entrySet())
-                            checkPlayerTimedGroupsAndPermissions(e.getKey(), e.getValue());
-                        for (Group group : tempGroups)
-                            checkGroupTimedPermissions(group);
-                    }
-                }, false);
-
+        checkTimedTaskId = this.getScheduler().runRepeating(() -> {
+            List<Group> tempTempGroups;
+            groupsLock.lock();
+            try {
+                tempTempGroups = new ArrayList<>(groups.values());
+            } finally {
+                groupsLock.unlock();
             }
+            final List<Group> tempGroups = tempTempGroups;
+
+            HashMap<UUID, PermissionPlayer> tempTempPlayers;
+            playersLock.lock();
+            try {
+                tempTempPlayers = new HashMap<>(players);
+            } finally {
+                playersLock.unlock();
+            }
+            final HashMap<UUID, PermissionPlayer> tempPlayers = tempTempPlayers;
+
+            getScheduler().runAsync(() -> {
+                for (Entry<UUID, PermissionPlayer> e : tempPlayers.entrySet())
+                    checkPlayerTimedGroupsAndPermissions(e.getKey(), e.getValue());
+                for (Group group : tempGroups)
+                    checkGroupTimedPermissions(group);
+            }, false);
 
         }, 60);
     }
@@ -195,23 +186,18 @@ public abstract class PermissionManagerBase {
             for (final CachedGroup cachedGroup : e.getValue()) {
                 if (cachedGroup.getExpireTaskId() == -1 && cachedGroup.willExpire()) {
                     final String server = e.getKey();
-                    Runnable removePlayerGroupRunnable = new Runnable() {
-
-                        @Override
-                        public void run() {
-                            try {
-                                debug("CachedGroup " + cachedGroup.getId() + " in player " + uuid.toString() + " expired.");
-                                Response response = removePlayerGroupBase(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), cachedGroup.getExpirationDate());
-                                if (response.succeeded()) {
-                                    plugin.getLogger().info("Group " + cachedGroup.getGroupId() + " in player " + uuid.toString() + " expired and was removed.");
-                                    getEventHandler().fireEvent(new PlayerGroupExpiredEvent(uuid, cachedGroup));
-                                } else
-                                    debug("Could not remove expired player group. " + response.getResponse());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                    Runnable removePlayerGroupRunnable = () -> {
+                        try {
+                            debug("CachedGroup " + cachedGroup.getId() + " in player " + uuid.toString() + " expired.");
+                            Response response = removePlayerGroupBase(uuid, cachedGroup.getGroupId(), server, cachedGroup.isNegated(), cachedGroup.getExpirationDate());
+                            if (response.succeeded()) {
+                                plugin.getLogger().info("Group " + cachedGroup.getGroupId() + " in player " + uuid.toString() + " expired and was removed.");
+                                getEventHandler().fireEvent(new PlayerGroupExpiredEvent(uuid, cachedGroup));
+                            } else
+                                debug("Could not remove expired player group. " + response.getResponse());
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
                         }
-
                     };
 
                     if (cachedGroup.hasExpired())
@@ -233,23 +219,18 @@ public abstract class PermissionManagerBase {
         for (final Permission ap : permissions) {
             final PowerfulPermission p = (PowerfulPermission) ap;
             if (p.getExpireTaskId() == -1 && p.willExpire()) {
-                Runnable removePlayerPermissionRunnable = new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            debug("Permission " + p.getId() + " in player " + uuid.toString() + " expired.");
-                            Response response = removePlayerPermissionBase(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate());
-                            if (response.succeeded()) {
-                                plugin.getLogger().info("Permission " + p.getId() + " in player " + uuid.toString() + " expired and was removed.");
-                                getEventHandler().fireEvent(new PlayerPermissionExpiredEvent(uuid, p));
-                            } else
-                                debug("Could not remove expired player permission. " + response.getResponse());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                Runnable removePlayerPermissionRunnable = () -> {
+                    try {
+                        debug("Permission " + p.getId() + " in player " + uuid.toString() + " expired.");
+                        Response response = removePlayerPermissionBase(uuid, p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate());
+                        if (response.succeeded()) {
+                            plugin.getLogger().info("Permission " + p.getId() + " in player " + uuid.toString() + " expired and was removed.");
+                            getEventHandler().fireEvent(new PlayerPermissionExpiredEvent(uuid, p));
+                        } else
+                            debug("Could not remove expired player permission. " + response.getResponse());
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-
                 };
 
                 if (p.hasExpired())
@@ -273,23 +254,18 @@ public abstract class PermissionManagerBase {
         for (final Permission ap : permissions) {
             final PowerfulPermission p = (PowerfulPermission) ap;
             if (p.getExpireTaskId() == -1 && p.willExpire()) {
-                Runnable removeGroupPermissionRunnable = new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            debug("Permission " + p.getId() + " in group " + group.getId() + " expired.");
-                            Response response = removeGroupPermissionBase(group.getId(), p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate());
-                            if (response.succeeded()) {
-                                plugin.getLogger().info("Permission " + p.getId() + " in group " + group.getId() + " expired and was removed.");
-                                getEventHandler().fireEvent(new GroupPermissionExpiredEvent(group, p));
-                            } else
-                                debug("Could not remove expired group permission. " + response.getResponse());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                Runnable removeGroupPermissionRunnable = () -> {
+                    try {
+                        debug("Permission " + p.getId() + " in group " + group.getId() + " expired.");
+                        Response response = removeGroupPermissionBase(group.getId(), p.getPermissionString(), p.getWorld(), p.getServer(), p.getExpirationDate());
+                        if (response.succeeded()) {
+                            plugin.getLogger().info("Permission " + p.getId() + " in group " + group.getId() + " expired and was removed.");
+                            getEventHandler().fireEvent(new GroupPermissionExpiredEvent(group, p));
+                        } else
+                            debug("Could not remove expired group permission. " + response.getResponse());
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-
                 };
 
                 if (p.hasExpired())
@@ -337,13 +313,11 @@ public abstract class PermissionManagerBase {
 
     public void notifyReloadGroups() {
         if (redisEnabled && redis != null) {
-            plugin.runTaskAsynchronously(new Runnable() {
-                public void run() {
-                    Jedis jedis = redis.getConnection();
-                    if (jedis != null) {
-                        jedis.publish("PowerfulPerms", "[groups]" + " " + serverId);
-                        jedis.close();
-                    }
+            plugin.runTaskAsynchronously(() -> {
+                Jedis jedis = redis.getConnection();
+                if (jedis != null) {
+                    jedis.publish("PowerfulPerms", "[groups]" + " " + serverId);
+                    jedis.close();
                 }
             });
         }
@@ -351,13 +325,11 @@ public abstract class PermissionManagerBase {
 
     public void notifyReloadPlayers() {
         if (redisEnabled && redis != null) {
-            plugin.runTaskAsynchronously(new Runnable() {
-                public void run() {
-                    Jedis jedis = redis.getConnection();
-                    if (jedis != null) {
-                        jedis.publish("PowerfulPerms", "[players]" + " " + serverId);
-                        jedis.close();
-                    }
+            plugin.runTaskAsynchronously(() -> {
+                Jedis jedis = redis.getConnection();
+                if (jedis != null) {
+                    jedis.publish("PowerfulPerms", "[players]" + " " + serverId);
+                    jedis.close();
                 }
             });
         }
@@ -367,13 +339,11 @@ public abstract class PermissionManagerBase {
         if (uuid.equals(DefaultPermissionPlayer.getUUID())) {
             notifyReloadPlayers();
         } else if (redisEnabled && redis != null) {
-            plugin.runTaskAsynchronously(new Runnable() {
-                public void run() {
-                    Jedis jedis = redis.getConnection();
-                    if (jedis != null) {
-                        jedis.publish("PowerfulPerms", uuid + " " + serverId);
-                        jedis.close();
-                    }
+            plugin.runTaskAsynchronously(() -> {
+                Jedis jedis = redis.getConnection();
+                if (jedis != null) {
+                    jedis.publish("PowerfulPerms", uuid + " " + serverId);
+                    jedis.close();
                 }
             });
         }
@@ -482,91 +452,83 @@ public abstract class PermissionManagerBase {
 
     public void loadPlayer(final UUID uuid, final String name, final boolean storeCache, final boolean sameThread) {
         debug("loadPlayer begin");
-        db.scheduler.runAsync(new Runnable() {
+        db.scheduler.runAsync(() -> {
+            DBResult result = db.getPlayer(uuid);
+            if (result.booleanValue()) {
+                final DBDocument row = result.next();
+                if (row != null) {
+                    // The player exists in database.
 
-            @Override
-            public void run() {
-                DBResult result = db.getPlayer(uuid);
-                if (result.booleanValue()) {
-                    final DBDocument row = result.next();
-                    if (row != null) {
-                        // The player exists in database.
+                    String playerName_loaded = row.getString("name");
+                    debug("playername_loaded " + playerName_loaded);
 
-                        String playerName_loaded = row.getString("name");
-                        debug("playername_loaded " + playerName_loaded);
+                    if (name != null) {
+                        debug("playerName " + name);
 
-                        if (name != null) {
-                            debug("playerName " + name);
-
-                            // Check if name mismatch, update player name
-                            if (!playerName_loaded.equals(name)) {
-                                debug("PLAYER NAME MISMATCH.");
-                                boolean success = db.setPlayerName(uuid, name);
-                                if (!success)
-                                    debug("COULD NOT UPDATE PLAYER NAME OF PLAYER " + uuid.toString());
-                                else
-                                    debug("PLAYER NAME UPDATED. NAMECHANGE");
-                                loadPlayerFinished(uuid, row, storeCache, sameThread);
-                            } else
-                                loadPlayerFinished(uuid, row, storeCache, sameThread);
+                        // Check if name mismatch, update player name
+                        if (!playerName_loaded.equals(name)) {
+                            debug("PLAYER NAME MISMATCH.");
+                            boolean success = db.setPlayerName(uuid, name);
+                            if (!success)
+                                debug("COULD NOT UPDATE PLAYER NAME OF PLAYER " + uuid.toString());
+                            else
+                                debug("PLAYER NAME UPDATED. NAMECHANGE");
+                            loadPlayerFinished(uuid, row, storeCache, sameThread);
                         } else
                             loadPlayerFinished(uuid, row, storeCache, sameThread);
-                    } else {
-                        // Could not find player with UUID. Create new player.
-                        boolean success = db.insertPlayer(uuid, name, "", "");
-                        if (!success)
-                            debug("COULD NOT CREATE PLAYER " + uuid.toString() + " - " + name);
-                        else
-                            debug("NEW PLAYER CREATED");
-                        loadPlayerFinished(uuid, null, storeCache, sameThread);
-                    }
+                    } else
+                        loadPlayerFinished(uuid, row, storeCache, sameThread);
+                } else {
+                    // Could not find player with UUID. Create new player.
+                    boolean success = db.insertPlayer(uuid, name, "", "");
+                    if (!success)
+                        debug("COULD NOT CREATE PLAYER " + uuid.toString() + " - " + name);
+                    else
+                        debug("NEW PLAYER CREATED");
+                    loadPlayerFinished(uuid, null, storeCache, sameThread);
                 }
             }
         }, sameThread);
     }
 
     protected void loadPlayerFinished(final UUID uuid, final DBDocument row, final boolean storeCache, final boolean sameThread) {
-        db.scheduler.runAsync(new Runnable() {
+        db.scheduler.runAsync(() -> {
+            debug("loadPlayerFinished begin. storeCache: " + storeCache + " sameThread: " + sameThread);
+            final String prefix_loaded = (row != null ? row.getString("prefix") : "");
+            final String suffix_loaded = (row != null ? row.getString("suffix") : "");
 
-            @Override
-            public void run() {
-                debug("loadPlayerFinished begin. storeCache: " + storeCache + " sameThread: " + sameThread);
-                final String prefix_loaded = (row != null ? row.getString("prefix") : "");
-                final String suffix_loaded = (row != null ? row.getString("suffix") : "");
+            try {
+                LinkedHashMap<String, List<CachedGroup>> tempGroups = loadPlayerGroups(uuid);
+                List<Permission> perms = loadPlayerOwnPermissions(uuid);
+                if (perms == null)
+                    perms = new ArrayList<>();
 
-                try {
-                    LinkedHashMap<String, List<CachedGroup>> tempGroups = loadPlayerGroups(uuid);
-                    List<Permission> perms = loadPlayerOwnPermissions(uuid);
-                    if (perms == null)
-                        perms = new ArrayList<>();
+                if (storeCache) {
+                    debug("Inserted into cachedPlayers allowing playerjoin to finish");
+                    cachedPlayers.put(uuid, new CachedPlayer(tempGroups, prefix_loaded, suffix_loaded, perms));
+                } else {
+                    // Player should be reloaded if "login" is false. Reload already loaded player.
 
-                    if (storeCache) {
-                        debug("Inserted into cachedPlayers allowing playerjoin to finish");
-                        cachedPlayers.put(uuid, new CachedPlayer(tempGroups, prefix_loaded, suffix_loaded, perms));
-                    } else {
-                        // Player should be reloaded if "login" is false. Reload already loaded player.
+                    PermissionPlayerBase toUpdate = (PermissionPlayerBase) getPermissionPlayer(uuid);
+                    if (plugin.isPlayerOnline(uuid) && toUpdate != null) {
+                        debug("Player instance " + toUpdate.toString());
+                        PermissionPlayerBase base;
+                        debug("loadPlayerFinished reload group count:" + tempGroups.size());
+                        if (tempGroups.isEmpty()) {
+                            // Player has no groups, put default data
+                            base = new PermissionPlayerBase(deepCopyDefaultGroups(), perms, prefix_loaded, suffix_loaded, plugin, true);
+                        } else
+                            base = new PermissionPlayerBase(tempGroups, perms, prefix_loaded, suffix_loaded, plugin, false);
+                        toUpdate.update(base);
+                        checkPlayerTimedGroupsAndPermissions(uuid, toUpdate);
 
-                        PermissionPlayerBase toUpdate = (PermissionPlayerBase) getPermissionPlayer(uuid);
-                        if (plugin.isPlayerOnline(uuid) && toUpdate != null) {
-                            debug("Player instance " + toUpdate.toString());
-                            PermissionPlayerBase base;
-                            debug("loadPlayerFinished reload group count:" + tempGroups.size());
-                            if (tempGroups.isEmpty()) {
-                                // Player has no groups, put default data
-                                base = new PermissionPlayerBase(deepCopyDefaultGroups(), perms, prefix_loaded, suffix_loaded, plugin, true);
-                            } else
-                                base = new PermissionPlayerBase(tempGroups, perms, prefix_loaded, suffix_loaded, plugin, false);
-                            toUpdate.update(base);
-                            checkPlayerTimedGroupsAndPermissions(uuid, toUpdate);
-
-                            cachedPlayers.remove(uuid);
-                            eventHandler.fireEvent(new PlayerLoadedEvent(uuid, plugin.getPlayerName(uuid)));
-                        }
+                        cachedPlayers.remove(uuid);
+                        eventHandler.fireEvent(new PlayerLoadedEvent(uuid, plugin.getPlayerName(uuid)));
                     }
-                    debug("loadPlayerFinished runnable end");
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
+                debug("loadPlayerFinished runnable end");
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }, sameThread);
     }
@@ -635,48 +597,44 @@ public abstract class PermissionManagerBase {
     protected void loadGroups(final boolean beginSameThread, final boolean endSameThread) {
         debug("loadGroups begin");
 
-        db.scheduler.runAsync(new Runnable() {
+        db.scheduler.runAsync(() -> {
+            DBResult result = db.getGroups();
+            if (result.booleanValue()) {
+                final DBResult groupResult = result;
 
-            @Override
-            public void run() {
-                DBResult result = db.getGroups();
-                if (result.booleanValue()) {
-                    final DBResult groupResult = result;
+                try {
+                    HashMap<Integer, List<Integer>> parents = loadGroupParents();
+                    debug("loadgroups parents size: " + parents.size());
 
+                    final HashMap<Integer, HashMap<String, String>> prefixes = loadGroupPrefixes();
+                    final HashMap<Integer, HashMap<String, String>> suffixes = loadGroupSuffixes();
+                    final HashMap<Integer, List<PowerfulPermission>> permissions = loadGroupPermissions();
+
+                    groupsLock.lock();
                     try {
-                        HashMap<Integer, List<Integer>> parents = loadGroupParents();
-                        debug("loadgroups parents size: " + parents.size());
+                        groups.clear();
+                        while (groupResult.hasNext()) {
+                            DBDocument row = groupResult.next();
+                            final int groupId = row.getInt("id");
+                            final String name = row.getString("name");
+                            String ladder1 = row.getString("ladder");
+                            final String ladder = (ladder1 == null || ladder1.isEmpty() ? "default" : ladder1);
+                            final int rank = row.getInt("rank");
 
-                        final HashMap<Integer, HashMap<String, String>> prefixes = loadGroupPrefixes();
-                        final HashMap<Integer, HashMap<String, String>> suffixes = loadGroupSuffixes();
-                        final HashMap<Integer, List<PowerfulPermission>> permissions = loadGroupPermissions();
+                            PowerfulGroup group = new PowerfulGroup(groupId, name, permissions.get(groupId), prefixes.get(groupId), suffixes.get(groupId), ladder, rank, plugin);
+                            group.setParents(parents.get(groupId));
+                            groups.put(groupId, group);
 
-                        groupsLock.lock();
-                        try {
-                            groups.clear();
-                            while (groupResult.hasNext()) {
-                                DBDocument row = groupResult.next();
-                                final int groupId = row.getInt("id");
-                                final String name = row.getString("name");
-                                String ladder1 = row.getString("ladder");
-                                final String ladder = (ladder1 == null || ladder1.isEmpty() ? "default" : ladder1);
-                                final int rank = row.getInt("rank");
-
-                                PowerfulGroup group = new PowerfulGroup(groupId, name, permissions.get(groupId), prefixes.get(groupId), suffixes.get(groupId), ladder, rank, plugin);
-                                group.setParents(parents.get(groupId));
-                                groups.put(groupId, group);
-
-                                checkGroupTimedPermissions(group);
-                            }
-                            debug("loadGroups end");
-                        } finally {
-                            groupsLock.unlock();
+                            checkGroupTimedPermissions(group);
                         }
-                        // Reload players too.
-                        reloadDefaultPlayers(beginSameThread);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        debug("loadGroups end");
+                    } finally {
+                        groupsLock.unlock();
                     }
+                    // Reload players too.
+                    reloadDefaultPlayers(beginSameThread);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }, beginSameThread);

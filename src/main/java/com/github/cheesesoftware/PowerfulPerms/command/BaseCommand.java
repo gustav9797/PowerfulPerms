@@ -26,13 +26,9 @@ public class BaseCommand extends SubCommand {
 
     @Override
     public CommandResult execute(ICommand invoker, String sender, String[] args) {
-        plugin.getPermissionManager().getExecutor().submit(new Runnable() {
-
-            @Override
-            public void run() {
-                String[] argsTemp = resolveArgs(args);
-                resolveSequences(invoker, sender, argsTemp);
-            }
+        plugin.getPermissionManager().getExecutor().submit(() -> {
+            String[] argsTemp = resolveArgs(args);
+            resolveSequences(invoker, sender, argsTemp);
         });
         return CommandResult.success;
     }

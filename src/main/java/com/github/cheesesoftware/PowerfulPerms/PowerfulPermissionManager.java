@@ -128,40 +128,36 @@ public class PowerfulPermissionManager extends PermissionManagerMiddle implement
 
     @Override
     public ListenableFuture<Boolean> playerHasPermission(UUID uuid, String permission, String world, String server) {
-        ListenableFuture<Boolean> first = service.submit(new Callable<Boolean>() {
-
-            @Override
-            public Boolean call() throws Exception {
-                PermissionPlayer player = getPermissionPlayer(uuid);
-                if (player != null) {
-                    if ((world == null || world.isEmpty() || world.equalsIgnoreCase("all")) && (server == null || server.isEmpty() || server.equalsIgnoreCase("all")))
-                        return player.hasPermission(permission);
-                    PermissionContainer permissionContainer = new PermissionContainer(player.getPermissions());
-                    List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer, plugin);
-                    List<String> realPerms = PowerfulPermissionPlayer.calculateRealPermissions(perms, plugin);
-                    permissionContainer.setRealPermissions(realPerms);
-                    OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
-                    permissionContainer.setTemporaryPrePermissions(CustomPermissibleBase.getTemporaryPrePermissions((offlinePlayer != null ? offlinePlayer.isOp() : false)));
-                    return permissionContainer.hasPermission(permission);
-                }
-
-                LinkedHashMap<String, List<CachedGroup>> currentGroups = getPlayerCurrentGroupsBase(uuid);
-                List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
-                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
-                PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissionsBase(uuid));
-                List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer, plugin);
-                // Player own permissions have been added. Permissions from player groups have been added. In relation to world and server.
-
+        ListenableFuture<Boolean> first = service.submit(() -> {
+            PermissionPlayer player = getPermissionPlayer(uuid);
+            if (player != null) {
+                if ((world == null || world.isEmpty() || world.equalsIgnoreCase("all")) && (server == null || server.isEmpty() || server.equalsIgnoreCase("all")))
+                    return player.hasPermission(permission);
+                PermissionContainer permissionContainer = new PermissionContainer(player.getPermissions());
+                List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer, plugin);
                 List<String> realPerms = PowerfulPermissionPlayer.calculateRealPermissions(perms, plugin);
                 permissionContainer.setRealPermissions(realPerms);
-                // Child permissions have been added.
-
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
                 permissionContainer.setTemporaryPrePermissions(CustomPermissibleBase.getTemporaryPrePermissions((offlinePlayer != null ? offlinePlayer.isOp() : false)));
-                // Default Bukkit permissions have been added.
-
                 return permissionContainer.hasPermission(permission);
             }
+
+            LinkedHashMap<String, List<CachedGroup>> currentGroups = getPlayerCurrentGroupsBase(uuid);
+            List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
+            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
+            PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissionsBase(uuid));
+            List<String> perms = PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer, plugin);
+            // Player own permissions have been added. Permissions from player groups have been added. In relation to world and server.
+
+            List<String> realPerms = PowerfulPermissionPlayer.calculateRealPermissions(perms, plugin);
+            permissionContainer.setRealPermissions(realPerms);
+            // Child permissions have been added.
+
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+            permissionContainer.setTemporaryPrePermissions(CustomPermissibleBase.getTemporaryPrePermissions((offlinePlayer != null ? offlinePlayer.isOp() : false)));
+            // Default Bukkit permissions have been added.
+
+            return permissionContainer.hasPermission(permission);
         });
         return first;
     }

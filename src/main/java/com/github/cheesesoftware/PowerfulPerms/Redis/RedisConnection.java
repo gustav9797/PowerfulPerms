@@ -38,14 +38,10 @@ public class RedisConnection {
         setupPool();
         setupSubscriber();
         subscribeSubscriber();
-        taskId = permissionManager.getScheduler().runRepeating(new Runnable() {
-
-            @Override
-            public void run() {
-                Jedis jedis = getConnection();
-                if (jedis != null)
-                    jedis.close();
-            }
+        taskId = permissionManager.getScheduler().runRepeating(() -> {
+            Jedis jedis = getConnection();
+            if (jedis != null)
+                jedis.close();
         }, 60);
     }
 
@@ -62,35 +58,33 @@ public class RedisConnection {
         subscriber = (new JedisPubSub() {
             @Override
             public void onMessage(String channel, final String msg) {
-                permissionManager.getScheduler().runAsync(new Runnable() {
-                    public void run() {
-                        // Reload player or groups depending on message
-                        String[] split = msg.split(" ");
-                        if (split.length >= 2) {
-                            String first = split[0];
-                            String server = split[1];
+                permissionManager.getScheduler().runAsync(() -> {
+                    // Reload player or groups depending on message
+                    String[] split = msg.split(" ");
+                    if (split.length >= 2) {
+                        String first = split[0];
+                        String server = split[1];
 
-                            if (server.equals(PermissionManagerBase.serverId))
-                                return;
-                            if (first.equals("[groups]")) {
-                                permissionManager.loadGroups();
-                                plugin.getLogger().info(PermissionManagerBase.consolePrefix + "Reloaded all groups.");
-                            } else if (first.equals("[players]")) {
-                                permissionManager.loadGroups();
-                                plugin.getLogger().info(PermissionManagerBase.consolePrefix + "Reloaded all players.");
-                            } else if (first.equals("[ping]") && split.length >= 3) {
-                                String sender = split[2];
-                                Jedis temp = pool.getResource();
-                                temp.publish("PowerfulPerms", "[pingreply]" + " " + PermissionManagerBase.serverName + " " + sender);
-                                temp.close();
-                            } else if (first.equals("[pingreply]") && split.length >= 3) {
-                                String sender = split[2];
-                                if (!plugin.isBungeeCord() || sender.equalsIgnoreCase("console"))
-                                    plugin.sendPlayerMessage(sender, "Received Redis ping from server \"" + server + "\".");
-                            } else {
-                                UUID uuid = UUID.fromString(first);
-                                permissionManager.reloadPlayer(uuid);
-                            }
+                        if (server.equals(PermissionManagerBase.serverId))
+                            return;
+                        if (first.equals("[groups]")) {
+                            permissionManager.loadGroups();
+                            plugin.getLogger().info(PermissionManagerBase.consolePrefix + "Reloaded all groups.");
+                        } else if (first.equals("[players]")) {
+                            permissionManager.loadGroups();
+                            plugin.getLogger().info(PermissionManagerBase.consolePrefix + "Reloaded all players.");
+                        } else if (first.equals("[ping]") && split.length >= 3) {
+                            String sender = split[2];
+                            Jedis temp = pool.getResource();
+                            temp.publish("PowerfulPerms", "[pingreply]" + " " + PermissionManagerBase.serverName + " " + sender);
+                            temp.close();
+                        } else if (first.equals("[pingreply]") && split.length >= 3) {
+                            String sender = split[2];
+                            if (!plugin.isBungeeCord() || sender.equalsIgnoreCase("console"))
+                                plugin.sendPlayerMessage(sender, "Received Redis ping from server \"" + server + "\".");
+                        } else {
+                            UUID uuid = UUID.fromString(first);
+                            permissionManager.reloadPlayer(uuid);
                         }
                     }
                 }, false);
@@ -114,23 +108,21 @@ public class RedisConnection {
             if (password != null && !password.isEmpty())
                 jedis.auth(password);
             isSubscribing = true;
-            permissionManager.getScheduler().runAsync(new Runnable() {
-                public void run() {
-                    try {
-                        if (subscriber != null && subscriber.isSubscribed())
-                            subscriber.unsubscribe();
-                        setupSubscriber();
-                        jedis.subscribe(subscriber, "PowerfulPerms");
-                    } catch (JedisConnectionException e) {
-                        isSubscribing = false;
-                        plugin.getLogger().warning("Redis connection failed: " + e.getMessage());
-                    } finally {
-                        if (jedis != null)
-                            jedis.close();
-                        subscriber = null;
-                        if (pool != null)
-                            pool.close();
-                    }
+            permissionManager.getScheduler().runAsync(() -> {
+                try {
+                    if (subscriber != null && subscriber.isSubscribed())
+                        subscriber.unsubscribe();
+                    setupSubscriber();
+                    jedis.subscribe(subscriber, "PowerfulPerms");
+                } catch (JedisConnectionException e) {
+                    isSubscribing = false;
+                    plugin.getLogger().warning("Redis connection failed: " + e.getMessage());
+                } finally {
+                    if (jedis != null)
+                        jedis.close();
+                    subscriber = null;
+                    if (pool != null)
+                        pool.close();
                 }
             }, false);
 

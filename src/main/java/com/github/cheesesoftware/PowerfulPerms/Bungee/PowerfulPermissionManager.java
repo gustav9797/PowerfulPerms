@@ -49,14 +49,10 @@ public class PowerfulPermissionManager extends PermissionManagerMiddle implement
 
         if (!e.isCancelled()) {
             e.registerIntent(bungeePlugin);
-            bungeePlugin.getProxy().getScheduler().schedule(bungeePlugin, new Runnable() {
-
-                @Override
-                public void run() {
-                    loadPlayer(e.getConnection().getUniqueId(), e.getConnection().getName(), true, true);
-                    debug("LoginEvent uuid " + e.getConnection().getUniqueId().toString());
-                    e.completeIntent(bungeePlugin);
-                }
+            bungeePlugin.getProxy().getScheduler().schedule(bungeePlugin, () -> {
+                loadPlayer(e.getConnection().getUniqueId(), e.getConnection().getName(), true, true);
+                debug("LoginEvent uuid " + e.getConnection().getUniqueId().toString());
+                e.completeIntent(bungeePlugin);
             }, 0, TimeUnit.MILLISECONDS);
         } else
             debug("LoginEvent player not allowed");
@@ -86,26 +82,22 @@ public class PowerfulPermissionManager extends PermissionManagerMiddle implement
 
     @Override
     public ListenableFuture<Boolean> playerHasPermission(UUID uuid, String permission, String world, String server) {
-        ListenableFuture<Boolean> first = service.submit(new Callable<Boolean>() {
-
-            @Override
-            public Boolean call() throws Exception {
-                PermissionPlayer player = getPermissionPlayer(uuid);
-                if (player != null) {
-                    if ((world == null || world.isEmpty() || world.equalsIgnoreCase("all")) && (server == null || server.isEmpty() || server.equalsIgnoreCase("all")))
-                        return player.hasPermission(permission);
-                    PermissionContainer permissionContainer = new PermissionContainer(player.getPermissions());
-                    permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer, plugin));
-                    return permissionContainer.hasPermission(permission);
-                }
-                LinkedHashMap<String, List<CachedGroup>> currentGroups = getPlayerCurrentGroupsBase(uuid);
-                List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
-                List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
-                PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissionsBase(uuid));
-                permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer, plugin));
-                // Player own permissions have been added. Permissions from player groups have been added. In relation to world and server.
+        ListenableFuture<Boolean> first = service.submit(() -> {
+            PermissionPlayer player = getPermissionPlayer(uuid);
+            if (player != null) {
+                if ((world == null || world.isEmpty() || world.equalsIgnoreCase("all")) && (server == null || server.isEmpty() || server.equalsIgnoreCase("all")))
+                    return player.hasPermission(permission);
+                PermissionContainer permissionContainer = new PermissionContainer(player.getPermissions());
+                permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, player.getGroups(), permissionContainer, plugin));
                 return permissionContainer.hasPermission(permission);
             }
+            LinkedHashMap<String, List<CachedGroup>> currentGroups = getPlayerCurrentGroupsBase(uuid);
+            List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(server, currentGroups);
+            List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
+            PermissionContainer permissionContainer = new PermissionContainer(getPlayerOwnPermissionsBase(uuid));
+            permissionContainer.setRealPermissions(PermissionPlayerBase.calculatePermissions(server, world, groups, permissionContainer, plugin));
+            // Player own permissions have been added. Permissions from player groups have been added. In relation to world and server.
+            return permissionContainer.hasPermission(permission);
         });
         return first;
     }
