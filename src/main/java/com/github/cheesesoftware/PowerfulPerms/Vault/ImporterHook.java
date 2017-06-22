@@ -45,9 +45,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
         ListenableFuture<String> second = permissionManager.getPlayerPrefix(player.getUniqueId(), ladder);
         try {
             return second.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return null;
@@ -70,9 +68,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
         ListenableFuture<String> second = permissionManager.getPlayerSuffix(player.getUniqueId(), ladder);
         try {
             return second.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return null;
@@ -85,9 +81,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
             Group group = second.get();
             if (group != null)
                 return group.getName();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return null;
@@ -103,9 +97,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
         ListenableFuture<Boolean> second = permissionManager.playerHasPermission(player.getUniqueId(), permission, world, "");
         try {
             return second.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return null;
@@ -122,9 +114,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
             for (Group group : groups)
                 groupNames.add(group.getName());
             return groupNames;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return new ArrayList<>();

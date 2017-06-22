@@ -47,12 +47,10 @@ public class SQL {
 	try {
 	    Class.forName("com.mysql.jdbc.Driver");
 	    return DriverManager.getConnection(connectionString, username, password);
-	} catch (ClassNotFoundException e) {
-	    e.printStackTrace();
-	} catch (SQLException e) {
+	} catch (ClassNotFoundException | SQLException e) {
 	    e.printStackTrace();
 	}
-	return null;
+        return null;
     }
 
 }

@@ -58,9 +58,7 @@ public class BaseCommand extends SubCommand {
                     return;
                 else if (result == CommandResult.noMatch)
                     hasSomePermission = true;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
         }

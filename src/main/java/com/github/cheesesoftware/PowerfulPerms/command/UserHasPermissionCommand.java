@@ -57,9 +57,7 @@ public class UserHasPermissionCommand extends SubCommand {
                                         sendSender(invoker, sender, playerName + ChatColor.RED + " does not " + ChatColor.WHITE + "have the permission \"" + permission + "\".");
                                 } else
                                     sendSender(invoker, sender, "The permission \"" + permission + "\" is not set.");
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            } catch (ExecutionException e) {
+                            } catch (InterruptedException | ExecutionException e) {
                                 e.printStackTrace();
                             }
                         }

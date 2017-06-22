@@ -224,9 +224,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
                     if (has == null)
                         return false;
                     return has;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             } catch (Exception e) {
