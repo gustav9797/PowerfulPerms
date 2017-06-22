@@ -52,7 +52,7 @@ public class UserCommand extends SubCommand {
                     sendSender(invoker, sender, "Could not find player UUID.");
                 } else {
                     // List player permissions
-                    final Queue<String> rows = new java.util.ArrayDeque<String>();
+                    final Queue<String> rows = new java.util.ArrayDeque<>();
                     rows.add(ChatColor.BLUE + "Listing permissions for player " + playerName + ".");
 
                     String tempUUID = "empty";
@@ -67,10 +67,10 @@ public class UserCommand extends SubCommand {
 
                     Map<String, List<CachedGroup>> groups = permissionManager.getPlayerCurrentGroupsBase(uuid);
                     if (groups == null)
-                        groups = new LinkedHashMap<String, List<CachedGroup>>();
+                        groups = new LinkedHashMap<>();
 
                     // Store by ladder instead of server
-                    Map<String, List<Pair<String, CachedGroup>>> ladderGroups = new LinkedHashMap<String, List<Pair<String, CachedGroup>>>();
+                    Map<String, List<Pair<String, CachedGroup>>> ladderGroups = new LinkedHashMap<>();
                     for (Entry<String, List<CachedGroup>> currentGroups : groups.entrySet()) {
                         if (currentGroups != null) {
                             for (CachedGroup currentGroup : currentGroups.getValue()) {
@@ -79,9 +79,9 @@ public class UserCommand extends SubCommand {
 
                                 List<Pair<String, CachedGroup>> out = ladderGroups.get(ladder);
                                 if (out == null)
-                                    out = new ArrayList<Pair<String, CachedGroup>>();
+                                    out = new ArrayList<>();
 
-                                out.add(new Pair<String, CachedGroup>(currentGroups.getKey(), currentGroup));
+                                out.add(new Pair<>(currentGroups.getKey(), currentGroup));
                                 ladderGroups.put(ladder, out);
                             }
                         }

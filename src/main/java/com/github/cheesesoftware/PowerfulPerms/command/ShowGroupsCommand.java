@@ -24,11 +24,11 @@ public class ShowGroupsCommand extends SubCommand {
         if (hasBasicPerms(invoker, sender, "powerfulperms.groups")) {
             if (args != null && args.length == 1 && args[0].equalsIgnoreCase("groups")) {
                 Map<Integer, Group> groups = permissionManager.getGroups();
-                Map<String, List<Group>> ladderGroups = new HashMap<String, List<Group>>();
+                Map<String, List<Group>> ladderGroups = new HashMap<>();
                 for (Group group : groups.values()) {
                     List<Group> temp = ladderGroups.get(group.getLadder());
                     if (temp == null)
-                        temp = new ArrayList<Group>();
+                        temp = new ArrayList<>();
                     temp.add(group);
                     ladderGroups.put(group.getLadder(), temp);
                 }
@@ -54,7 +54,7 @@ public class ShowGroupsCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "groups".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("groups");
             return output;
         }

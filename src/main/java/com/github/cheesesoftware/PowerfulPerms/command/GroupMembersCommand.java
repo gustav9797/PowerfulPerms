@@ -44,7 +44,7 @@ public class GroupMembersCommand extends SubCommand {
                     page = 1;
                 page--;
 
-                final List<String> rows = new ArrayList<String>();
+                final List<String> rows = new ArrayList<>();
                 rows.add(ChatColor.BLUE + "Listing members in group " + groupName + ".");
                 int rowsPerPage = 18;
                 DBResult result = permissionManager.getDatabase().getPlayersInGroup(group.getId(), rowsPerPage, page * rowsPerPage);
@@ -70,11 +70,11 @@ public class GroupMembersCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "members".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("members");
             return output;
         } else if (args.length == 2 && args[0].equalsIgnoreCase("members")) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             for (Group group : permissionManager.getGroups().values()) {
                 if (group.getLadder().toLowerCase().startsWith(args[1].toLowerCase()) && !output.contains(group.getLadder()))
                     output.add(group.getLadder());

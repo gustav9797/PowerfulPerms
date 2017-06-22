@@ -45,7 +45,7 @@ public class GroupHasPermissionCommand extends SubCommand {
                     world = args[4];
 
                 List<Permission> permissions = group.getPermissions();
-                List<String> realPermissions = new ArrayList<String>();
+                List<String> realPermissions = new ArrayList<>();
                 for (Permission p : permissions) {
                     if (PermissionContainer.permissionApplies(p, server, world))
                         realPermissions.add(p.getPermissionString());
@@ -71,7 +71,7 @@ public class GroupHasPermissionCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if ("haspermission".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("haspermission");
             return output;
         }

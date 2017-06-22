@@ -21,7 +21,7 @@ public class ShowLaddersCommand extends SubCommand {
         if (hasBasicPerms(invoker, sender, "powerfulperms.ladders")) {
             if (args != null && args.length == 1 && args[0].equalsIgnoreCase("ladders")) {
 
-                List<String> ladders = new ArrayList<String>();
+                List<String> ladders = new ArrayList<>();
                 Map<Integer, Group> groups = permissionManager.getGroups();
                 String s = "";
                 for (Group group : groups.values()) {
@@ -44,7 +44,7 @@ public class ShowLaddersCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if ("ladders".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("ladders");
             return output;
         }

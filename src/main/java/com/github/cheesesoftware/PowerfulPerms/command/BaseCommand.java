@@ -39,7 +39,7 @@ public class BaseCommand extends SubCommand {
 
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
-        List<String> output = new ArrayList<String>();
+        List<String> output = new ArrayList<>();
         for (SubCommand subCommand : subCommands) {
             List<String> out = subCommand.tabComplete(invoker, sender, args);
             if (out != null)
@@ -74,7 +74,7 @@ public class BaseCommand extends SubCommand {
 
     @Override
     public List<String> getUsage() {
-        List<String> usage = new ArrayList<String>();
+        List<String> usage = new ArrayList<>();
         usage.add(ChatColor.RED + "~ " + ChatColor.BLUE + "PowerfulPerms" + ChatColor.BOLD + ChatColor.RED + " Reference ~");
         for (SubCommand subCommand : subCommands)
             usage.addAll(subCommand.getUsage());
@@ -82,7 +82,7 @@ public class BaseCommand extends SubCommand {
     }
 
     public static String[] resolveArgs(String[] args) {
-        List<String> output = new ArrayList<String>();
+        List<String> output = new ArrayList<>();
         String current = "";
         boolean adding = false;
 

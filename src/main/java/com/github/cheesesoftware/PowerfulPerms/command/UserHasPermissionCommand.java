@@ -75,7 +75,7 @@ public class UserHasPermissionCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if ("haspermission".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("haspermission");
             return output;
         }

@@ -118,7 +118,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
             LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
             List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
             List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
-            List<String> groupNames = new ArrayList<String>();
+            List<String> groupNames = new ArrayList<>();
             for (Group group : groups)
                 groupNames.add(group.getName());
             return groupNames;
@@ -127,7 +127,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        return new ArrayList<String>();
+        return new ArrayList<>();
     }
 
     @Override

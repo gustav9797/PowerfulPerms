@@ -14,7 +14,7 @@ public class PowerfulEventHandler implements EventHandler {
     private List<PowerfulPermsListener> listeners;
 
     public PowerfulEventHandler() {
-        listeners = new ArrayList<PowerfulPermsListener>();
+        listeners = new ArrayList<>();
     }
 
     public void registerListener(PowerfulPermsListener listener) {

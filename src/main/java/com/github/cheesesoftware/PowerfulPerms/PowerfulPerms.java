@@ -221,7 +221,7 @@ public class PowerfulPerms extends JavaPlugin implements Listener, PowerfulPerms
 
     @Override
     public Map<UUID, String> getOnlinePlayers() {
-        HashMap<UUID, String> players = new HashMap<UUID, String>();
+        HashMap<UUID, String> players = new HashMap<>();
         for (Player player : Bukkit.getOnlinePlayers())
             players.put(player.getUniqueId(), player.getName());
         return players;

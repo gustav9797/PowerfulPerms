@@ -9,11 +9,11 @@ import com.github.cheesesoftware.PowerfulPermsAPI.Permission;
 
 public class PermissionContainer {
 
-    protected List<Permission> ownPermissions = new ArrayList<Permission>();
-    protected List<String> realPermissions = new ArrayList<String>();
-    protected List<Permission> allPermissions = new ArrayList<Permission>();
-    protected List<String> temporaryPrePermissions = new ArrayList<String>();
-    protected List<String> temporaryPostPermissions = new ArrayList<String>();
+    protected List<Permission> ownPermissions = new ArrayList<>();
+    protected List<String> realPermissions = new ArrayList<>();
+    protected List<Permission> allPermissions = new ArrayList<>();
+    protected List<String> temporaryPrePermissions = new ArrayList<>();
+    protected List<String> temporaryPostPermissions = new ArrayList<>();
 
     protected ReentrantLock asyncPermLock = new ReentrantLock();
 
@@ -118,7 +118,7 @@ public class PermissionContainer {
      * Returns all permissions for this player.
      */
     public List<Permission> getPermissions() {
-        return new ArrayList<Permission>(this.ownPermissions);
+        return new ArrayList<>(this.ownPermissions);
     }
 
     /**
@@ -127,7 +127,7 @@ public class PermissionContainer {
     public List<String> getPermissionsInEffect() {
         asyncPermLock.lock();
         try {
-            return new ArrayList<String>(this.realPermissions);
+            return new ArrayList<>(this.realPermissions);
         } finally {
             asyncPermLock.unlock();
         }
@@ -139,7 +139,7 @@ public class PermissionContainer {
     public List<Permission> getAllPermissions() {
         asyncPermLock.lock();
         try {
-            return new ArrayList<Permission>(this.allPermissions);
+            return new ArrayList<>(this.allPermissions);
         } finally {
             asyncPermLock.unlock();
         }
@@ -159,7 +159,7 @@ public class PermissionContainer {
     public void setRealPermissions(List<String> permissions) {
         asyncPermLock.lock();
         try {
-            this.realPermissions = new ArrayList<String>(permissions);
+            this.realPermissions = new ArrayList<>(permissions);
         } finally {
             asyncPermLock.unlock();
         }
@@ -168,7 +168,7 @@ public class PermissionContainer {
     public void setAllPermissions(List<Permission> permissions) {
         asyncPermLock.lock();
         try {
-            this.allPermissions = new ArrayList<Permission>(permissions);
+            this.allPermissions = new ArrayList<>(permissions);
         } finally {
             asyncPermLock.unlock();
         }
@@ -177,7 +177,7 @@ public class PermissionContainer {
     public void setTemporaryPrePermissions(List<String> permissions) {
         asyncPermLock.lock();
         try {
-            this.temporaryPrePermissions = new ArrayList<String>(permissions);
+            this.temporaryPrePermissions = new ArrayList<>(permissions);
         } finally {
             asyncPermLock.unlock();
         }
@@ -186,7 +186,7 @@ public class PermissionContainer {
     public void setTemporaryPostPermissions(List<String> permissions) {
         asyncPermLock.lock();
         try {
-            this.temporaryPostPermissions = new ArrayList<String>(permissions);
+            this.temporaryPostPermissions = new ArrayList<>(permissions);
         } finally {
             asyncPermLock.unlock();
         }

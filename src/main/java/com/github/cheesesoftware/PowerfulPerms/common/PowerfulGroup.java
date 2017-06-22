@@ -14,23 +14,23 @@ public class PowerfulGroup implements Group {
 
     private int id;
     private String name;
-    private List<PowerfulPermission> permissions = new ArrayList<PowerfulPermission>();
+    private List<PowerfulPermission> permissions = new ArrayList<>();
     private List<Integer> parents;
     private String ladder;
     private int rank;
 
     private PowerfulPermsPlugin plugin;
 
-    private HashMap<String, String> serverPrefix = new HashMap<String, String>();
-    private HashMap<String, String> serverSuffix = new HashMap<String, String>();
+    private HashMap<String, String> serverPrefix = new HashMap<>();
+    private HashMap<String, String> serverSuffix = new HashMap<>();
 
     public PowerfulGroup(int id, String name, List<PowerfulPermission> permissions, HashMap<String, String> prefixes, HashMap<String, String> suffixes, String ladder, int rank,
             PowerfulPermsPlugin plugin) {
         this.id = id;
         this.name = name;
-        this.permissions = (permissions != null ? permissions : new ArrayList<PowerfulPermission>());
-        this.serverPrefix = (prefixes != null ? prefixes : new HashMap<String, String>());
-        this.serverSuffix = (suffixes != null ? suffixes : new HashMap<String, String>());
+        this.permissions = (permissions != null ? permissions : new ArrayList<>());
+        this.serverPrefix = (prefixes != null ? prefixes : new HashMap<>());
+        this.serverSuffix = (suffixes != null ? suffixes : new HashMap<>());
         this.ladder = ladder;
         this.rank = rank;
         this.plugin = plugin;
@@ -48,7 +48,7 @@ public class PowerfulGroup implements Group {
 
     @Override
     public List<Group> getParents() {
-        List<Group> out = new ArrayList<Group>();
+        List<Group> out = new ArrayList<>();
         for (int groupId : parents) {
             Group group = plugin.getPermissionManager().getGroup(groupId);
             if (group != null)
@@ -89,22 +89,22 @@ public class PowerfulGroup implements Group {
 
     @Override
     public ArrayList<Permission> getOwnPermissions() {
-        return new ArrayList<Permission>(permissions);
+        return new ArrayList<>(permissions);
     }
 
     @Override
     public ArrayList<Permission> getPermissions() {
-        ArrayList<Permission> output = new ArrayList<Permission>();
+        ArrayList<Permission> output = new ArrayList<>();
 
         if (this.parents.size() > 1) {
             // Sort parents
-            TreeMap<Integer, List<Group>> sortedParents = new TreeMap<Integer, List<Group>>();
+            TreeMap<Integer, List<Group>> sortedParents = new TreeMap<>();
             for (Integer parent : this.parents) {
                 Group group = plugin.getPermissionManager().getGroup(parent);
                 if (group != null) {
                     List<Group> temp = sortedParents.get(group.getRank());
                     if (temp == null)
-                        temp = new ArrayList<Group>();
+                        temp = new ArrayList<>();
                     temp.add(group);
                     sortedParents.put(group.getRank(), temp);
                 } else
@@ -144,7 +144,7 @@ public class PowerfulGroup implements Group {
 
     @Override
     public void setParents(List<Integer> parents) {
-        this.parents = (parents != null ? parents : new ArrayList<Integer>());
+        this.parents = (parents != null ? parents : new ArrayList<>());
     }
 
 }

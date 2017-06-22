@@ -42,12 +42,12 @@ import redis.clients.jedis.Jedis;
 
 public abstract class PermissionManagerBase {
 
-    protected HashMap<UUID, PermissionPlayer> players = new HashMap<UUID, PermissionPlayer>();
+    protected HashMap<UUID, PermissionPlayer> players = new HashMap<>();
     protected ReentrantLock playersLock = new ReentrantLock();
 
-    protected ConcurrentHashMap<UUID, CachedPlayer> cachedPlayers = new ConcurrentHashMap<UUID, CachedPlayer>();
+    protected ConcurrentHashMap<UUID, CachedPlayer> cachedPlayers = new ConcurrentHashMap<>();
 
-    protected HashMap<Integer, Group> groups = new HashMap<Integer, Group>();
+    protected HashMap<Integer, Group> groups = new HashMap<>();
     protected ReentrantLock groupsLock = new ReentrantLock();
 
     private final Database db;
@@ -158,7 +158,7 @@ public abstract class PermissionManagerBase {
                 List<Group> tempTempGroups;
                 groupsLock.lock();
                 try {
-                    tempTempGroups = new ArrayList<Group>(groups.values());
+                    tempTempGroups = new ArrayList<>(groups.values());
                 } finally {
                     groupsLock.unlock();
                 }
@@ -167,7 +167,7 @@ public abstract class PermissionManagerBase {
                 HashMap<UUID, PermissionPlayer> tempTempPlayers;
                 playersLock.lock();
                 try {
-                    tempTempPlayers = new HashMap<UUID, PermissionPlayer>(players);
+                    tempTempPlayers = new HashMap<>(players);
                 } finally {
                     playersLock.unlock();
                 }
@@ -313,10 +313,10 @@ public abstract class PermissionManagerBase {
 
     protected LinkedHashMap<String, List<CachedGroup>> deepCopyDefaultGroups() {
         if (defaultGroups != null) {
-            LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
-            LinkedHashMap<String, List<CachedGroup>> input = new LinkedHashMap<String, List<CachedGroup>>(defaultGroups);
+            LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<>();
+            LinkedHashMap<String, List<CachedGroup>> input = new LinkedHashMap<>(defaultGroups);
             for (Entry<String, List<CachedGroup>> next : input.entrySet()) {
-                output.put(next.getKey(), new ArrayList<CachedGroup>(next.getValue()));
+                output.put(next.getKey(), new ArrayList<>(next.getValue()));
             }
             return output;
         }
@@ -382,7 +382,7 @@ public abstract class PermissionManagerBase {
     public void reloadPlayers() {
         playersLock.lock();
         try {
-            ArrayList<UUID> uuids = new ArrayList<UUID>(players.keySet());
+            ArrayList<UUID> uuids = new ArrayList<>(players.keySet());
             for (UUID uuid : uuids) {
                 if (!plugin.isPlayerOnline(uuid)) {
                     players.remove(uuid);
@@ -538,7 +538,7 @@ public abstract class PermissionManagerBase {
                     LinkedHashMap<String, List<CachedGroup>> tempGroups = loadPlayerGroups(uuid);
                     List<Permission> perms = loadPlayerOwnPermissions(uuid);
                     if (perms == null)
-                        perms = new ArrayList<Permission>();
+                        perms = new ArrayList<>();
 
                     if (storeCache) {
                         debug("Inserted into cachedPlayers allowing playerjoin to finish");
@@ -707,7 +707,7 @@ public abstract class PermissionManagerBase {
     public Map<Integer, Group> getGroups() {
         groupsLock.lock();
         try {
-            return new HashMap<Integer, Group>(this.groups);
+            return new HashMap<>(this.groups);
         } finally {
             groupsLock.unlock();
         }
@@ -802,14 +802,14 @@ public abstract class PermissionManagerBase {
 
         List<Permission> perms = loadPlayerOwnPermissions(uuid);
         if (perms == null)
-            perms = new ArrayList<Permission>();
+            perms = new ArrayList<>();
         return perms;
     }
 
     protected List<Permission> loadPlayerOwnPermissions(final UUID uuid) {
         DBResult result = db.getPlayerPermissions(uuid);
         if (result.booleanValue()) {
-            ArrayList<Permission> perms = new ArrayList<Permission>();
+            ArrayList<Permission> perms = new ArrayList<>();
             while (result.hasNext()) {
                 DBDocument row = result.next();
                 Permission tempPerm = new PowerfulPermission(row.getInt("id"), row.getString("permission"), row.getString("world"), row.getString("server"), row.getDate("expires"));
@@ -824,7 +824,7 @@ public abstract class PermissionManagerBase {
     protected LinkedHashMap<String, List<CachedGroup>> loadPlayerGroups(final UUID uuid) {
         DBResult result = db.getPlayerGroups(uuid);
         if (result.booleanValue()) {
-            LinkedHashMap<String, List<CachedGroup>> localGroups = new LinkedHashMap<String, List<CachedGroup>>();
+            LinkedHashMap<String, List<CachedGroup>> localGroups = new LinkedHashMap<>();
             while (result.hasNext()) {
                 DBDocument row = result.next();
                 int groupId = row.getInt("groupid");
@@ -835,7 +835,7 @@ public abstract class PermissionManagerBase {
                 }
 
                 if (!localGroups.containsKey(row.getString("server")))
-                    localGroups.put(row.getString("server"), new ArrayList<CachedGroup>());
+                    localGroups.put(row.getString("server"), new ArrayList<>());
                 List<CachedGroup> serverGroups = localGroups.get(row.getString("server"));
                 serverGroups.add(new CachedGroup(row.getInt("id"), groupId, row.getBoolean("negated"), row.getDate("expires")));
                 localGroups.put(row.getString("server"), serverGroups);
@@ -849,14 +849,14 @@ public abstract class PermissionManagerBase {
     protected HashMap<Integer, List<Integer>> loadGroupParents() {
         DBResult result = db.getGroupParents();
         if (result.booleanValue()) {
-            HashMap<Integer, List<Integer>> parents = new HashMap<Integer, List<Integer>>();
+            HashMap<Integer, List<Integer>> parents = new HashMap<>();
             while (result.hasNext()) {
                 DBDocument row = result.next();
 
                 int groupId = row.getInt("groupid");
                 int parentId = row.getInt("parentgroupid");
                 if (!parents.containsKey(groupId))
-                    parents.put(groupId, new ArrayList<Integer>());
+                    parents.put(groupId, new ArrayList<>());
                 List<Integer> localParents = parents.get(groupId);
                 localParents.add(parentId);
                 parents.put(groupId, localParents);
@@ -870,13 +870,13 @@ public abstract class PermissionManagerBase {
     protected HashMap<Integer, HashMap<String, String>> loadGroupPrefixes() {
         DBResult result = db.getGroupPrefixes();
         if (result.booleanValue()) {
-            HashMap<Integer, HashMap<String, String>> prefixes = new HashMap<Integer, HashMap<String, String>>();
+            HashMap<Integer, HashMap<String, String>> prefixes = new HashMap<>();
             while (result.hasNext()) {
                 DBDocument row = result.next();
 
                 int groupId = row.getInt("groupid");
                 if (!prefixes.containsKey(groupId))
-                    prefixes.put(groupId, new HashMap<String, String>());
+                    prefixes.put(groupId, new HashMap<>());
                 HashMap<String, String> localPrefixes = prefixes.get(groupId);
                 localPrefixes.put(row.getString("server"), row.getString("prefix"));
                 prefixes.put(groupId, localPrefixes);
@@ -890,13 +890,13 @@ public abstract class PermissionManagerBase {
     protected HashMap<Integer, HashMap<String, String>> loadGroupSuffixes() {
         DBResult result = db.getGroupSuffixes();
         if (result.booleanValue()) {
-            HashMap<Integer, HashMap<String, String>> suffixes = new HashMap<Integer, HashMap<String, String>>();
+            HashMap<Integer, HashMap<String, String>> suffixes = new HashMap<>();
             while (result.hasNext()) {
                 DBDocument row = result.next();
 
                 int groupId = row.getInt("groupid");
                 if (!suffixes.containsKey(groupId))
-                    suffixes.put(groupId, new HashMap<String, String>());
+                    suffixes.put(groupId, new HashMap<>());
                 HashMap<String, String> localSuffixes = suffixes.get(groupId);
                 localSuffixes.put(row.getString("server"), row.getString("suffix"));
                 suffixes.put(groupId, localSuffixes);
@@ -910,13 +910,13 @@ public abstract class PermissionManagerBase {
     protected HashMap<Integer, List<PowerfulPermission>> loadGroupPermissions() {
         DBResult result = db.getGroupPermissions();
         if (result.booleanValue()) {
-            HashMap<Integer, List<PowerfulPermission>> permissions = new HashMap<Integer, List<PowerfulPermission>>();
+            HashMap<Integer, List<PowerfulPermission>> permissions = new HashMap<>();
             while (result.hasNext()) {
                 DBDocument row = result.next();
 
                 int groupId = row.getInt("groupid");
                 if (!permissions.containsKey(groupId))
-                    permissions.put(groupId, new ArrayList<PowerfulPermission>());
+                    permissions.put(groupId, new ArrayList<>());
                 List<PowerfulPermission> localPermissions = permissions.get(groupId);
                 localPermissions.add(new PowerfulPermission(row.getInt("id"), row.getString("permission"), row.getString("world"), row.getString("server"), row.getDate("expires")));
                 permissions.put(groupId, localPermissions);
@@ -1067,7 +1067,7 @@ public abstract class PermissionManagerBase {
             // Get online UUID.
 
             debug("Begin UUID retrieval...");
-            ArrayList<String> list = new ArrayList<String>();
+            ArrayList<String> list = new ArrayList<>();
             list.add(playerName);
             UUIDFetcher fetcher = new UUIDFetcher(list);
             try {
@@ -1111,7 +1111,7 @@ public abstract class PermissionManagerBase {
             if (plugin.getServerMode() == ServerMode.ONLINE) {
                 // Convert player name to UUID using Mojang API
                 debug("Begin UUID retrieval...");
-                ArrayList<String> list = new ArrayList<String>();
+                ArrayList<String> list = new ArrayList<>();
                 list.add(playerName);
                 UUIDFetcher fetcher = new UUIDFetcher(list);
                 try {
@@ -1216,7 +1216,7 @@ public abstract class PermissionManagerBase {
 
         List<Permission> result = getPlayerOwnPermissionsBase(uuid);
         if (result != null) {
-            List<Permission> toDelete = new ArrayList<Permission>();
+            List<Permission> toDelete = new ArrayList<>();
             for (Permission e : result) {
                 if (e.getPermissionString().equalsIgnoreCase(permission)) {
                     if (anyServer || e.getServer().equalsIgnoreCase(tempServer)) {
@@ -1359,7 +1359,7 @@ public abstract class PermissionManagerBase {
         if (result != null) {
             List<CachedGroup> groupList = result.get(serverFinal);
             if (groupList == null)
-                groupList = new ArrayList<CachedGroup>();
+                groupList = new ArrayList<>();
             for (CachedGroup cachedGroup : groupList) {
                 if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated) {
                     // Update expiration date instead
@@ -1458,12 +1458,12 @@ public abstract class PermissionManagerBase {
         List<Group> groups;
         groupsLock.lock();
         try {
-            groups = new ArrayList<Group>(this.groups.values());
+            groups = new ArrayList<>(this.groups.values());
         } finally {
             groupsLock.unlock();
         }
 
-        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<>();
         for (Group current : groups) {
             if (current.getLadder().equals(group.getLadder()))
                 sortedGroups.put(current.getRank(), current);
@@ -1489,12 +1489,12 @@ public abstract class PermissionManagerBase {
         List<Group> groups;
         groupsLock.lock();
         try {
-            groups = new ArrayList<Group>(this.groups.values());
+            groups = new ArrayList<>(this.groups.values());
         } finally {
             groupsLock.unlock();
         }
 
-        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>(Collections.reverseOrder());
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<>(Collections.reverseOrder());
         for (Group current : groups) {
             if (current.getLadder().equals(group.getLadder()))
                 sortedGroups.put(current.getRank(), current);
@@ -1650,7 +1650,7 @@ public abstract class PermissionManagerBase {
         Map<Integer, Group> groupsClone;
         groupsLock.lock();
         try {
-            groupsClone = new HashMap<Integer, Group>(groups);
+            groupsClone = new HashMap<>(groups);
         } finally {
             groupsLock.unlock();
         }
@@ -1745,7 +1745,7 @@ public abstract class PermissionManagerBase {
                 tempWorld = "";
 
             List<Permission> groupPermissions = group.getOwnPermissions();
-            List<Permission> toDelete = new ArrayList<Permission>();
+            List<Permission> toDelete = new ArrayList<>();
             for (Permission e : groupPermissions) {
                 if (e.getPermissionString().equalsIgnoreCase(permission)) {
                     if (anyServer || e.getServer().equalsIgnoreCase(tempServer)) {
