@@ -10,11 +10,11 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PermissionManager;
 import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
 public abstract class SubCommand {
-    protected List<SubCommand> subCommands = new ArrayList<SubCommand>();
+    protected List<SubCommand> subCommands = new ArrayList<>();
     protected PowerfulPermsPlugin plugin;
     protected PermissionManagerBase permissionManager;
     protected PermissionManager _permissionManager;
-    protected List<String> usage = new ArrayList<String>();
+    protected List<String> usage = new ArrayList<>();
 
     public SubCommand(PowerfulPermsPlugin plugin, PermissionManager permissionManager) {
         this.plugin = plugin;

@@ -36,73 +36,37 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> getPlayerOwnGroups(UUID uuid) {
-        ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> listenableFuture = service.submit(new Callable<LinkedHashMap<String, List<CachedGroup>>>() {
-
-            @Override
-            public LinkedHashMap<String, List<CachedGroup>> call() throws Exception {
-                return getPlayerOwnGroupsBase(uuid);
-            }
-        });
+        ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> listenableFuture = service.submit(() -> getPlayerOwnGroupsBase(uuid));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> getPlayerCurrentGroups(UUID uuid) {
-        ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> listenableFuture = service.submit(new Callable<LinkedHashMap<String, List<CachedGroup>>>() {
-
-            @Override
-            public LinkedHashMap<String, List<CachedGroup>> call() throws Exception {
-                return getPlayerCurrentGroupsBase(uuid);
-            }
-        });
+        ListenableFuture<LinkedHashMap<String, List<CachedGroup>>> listenableFuture = service.submit(() -> getPlayerCurrentGroupsBase(uuid));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Group> getPlayerPrimaryGroup(UUID uuid) {
-        ListenableFuture<Group> listenableFuture = service.submit(new Callable<Group>() {
-
-            @Override
-            public Group call() throws Exception {
-                return getPlayerPrimaryGroupBase(uuid);
-            }
-        });
+        ListenableFuture<Group> listenableFuture = service.submit(() -> getPlayerPrimaryGroupBase(uuid));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Boolean> isPlayerDefault(UUID uuid) {
-        ListenableFuture<Boolean> listenableFuture = service.submit(new Callable<Boolean>() {
-
-            @Override
-            public Boolean call() throws Exception {
-                return isPlayerDefaultBase(uuid);
-            }
-        });
+        ListenableFuture<Boolean> listenableFuture = service.submit(() -> isPlayerDefaultBase(uuid));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<DBDocument> getPlayerData(UUID uuid) {
-        ListenableFuture<DBDocument> listenableFuture = service.submit(new Callable<DBDocument>() {
-
-            @Override
-            public DBDocument call() throws Exception {
-                return getPlayerDataBase(uuid);
-            }
-        });
+        ListenableFuture<DBDocument> listenableFuture = service.submit(() -> getPlayerDataBase(uuid));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<List<Permission>> getPlayerOwnPermissions(UUID uuid) {
-        ListenableFuture<List<Permission>> listenableFuture = service.submit(new Callable<List<Permission>>() {
-
-            @Override
-            public List<Permission> call() throws Exception {
-                return getPlayerOwnPermissionsBase(uuid);
-            }
-        });
+        ListenableFuture<List<Permission>> listenableFuture = service.submit(() -> getPlayerOwnPermissionsBase(uuid));
         return listenableFuture;
     }
 
@@ -114,13 +78,7 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<String> getPlayerPrefix(UUID uuid, String ladder) {
-        ListenableFuture<String> first = service.submit(new Callable<String>() {
-
-            @Override
-            public String call() throws Exception {
-                return getPlayerPrefixBase(uuid, ladder);
-            }
-        });
+        ListenableFuture<String> first = service.submit(() -> getPlayerPrefixBase(uuid, ladder));
         return first;
     }
 
@@ -131,13 +89,7 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<String> getPlayerSuffix(UUID uuid, String ladder) {
-        ListenableFuture<String> listenableFuture = service.submit(new Callable<String>() {
-
-            @Override
-            public String call() throws Exception {
-                return getPlayerSuffixBase(uuid, ladder);
-            }
-        });
+        ListenableFuture<String> listenableFuture = service.submit(() -> getPlayerSuffixBase(uuid, ladder));
         return listenableFuture;
     }
 
@@ -148,49 +100,25 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<String> getPlayerOwnPrefix(UUID uuid) {
-        ListenableFuture<String> listenableFuture = service.submit(new Callable<String>() {
-
-            @Override
-            public String call() throws Exception {
-                return getPlayerOwnPrefixBase(uuid);
-            }
-        });
+        ListenableFuture<String> listenableFuture = service.submit(() -> getPlayerOwnPrefixBase(uuid));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<String> getPlayerOwnSuffix(UUID uuid) {
-        ListenableFuture<String> listenableFuture = service.submit(new Callable<String>() {
-
-            @Override
-            public String call() throws Exception {
-                return getPlayerOwnSuffixBase(uuid);
-            }
-        });
+        ListenableFuture<String> listenableFuture = service.submit(() -> getPlayerOwnSuffixBase(uuid));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<UUID> getConvertUUID(String playerName) {
-        ListenableFuture<UUID> listenableFuture = service.submit(new Callable<UUID>() {
-
-            @Override
-            public UUID call() throws Exception {
-                return getConvertUUIDBase(playerName);
-            }
-        });
+        ListenableFuture<UUID> listenableFuture = service.submit(() -> getConvertUUIDBase(playerName));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> createPlayer(String name, UUID uuid) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return createPlayerBase(name, uuid);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> createPlayerBase(name, uuid));
         return listenableFuture;
     }
 
@@ -201,13 +129,7 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<Response> addPlayerPermission(UUID uuid, String permission, String world, String server, Date expires) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return addPlayerPermissionBase(uuid, permission, world, server, expires);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> addPlayerPermissionBase(uuid, permission, world, server, expires));
         return listenableFuture;
     }
 
@@ -218,49 +140,25 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<Response> removePlayerPermission(UUID uuid, String permission, String world, String server, Date expires) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return removePlayerPermissionBase(uuid, permission, world, server, expires);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> removePlayerPermissionBase(uuid, permission, world, server, expires));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> removePlayerPermissions(UUID uuid) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return removePlayerPermissionsBase(uuid);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> removePlayerPermissionsBase(uuid));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> setPlayerPrefix(UUID uuid, String prefix) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return setPlayerPrefixBase(uuid, prefix);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> setPlayerPrefixBase(uuid, prefix));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> setPlayerSuffix(UUID uuid, String suffix) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return setPlayerSuffixBase(uuid, suffix);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> setPlayerSuffixBase(uuid, suffix));
         return listenableFuture;
     }
 
@@ -276,13 +174,7 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<Response> removePlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return removePlayerGroupBase(uuid, groupId, server, negated, expires);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> removePlayerGroupBase(uuid, groupId, server, negated, expires));
         return listenableFuture;
     }
 
@@ -298,85 +190,43 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<Response> addPlayerGroup(UUID uuid, int groupId, String server, boolean negated, Date expires) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return addPlayerGroupBase(uuid, groupId, server, negated, expires);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> addPlayerGroupBase(uuid, groupId, server, negated, expires));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> setPlayerRank(UUID uuid, int groupId) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return setPlayerRankBase(uuid, groupId);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> setPlayerRankBase(uuid, groupId));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> promotePlayer(UUID uuid, String ladder) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return promotePlayerBase(uuid, ladder);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> promotePlayerBase(uuid, ladder));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> demotePlayer(UUID uuid, String ladder) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return demotePlayerBase(uuid, ladder);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> demotePlayerBase(uuid, ladder));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> deletePlayer(UUID uuid) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return deletePlayerBase(uuid);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> deletePlayerBase(uuid));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> createGroup(String name, String ladder, int rank) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return createGroupBase(name, ladder, rank);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> createGroupBase(name, ladder, rank));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> deleteGroup(int groupId) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return deleteGroupBase(groupId);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> deleteGroupBase(groupId));
         return listenableFuture;
     }
 
@@ -387,13 +237,7 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<Response> addGroupPermission(int groupId, String permission, String world, String server, Date expires) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return addGroupPermissionBase(groupId, permission, world, server, expires);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> addGroupPermissionBase(groupId, permission, world, server, expires));
         return listenableFuture;
     }
 
@@ -404,49 +248,25 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<Response> removeGroupPermission(int groupId, String permission, String world, String server, Date expires) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return removeGroupPermissionBase(groupId, permission, world, server, expires);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> removeGroupPermissionBase(groupId, permission, world, server, expires));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> removeGroupPermissions(int groupId) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return removeGroupPermissionsBase(groupId);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> removeGroupPermissionsBase(groupId));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> addGroupParent(int groupId, int parentGroupId) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return addGroupParentBase(groupId, parentGroupId);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> addGroupParentBase(groupId, parentGroupId));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> removeGroupParent(int groupId, int parentGroupId) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return removeGroupParentBase(groupId, parentGroupId);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> removeGroupParentBase(groupId, parentGroupId));
         return listenableFuture;
     }
 
@@ -457,13 +277,7 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<Response> setGroupPrefix(int groupId, String prefix, String server) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return setGroupPrefixBase(groupId, prefix, server);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> setGroupPrefixBase(groupId, prefix, server));
         return listenableFuture;
     }
 
@@ -474,49 +288,25 @@ public class PermissionManagerMiddle extends PermissionManagerBase implements Pe
 
     @Override
     public ListenableFuture<Response> setGroupSuffix(int groupId, String suffix, String server) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return setGroupSuffixBase(groupId, suffix, server);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> setGroupSuffixBase(groupId, suffix, server));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> setGroupLadder(int groupId, String ladder) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return setGroupLadderBase(groupId, ladder);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> setGroupLadderBase(groupId, ladder));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> setGroupRank(int groupId, int rank) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return setGroupRankBase(groupId, rank);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> setGroupRankBase(groupId, rank));
         return listenableFuture;
     }
 
     @Override
     public ListenableFuture<Response> setGroupName(int groupId, String name) {
-        ListenableFuture<Response> listenableFuture = service.submit(new Callable<Response>() {
-
-            @Override
-            public Response call() throws Exception {
-                return setGroupNameBase(groupId, name);
-            }
-        });
+        ListenableFuture<Response> listenableFuture = service.submit(() -> setGroupNameBase(groupId, name));
         return listenableFuture;
     }
 

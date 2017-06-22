@@ -20,10 +20,10 @@ import org.bukkit.plugin.Plugin;
 public class CustomPermissibleBase extends PermissibleBase {
 
     private PowerfulPermissionPlayer permissionsPlayer;
-    private List<PermissionAttachment> ppAttachments = new LinkedList<PermissionAttachment>();
+    private List<PermissionAttachment> ppAttachments = new LinkedList<>();
     private Permissible parent = this;
-    private List<String> temporaryPrePermissions = new ArrayList<String>();
-    private List<String> temporaryPostPermissions = new ArrayList<String>();
+    private List<String> temporaryPrePermissions = new ArrayList<>();
+    private List<String> temporaryPostPermissions = new ArrayList<>();
 
     public CustomPermissibleBase(PowerfulPermissionPlayer permissionsPlayer) {
         super(permissionsPlayer.getPlayer());
@@ -181,7 +181,7 @@ public class CustomPermissibleBase extends PermissibleBase {
     }
 
     public static List<String> getTemporaryPrePermissions(boolean isOp) {
-        List<String> prePermissions = new ArrayList<String>();
+        List<String> prePermissions = new ArrayList<>();
         Set<Permission> defaults = Bukkit.getServer().getPluginManager().getDefaultPermissions(isOp);
 
         for (Permission perm : defaults) {
@@ -276,7 +276,7 @@ public class CustomPermissibleBase extends PermissibleBase {
 
     @Override
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
-        Set<PermissionAttachmentInfo> output = new HashSet<PermissionAttachmentInfo>();
+        Set<PermissionAttachmentInfo> output = new HashSet<>();
         for (String permission : permissionsPlayer.getPermissionsInEffect()) {
             if (permission.startsWith("-"))
                 output.add(new PermissionAttachmentInfo(this, permission.substring(1), null, false));

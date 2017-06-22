@@ -73,18 +73,18 @@ public class GroupParentsCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "parents".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("parents");
             return output;
         } else if (args.length == 2 && args[0].equalsIgnoreCase("parents")) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             if ("add".startsWith(args[1].toLowerCase()))
                 output.add("add");
             if ("remove".startsWith(args[1].toLowerCase()))
                 output.add("remove");
             return output;
         } else if (args.length == 3 && args[0].equalsIgnoreCase("parents")) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             for (Group group : permissionManager.getGroups().values()) {
                 if (group.getName().toLowerCase().startsWith(args[2].toLowerCase()))
                     output.add(group.getName());

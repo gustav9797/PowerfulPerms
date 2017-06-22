@@ -46,11 +46,11 @@ public class UserDemoteCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "demote".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("demote");
             return output;
         } else if (args.length == 2 && args[0].equalsIgnoreCase("demote")) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             for (Group group : permissionManager.getGroups().values()) {
                 if (group.getLadder().toLowerCase().startsWith(args[1].toLowerCase()) && !output.contains(group.getLadder()))
                     output.add(group.getLadder());

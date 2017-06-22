@@ -105,11 +105,11 @@ public class GroupPrefixCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "prefix".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("prefix");
             return output;
         } else if (args.length == 2 && args[0].equalsIgnoreCase("prefix")) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             if ("set".startsWith(args[1].toLowerCase()))
                 output.add("set");
             if ("remove".startsWith(args[1].toLowerCase()))

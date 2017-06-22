@@ -70,7 +70,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     }
 
     public static List<String> calculateRealPermissions(List<String> perms, PowerfulPermsPlugin plugin) {
-        List<String> realPerms = new ArrayList<String>();
+        List<String> realPerms = new ArrayList<>();
         for (String permString : perms) {
             boolean invert = false;
             if (permString.startsWith("-")) {
@@ -90,7 +90,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
     private static List<String> calculateChildPermissions(Map<String, Boolean> children, boolean invert, PowerfulPermsPlugin plugin) {
         Set<String> keys = children.keySet();
         if (keys.size() > 0) {
-            List<String> perms = new ArrayList<String>();
+            List<String> perms = new ArrayList<>();
 
             for (String name : keys) {
                 org.bukkit.permissions.Permission perm = Bukkit.getServer().getPluginManager().getPermission(name);
@@ -111,7 +111,7 @@ public class PowerfulPermissionPlayer extends PermissionPlayerBase {
 
             return perms;
         }
-        return new ArrayList<String>();
+        return new ArrayList<>();
     }
 
 }

@@ -105,11 +105,11 @@ public class GroupSuffixCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "suffix".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("suffix");
             return output;
         } else if (args.length == 2 && args[0].equalsIgnoreCase("suffix")) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             if ("set".startsWith(args[1].toLowerCase()))
                 output.add("set");
             if ("remove".startsWith(args[1].toLowerCase()))

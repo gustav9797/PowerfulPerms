@@ -28,7 +28,7 @@ public class MySQLDatabase extends Database {
 
     private PowerfulPermsPlugin plugin;
     private SQL sql;
-    private Map<String, String> tables = new HashMap<String, String>();
+    private Map<String, String> tables = new HashMap<>();
 
     public MySQLDatabase(IScheduler scheduler, DatabaseCredentials cred, PowerfulPermsPlugin plugin, String tablePrefix) {
         super(scheduler, tablePrefix);
@@ -84,11 +84,11 @@ public class MySQLDatabase extends Database {
     }
 
     private DBResult fromResultSet(ResultSet r) throws SQLException {
-        ArrayList<DBDocument> rows = new ArrayList<DBDocument>();
+        ArrayList<DBDocument> rows = new ArrayList<>();
         ResultSetMetaData md = r.getMetaData();
         int columns = md.getColumnCount();
         while (r.next()) {
-            Map<String, Object> row = new HashMap<String, Object>(columns);
+            Map<String, Object> row = new HashMap<>(columns);
             for (int i = 1; i <= columns; ++i) {
                 row.put(md.getColumnName(i), r.getObject(i));
             }
@@ -196,7 +196,7 @@ public class MySQLDatabase extends Database {
                     e.printStackTrace();
                 }
 
-                Map<String, Integer> groupIds = new TreeMap<String, Integer>(String.CASE_INSENSITIVE_ORDER);
+                Map<String, Integer> groupIds = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
                 try {
                     PreparedStatement s = sql.getConnection().prepareStatement("SELECT * FROM " + tblGroupsTemp);
                     s.execute();

@@ -45,9 +45,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
         ListenableFuture<String> second = permissionManager.getPlayerPrefix(player.getUniqueId(), ladder);
         try {
             return second.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return null;
@@ -70,9 +68,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
         ListenableFuture<String> second = permissionManager.getPlayerSuffix(player.getUniqueId(), ladder);
         try {
             return second.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return null;
@@ -85,9 +81,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
             Group group = second.get();
             if (group != null)
                 return group.getName();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return null;
@@ -103,9 +97,7 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
         ListenableFuture<Boolean> second = permissionManager.playerHasPermission(player.getUniqueId(), permission, world, "");
         try {
             return second.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return null;
@@ -118,16 +110,14 @@ public class ImporterHook implements eu.taigacraft.importer.permissions.Permissi
             LinkedHashMap<String, List<CachedGroup>> currentGroups = second.get();
             List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
             List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
-            List<String> groupNames = new ArrayList<String>();
+            List<String> groupNames = new ArrayList<>();
             for (Group group : groups)
                 groupNames.add(group.getName());
             return groupNames;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-        return new ArrayList<String>();
+        return new ArrayList<>();
     }
 
     @Override

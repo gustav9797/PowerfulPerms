@@ -14,7 +14,7 @@ public class PowerfulEventHandler implements EventHandler {
     private List<PowerfulPermsListener> listeners;
 
     public PowerfulEventHandler() {
-        listeners = new ArrayList<PowerfulPermsListener>();
+        listeners = new ArrayList<>();
     }
 
     public void registerListener(PowerfulPermsListener listener) {
@@ -35,11 +35,7 @@ public class PowerfulEventHandler implements EventHandler {
                             if (event.getClass().equals(methodParameter)) {
                                 try {
                                     method.invoke(listener, event);
-                                } catch (IllegalAccessException e) {
-                                    e.printStackTrace();
-                                } catch (IllegalArgumentException e) {
-                                    e.printStackTrace();
-                                } catch (InvocationTargetException e) {
+                                } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
                                     e.printStackTrace();
                                 }
                             }

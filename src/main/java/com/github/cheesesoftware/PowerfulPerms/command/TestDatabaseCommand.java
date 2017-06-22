@@ -20,14 +20,12 @@ public class TestDatabaseCommand extends SubCommand {
         if (hasBasicPerms(invoker, sender, "powerfulperms.test.database")) {
             if (args != null && args.length >= 1 && args[0].equalsIgnoreCase("database")) {
                 final PermissionManagerBase base = (PermissionManagerBase) permissionManager;
-                plugin.runTaskAsynchronously(new Runnable() {
-                    public void run() {
-                        boolean success = base.getDatabase().ping();
-                        if (success)
-                            sendSender(invoker, sender, "Your database connection is fine.");
-                        else
-                            sendSender(invoker, sender, "Could not open a connection to your database. Check the console for any exceptions.");
-                    }
+                plugin.runTaskAsynchronously(() -> {
+                    boolean success = base.getDatabase().ping();
+                    if (success)
+                        sendSender(invoker, sender, "Your database connection is fine.");
+                    else
+                        sendSender(invoker, sender, "Could not open a connection to your database. Check the console for any exceptions.");
                 });
                 return CommandResult.success;
             } else
@@ -39,7 +37,7 @@ public class TestDatabaseCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if ("database".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("database");
             return output;
         }

@@ -10,7 +10,7 @@ import com.github.cheesesoftware.PowerfulPermsAPI.CachedGroup;
 public class Util {
 
     public static LinkedHashMap<String, List<CachedGroup>> getPlayerGroups_old(String raw) {
-        LinkedHashMap<String, List<CachedGroup>> tempGroups = new LinkedHashMap<String, List<CachedGroup>>();
+        LinkedHashMap<String, List<CachedGroup>> tempGroups = new LinkedHashMap<>();
         for (String s : raw.split(";")) {
             // Each group entry
             String[] split = s.split(":");
@@ -20,7 +20,7 @@ public class Util {
                 // If list null, initialize list
                 List<CachedGroup> input = tempGroups.get(server);
                 if (input == null)
-                    input = new ArrayList<CachedGroup>();
+                    input = new ArrayList<>();
 
                 boolean negated = split[1].startsWith("-");
                 if (negated)
@@ -35,7 +35,7 @@ public class Util {
                     // If list null, initialize list
                     List<CachedGroup> input = tempGroups.get("");
                     if (input == null)
-                        input = new ArrayList<CachedGroup>();
+                        input = new ArrayList<>();
 
                     input.add(new CachedGroup(-1, Integer.parseInt(s), false, null));
                     tempGroups.put("", input);
@@ -46,7 +46,7 @@ public class Util {
     }
 
     public static HashMap<String, String> getPrefixSuffix_old(String input) {
-        HashMap<String, String> output = new HashMap<String, String>();
+        HashMap<String, String> output = new HashMap<>();
         String[] splitted = input.split(";;;;;;;;");
         for (String one : splitted) {
             String[] server_prefixSuffix = one.split("::::::::");
@@ -61,7 +61,7 @@ public class Util {
     }
 
     public static ArrayList<String> getGroupParents_old(String parentsString) {
-        ArrayList<String> parents = new ArrayList<String>();
+        ArrayList<String> parents = new ArrayList<>();
         if (parentsString.contains(";")) {
             for (String s : parentsString.split(";")) {
                 parents.add(s);

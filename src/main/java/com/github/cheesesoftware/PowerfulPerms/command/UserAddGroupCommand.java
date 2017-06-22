@@ -67,11 +67,11 @@ public class UserAddGroupCommand extends SubCommand {
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
         if (args.length == 1 && "addgroup".startsWith(args[0].toLowerCase())) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             output.add("addgroup");
             return output;
         } else if (args.length == 2 && args[0].equalsIgnoreCase("addgroup")) {
-            List<String> output = new ArrayList<String>();
+            List<String> output = new ArrayList<>();
             for (Group group : permissionManager.getGroups().values()) {
                 if (group.getName().toLowerCase().startsWith(args[1].toLowerCase()))
                     output.add(group.getName());

@@ -61,7 +61,7 @@ public class GroupBaseCommand extends SubCommand {
 
     @Override
     public List<String> tabComplete(ICommand invoker, String sender, String[] args) {
-        List<String> output = new ArrayList<String>();
+        List<String> output = new ArrayList<>();
         if (args.length == 1 && "group".startsWith(args[0].toLowerCase())) {
             // Tabcomplete "group"
             output.add("group");
@@ -89,7 +89,7 @@ public class GroupBaseCommand extends SubCommand {
 
     @Override
     public List<String> getUsage() {
-        List<String> usage = new ArrayList<String>();
+        List<String> usage = new ArrayList<>();
         for (SubCommand subCommand : subCommands)
             usage.addAll(subCommand.getUsage());
         return usage;

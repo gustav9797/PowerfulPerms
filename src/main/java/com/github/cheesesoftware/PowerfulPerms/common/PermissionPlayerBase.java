@@ -16,9 +16,9 @@ import com.github.cheesesoftware.PowerfulPermsAPI.PowerfulPermsPlugin;
 
 public class PermissionPlayerBase extends PermissionContainer implements PermissionPlayer {
 
-    protected LinkedHashMap<String, List<CachedGroup>> groups = new LinkedHashMap<String, List<CachedGroup>>(); // Contains -all- groups for this player.
+    protected LinkedHashMap<String, List<CachedGroup>> groups = new LinkedHashMap<>(); // Contains -all- groups for this player.
 
-    protected List<Group> currentGroups = new ArrayList<Group>();
+    protected List<Group> currentGroups = new ArrayList<>();
 
     protected String prefix = "";
     protected String suffix = "";
@@ -65,13 +65,11 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
      */
     @Override
     public LinkedHashMap<String, List<CachedGroup>> getCachedGroups() {
-        LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
+        LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<>();
         asyncGroupLock.lock();
         try {
-            Iterator<Entry<String, List<CachedGroup>>> it = this.groups.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, List<CachedGroup>> entry = it.next();
-                output.put(entry.getKey(), new ArrayList<CachedGroup>(entry.getValue()));
+            for (Entry<String, List<CachedGroup>> entry : this.groups.entrySet()) {
+                output.put(entry.getKey(), new ArrayList<>(entry.getValue()));
             }
         } finally {
             asyncGroupLock.unlock();
@@ -80,7 +78,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
     }
 
     public static List<CachedGroup> getCachedGroups(String server, LinkedHashMap<String, List<CachedGroup>> groups) {
-        List<CachedGroup> tempGroups = new ArrayList<CachedGroup>();
+        List<CachedGroup> tempGroups = new ArrayList<>();
 
         // Get server specific groups and add them
         List<CachedGroup> serverGroupsTemp = groups.get(server);
@@ -111,7 +109,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
     }
 
     public static List<Group> getGroups(List<CachedGroup> groups, PowerfulPermsPlugin plugin) {
-        List<Group> output = new ArrayList<Group>();
+        List<Group> output = new ArrayList<>();
 
         Iterator<CachedGroup> it1 = groups.iterator();
         while (it1.hasNext()) {
@@ -152,7 +150,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
      */
     @Override
     public List<Group> getGroups() {
-        return new ArrayList<Group>(this.currentGroups);
+        return new ArrayList<>(this.currentGroups);
     }
 
     /**
@@ -161,7 +159,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
     @Override
     public Group getGroup(String ladder) {
         List<Group> input = getGroups();
-        TreeMap<Integer, Group> sortedGroups = new TreeMap<Integer, Group>();
+        TreeMap<Integer, Group> sortedGroups = new TreeMap<>();
         // Sort groups by rank if same ladder
         for (Group group : input) {
             if (group.getLadder().equalsIgnoreCase(ladder)) {
@@ -177,22 +175,18 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
     }
 
     public static Group getPrimaryGroup(List<Group> input) {
-        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
+        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<>();
 
         for (Group group : input) {
             List<Group> temp = sortedGroups.get(group.getRank());
             if (temp == null)
-                temp = new ArrayList<Group>();
+                temp = new ArrayList<>();
             temp.add(group);
             sortedGroups.put(group.getRank(), temp);
         }
 
-        Iterator<List<Group>> it = sortedGroups.descendingMap().values().iterator();
-        while (it.hasNext()) {
-            List<Group> tempGroups = it.next();
-            Iterator<Group> it2 = tempGroups.iterator();
-            while (it2.hasNext()) {
-                Group group = it2.next();
+        for (List<Group> tempGroups : sortedGroups.descendingMap().values()) {
+            for (Group group : tempGroups) {
                 if (group != null)
                     return group;
             }
@@ -209,26 +203,22 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
     }
 
     public static String getPrefix(String ladder, List<Group> input) {
-        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
+        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<>();
 
         // Insert groups by rank value
         for (Group group : input) {
             if (ladder == null || group.getLadder().equalsIgnoreCase(ladder)) {
                 List<Group> temp = sortedGroups.get(group.getRank());
                 if (temp == null)
-                    temp = new ArrayList<Group>();
+                    temp = new ArrayList<>();
                 temp.add(group);
                 sortedGroups.put(group.getRank(), temp);
             }
         }
 
         // Return prefix from group with highest rank, if not found, move on to next rank
-        Iterator<List<Group>> it = sortedGroups.descendingMap().values().iterator();
-        while (it.hasNext()) {
-            List<Group> tempGroups = it.next();
-            Iterator<Group> it2 = tempGroups.iterator();
-            while (it2.hasNext()) {
-                Group group = it2.next();
+        for (List<Group> tempGroups : sortedGroups.descendingMap().values()) {
+            for (Group group : tempGroups) {
                 String prefix = group.getPrefix(PermissionManagerBase.serverName);
                 if (!prefix.isEmpty())
                     return prefix;
@@ -246,26 +236,22 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
     }
 
     public static String getSuffix(String ladder, List<Group> input) {
-        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
+        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<>();
 
         // Insert groups by rank value
         for (Group group : input) {
             if (ladder == null || group.getLadder().equalsIgnoreCase(ladder)) {
                 List<Group> temp = sortedGroups.get(group.getRank());
                 if (temp == null)
-                    temp = new ArrayList<Group>();
+                    temp = new ArrayList<>();
                 temp.add(group);
                 sortedGroups.put(group.getRank(), temp);
             }
         }
 
         // Return suffix from group with highest rank, if not found, move on to next rank
-        Iterator<List<Group>> it = sortedGroups.descendingMap().values().iterator();
-        while (it.hasNext()) {
-            List<Group> tempGroups = it.next();
-            Iterator<Group> it2 = tempGroups.iterator();
-            while (it2.hasNext()) {
-                Group group = it2.next();
+        for (List<Group> tempGroups : sortedGroups.descendingMap().values()) {
+            for (Group group : tempGroups) {
                 String suffix = group.getSuffix(PermissionManagerBase.serverName);
                 if (!suffix.isEmpty())
                     return suffix;
@@ -331,28 +317,24 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
     }
 
     public static List<Permission> getAllPermissions(List<Group> input, PermissionContainer out, PowerfulPermsPlugin plugin) {
-        ArrayList<Permission> unprocessedPerms = new ArrayList<Permission>();
+        ArrayList<Permission> unprocessedPerms = new ArrayList<>();
 
         // Add permissions from groups in normal order.
         plugin.debug("groups count " + input.size());
-        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<Integer, List<Group>>();
+        TreeMap<Integer, List<Group>> sortedGroups = new TreeMap<>();
 
         // Insert groups by rank value
         for (Group group : input) {
             List<Group> temp = sortedGroups.get(group.getRank());
             if (temp == null)
-                temp = new ArrayList<Group>();
+                temp = new ArrayList<>();
             temp.add(group);
             sortedGroups.put(group.getRank(), temp);
         }
 
         // Add permissions from sorted groups
-        Iterator<List<Group>> it = sortedGroups.values().iterator();
-        while (it.hasNext()) {
-            List<Group> tempGroups = it.next();
-            Iterator<Group> it2 = tempGroups.iterator();
-            while (it2.hasNext()) {
-                Group group = it2.next();
+        for (List<Group> tempGroups : sortedGroups.values()) {
+            for (Group group : tempGroups) {
                 unprocessedPerms.addAll(group.getPermissions());
             }
         }
@@ -368,7 +350,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
 
     public static List<String> calculatePermissions(String playerServer, String playerWorld, List<Group> input, PermissionContainer out, List<Permission> unprocessedPerms,
             PowerfulPermsPlugin plugin) {
-        List<String> output = new ArrayList<String>();
+        List<String> output = new ArrayList<>();
 
         for (Permission e : unprocessedPerms) {
             if (PermissionContainer.permissionApplies(e, playerServer, playerWorld)) {
@@ -377,9 +359,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         }
 
         if (plugin.isDebug()) {
-            Iterator<String> it2 = output.iterator();
-            while (it2.hasNext()) {
-                String perm = it2.next();
+            for (String perm : output) {
                 plugin.debug("base added perm " + perm);
             }
         }

@@ -38,7 +38,7 @@ public class GroupCommand extends SubCommand {
                 Group group = permissionManager.getGroup(args[0]);
                 if (group != null) {
                     // List group permissions
-                    Queue<String> rows = new java.util.ArrayDeque<String>();
+                    Queue<String> rows = new java.util.ArrayDeque<>();
 
                     rows.add(ChatColor.BLUE + "Listing permissions for group " + group.getName() + ".");
                     rows.add(ChatColor.GREEN + "Ladder" + ChatColor.WHITE + ": " + group.getLadder());

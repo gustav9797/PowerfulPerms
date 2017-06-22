@@ -18,8 +18,7 @@ public class Utils {
             String currentNumber = "";
             String currentWord = "";
             char[] chars = date.toCharArray();
-            for (int i = 0; i < chars.length; ++i) {
-                char cur = chars[i];
+            for (char cur : chars) {
                 if (Character.isDigit(cur)) {
                     if (!currentNumber.isEmpty() && !currentWord.isEmpty()) {
 
@@ -48,22 +47,47 @@ public class Utils {
     private static boolean finish(Calendar calendar, String currentNumber, String currentWord) {
         int number = Integer.parseInt(currentNumber);
 
-        if (currentWord.equals("s") || currentWord.equals("sec") || currentWord.equals("second") || currentWord.equals("seconds"))
-            calendar.add(Calendar.SECOND, number);
-        else if (currentWord.equals("mi") || currentWord.equals("min") || currentWord.equals("mins") || currentWord.equals("minutes"))
-            calendar.add(Calendar.MINUTE, number);
-        else if (currentWord.equals("h") || currentWord.equals("hour") || currentWord.equals("hours"))
-            calendar.add(Calendar.HOUR, number);
-        else if (currentWord.equals("d") || currentWord.equals("day") || currentWord.equals("days"))
-            calendar.add(Calendar.DAY_OF_MONTH, number);
-        else if (currentWord.equals("w") || currentWord.equals("week") || currentWord.equals("weeks"))
-            calendar.add(Calendar.WEEK_OF_MONTH, number);
-        else if (currentWord.equals("m") || currentWord.equals("month") || currentWord.equals("months"))
-            calendar.add(Calendar.MONTH, number);
-        else if (currentWord.equals("y") || currentWord.equals("year") || currentWord.equals("years"))
-            calendar.add(Calendar.YEAR, number);
-        else
-            return false;
+        switch (currentWord) {
+            case "s":
+            case "sec":
+            case "second":
+            case "seconds":
+                calendar.add(Calendar.SECOND, number);
+                break;
+            case "mi":
+            case "min":
+            case "mins":
+            case "minutes":
+                calendar.add(Calendar.MINUTE, number);
+                break;
+            case "h":
+            case "hour":
+            case "hours":
+                calendar.add(Calendar.HOUR, number);
+                break;
+            case "d":
+            case "day":
+            case "days":
+                calendar.add(Calendar.DAY_OF_MONTH, number);
+                break;
+            case "w":
+            case "week":
+            case "weeks":
+                calendar.add(Calendar.WEEK_OF_MONTH, number);
+                break;
+            case "m":
+            case "month":
+            case "months":
+                calendar.add(Calendar.MONTH, number);
+                break;
+            case "y":
+            case "year":
+            case "years":
+                calendar.add(Calendar.YEAR, number);
+                break;
+            default:
+                return false;
+        }
         return true;
     }
 

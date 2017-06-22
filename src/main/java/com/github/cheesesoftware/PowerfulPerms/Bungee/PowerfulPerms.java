@@ -277,7 +277,7 @@ public class PowerfulPerms extends Plugin implements Listener, PowerfulPermsPlug
 
     @Override
     public Map<UUID, String> getOnlinePlayers() {
-        HashMap<UUID, String> players = new HashMap<UUID, String>();
+        HashMap<UUID, String> players = new HashMap<>();
         for (ProxiedPlayer player : getProxy().getPlayers())
             players.put(player.getUniqueId(), player.getName());
         return players;

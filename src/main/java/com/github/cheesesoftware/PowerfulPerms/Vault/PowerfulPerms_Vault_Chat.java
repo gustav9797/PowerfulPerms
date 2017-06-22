@@ -177,9 +177,7 @@ public class PowerfulPerms_Vault_Chat extends Chat {
     }
 
     public String getVaultVariable(List<com.github.cheesesoftware.PowerfulPermsAPI.Permission> permissions, String node, String world) {
-        Iterator<com.github.cheesesoftware.PowerfulPermsAPI.Permission> it = permissions.iterator();
-        while (it.hasNext()) {
-            com.github.cheesesoftware.PowerfulPermsAPI.Permission p = it.next();
+        for (com.github.cheesesoftware.PowerfulPermsAPI.Permission p : permissions) {
             if (PermissionContainer.permissionApplies(p, PermissionManagerBase.serverName, world)) {
                 String perm = p.getPermissionString();
                 String begin = "vault.variables." + node + ".";

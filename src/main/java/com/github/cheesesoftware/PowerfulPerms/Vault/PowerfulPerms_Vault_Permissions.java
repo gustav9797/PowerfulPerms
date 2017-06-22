@@ -40,7 +40,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
     @Override
     public String[] getGroups() {
         Map<Integer, Group> groups = permissionManager.getGroups();
-        List<String> groupNames = new ArrayList<String>();
+        List<String> groupNames = new ArrayList<>();
         for (Group group : groups.values())
             groupNames.add(group.getName());
         return groupNames.toArray(new String[groupNames.size()]);
@@ -59,7 +59,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
                 LinkedHashMap<String, List<CachedGroup>> currentGroups = permissionManager.getPlayerCurrentGroupsBase(uuid);
                 List<CachedGroup> cachedGroups = PermissionPlayerBase.getCachedGroups(PermissionManagerBase.serverName, currentGroups);
                 List<Group> groups = PermissionPlayerBase.getGroups(cachedGroups, plugin);
-                List<String> groupNames = new ArrayList<String>();
+                List<String> groupNames = new ArrayList<>();
                 for (Group group : groups)
                     groupNames.add(group.getName());
                 return groupNames.toArray(new String[groupNames.size()]);
@@ -70,7 +70,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
             PermissionPlayer p = permissionManager.getPermissionPlayer(player);
             if (p != null) {
                 List<Group> groups = p.getGroups();
-                List<String> groupNames = new ArrayList<String>();
+                List<String> groupNames = new ArrayList<>();
                 for (Group group : groups)
                     groupNames.add(group.getName());
                 return groupNames.toArray(new String[groupNames.size()]);
@@ -224,9 +224,7 @@ public class PowerfulPerms_Vault_Permissions extends Permission {
                     if (has == null)
                         return false;
                     return has;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             } catch (Exception e) {

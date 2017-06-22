@@ -8,9 +8,9 @@ public class Paginator {
 
     public static List<List<String>> createList(Queue<String> input, int rowsPerPage) {
         int rowWidth = 55;
-        List<List<String>> list = new ArrayList<List<String>>();
+        List<List<String>> list = new ArrayList<>();
         while (input.size() > 0) {
-            List<String> page = new ArrayList<String>();
+            List<String> page = new ArrayList<>();
             for (int j = 0; j < rowsPerPage; j++) {
                 if (input.size() > 0) {
                     String row = input.remove();
