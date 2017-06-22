@@ -71,13 +71,9 @@ public class UserCommand extends SubCommand {
 
                     // Store by ladder instead of server
                     Map<String, List<Pair<String, CachedGroup>>> ladderGroups = new LinkedHashMap<String, List<Pair<String, CachedGroup>>>();
-                    Iterator<Entry<String, List<CachedGroup>>> it = groups.entrySet().iterator();
-                    while (it.hasNext()) {
-                        Entry<String, List<CachedGroup>> currentGroups = it.next();
+                    for (Entry<String, List<CachedGroup>> currentGroups : groups.entrySet()) {
                         if (currentGroups != null) {
-                            Iterator<CachedGroup> it2 = currentGroups.getValue().iterator();
-                            while (it2.hasNext()) {
-                                CachedGroup currentGroup = it2.next();
+                            for (CachedGroup currentGroup : currentGroups.getValue()) {
                                 Group group = plugin.getPermissionManager().getGroup(currentGroup.getGroupId());
                                 String ladder = (group != null ? group.getLadder() : "NULL");
 
@@ -94,9 +90,7 @@ public class UserCommand extends SubCommand {
                     // List groups
                     // String otherGroups = ChatColor.GREEN + "Groups" + ChatColor.WHITE + ": ";
                     if (groups != null && groups.size() > 0) {
-                        Iterator<Entry<String, List<Pair<String, CachedGroup>>>> it3 = ladderGroups.entrySet().iterator();
-                        while (it3.hasNext()) {
-                            Entry<String, List<Pair<String, CachedGroup>>> current = it3.next();
+                        for (Entry<String, List<Pair<String, CachedGroup>>> current : ladderGroups.entrySet()) {
                             Iterator<Pair<String, CachedGroup>> it4 = current.getValue().iterator();
                             String otherGroups = ChatColor.GREEN + "On ladder " + ChatColor.WHITE + "\"" + current.getKey() + "\": ";
                             while (it4.hasNext()) {
@@ -106,7 +100,7 @@ public class UserCommand extends SubCommand {
                                     otherGroups += (cachedGroup.getSecond().isNegated() ? (ChatColor.RED + "-") : "") + ChatColor.WHITE + group.getName()
                                             + (cachedGroup.getFirst() == null || cachedGroup.getFirst().isEmpty() ? "" : ChatColor.WHITE + ":" + ChatColor.RED + cachedGroup.getFirst())
                                             + (cachedGroup.getSecond().willExpire()
-                                                    ? ChatColor.WHITE + ":" + ChatColor.YELLOW + Utils.getExpirationDateString(cachedGroup.getSecond().getExpirationDate()) : "");
+                                            ? ChatColor.WHITE + ":" + ChatColor.YELLOW + Utils.getExpirationDateString(cachedGroup.getSecond().getExpirationDate()) : "");
                                     otherGroups += ", ";
                                 }
                             }

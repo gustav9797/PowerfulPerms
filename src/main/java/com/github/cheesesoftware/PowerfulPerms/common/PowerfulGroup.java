@@ -112,12 +112,8 @@ public class PowerfulGroup implements Group {
             }
 
             // Add permissions from sorted parents
-            Iterator<List<Group>> it = sortedParents.values().iterator();
-            while (it.hasNext()) {
-                List<Group> tempGroups = it.next();
-                Iterator<Group> it2 = tempGroups.iterator();
-                while (it2.hasNext()) {
-                    Group group = it2.next();
+            for (List<Group> tempGroups : sortedParents.values()) {
+                for (Group group : tempGroups) {
                     output.addAll(group.getPermissions());
                 }
             }

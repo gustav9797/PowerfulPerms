@@ -46,9 +46,7 @@ public class GroupHasPermissionCommand extends SubCommand {
 
                 List<Permission> permissions = group.getPermissions();
                 List<String> realPermissions = new ArrayList<String>();
-                Iterator<Permission> it = permissions.iterator();
-                while (it.hasNext()) {
-                    Permission p = it.next();
+                for (Permission p : permissions) {
                     if (PermissionContainer.permissionApplies(p, server, world))
                         realPermissions.add(p.getPermissionString());
                 }

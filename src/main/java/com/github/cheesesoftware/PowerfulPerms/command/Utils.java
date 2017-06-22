@@ -18,8 +18,7 @@ public class Utils {
             String currentNumber = "";
             String currentWord = "";
             char[] chars = date.toCharArray();
-            for (int i = 0; i < chars.length; ++i) {
-                char cur = chars[i];
+            for (char cur : chars) {
                 if (Character.isDigit(cur)) {
                     if (!currentNumber.isEmpty() && !currentWord.isEmpty()) {
 

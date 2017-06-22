@@ -315,9 +315,7 @@ public abstract class PermissionManagerBase {
         if (defaultGroups != null) {
             LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
             LinkedHashMap<String, List<CachedGroup>> input = new LinkedHashMap<String, List<CachedGroup>>(defaultGroups);
-            Iterator<Entry<String, List<CachedGroup>>> it = input.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, List<CachedGroup>> next = it.next();
+            for (Entry<String, List<CachedGroup>> next : input.entrySet()) {
                 output.put(next.getKey(), new ArrayList<CachedGroup>(next.getValue()));
             }
             return output;
@@ -768,13 +766,9 @@ public abstract class PermissionManagerBase {
             return new Response(false, "Could not retrieve the default groups.");
         else {
             LinkedHashMap<String, List<CachedGroup>> defaultGroups = result;
-            Iterator<Entry<String, List<CachedGroup>>> it = defaultGroups.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, List<CachedGroup>> entry = it.next();
+            for (Entry<String, List<CachedGroup>> entry : defaultGroups.entrySet()) {
                 String server = entry.getKey();
-                Iterator<CachedGroup> it2 = entry.getValue().iterator();
-                while (it2.hasNext()) {
-                    final CachedGroup toAdd = it2.next();
+                for (CachedGroup toAdd : entry.getValue()) {
                     boolean inserted = db.insertPlayerGroup(uuid, toAdd.getGroupId(), server, toAdd.isNegated(), toAdd.getExpirationDate());
                     if (!inserted)
                         plugin.getLogger().severe("Could not copy default group " + toAdd.getGroupId() + " to player " + uuid.toString() + ".");
@@ -1366,9 +1360,7 @@ public abstract class PermissionManagerBase {
             List<CachedGroup> groupList = result.get(serverFinal);
             if (groupList == null)
                 groupList = new ArrayList<CachedGroup>();
-            final Iterator<CachedGroup> it = groupList.iterator();
-            while (it.hasNext()) {
-                CachedGroup cachedGroup = it.next();
+            for (CachedGroup cachedGroup : groupList) {
                 if (cachedGroup.getGroupId() == groupId && cachedGroup.isNegated() == negated) {
                     // Update expiration date instead
                     final Date newExpiry = (expires == null || cachedGroup.getExpirationDate() == null ? expires
@@ -1425,9 +1417,7 @@ public abstract class PermissionManagerBase {
                 Entry<String, List<CachedGroup>> next = it.next();
                 final String server = next.getKey();
                 List<CachedGroup> playerCurrentGroups = next.getValue();
-                Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
-                while (it2.hasNext()) {
-                    final CachedGroup current = it2.next();
+                for (CachedGroup current : playerCurrentGroups) {
                     final Group currentGroup = getGroup(current.getGroupId());
                     if (currentGroup.getLadder().equals(group.getLadder()) && current.getExpirationDate() == null) {
                         if (toUse == null)
@@ -1540,10 +1530,8 @@ public abstract class PermissionManagerBase {
                     Entry<String, List<CachedGroup>> next = it.next();
                     final String server = next.getKey();
                     List<CachedGroup> playerCurrentGroups = next.getValue();
-                    Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
 
-                    while (it2.hasNext()) {
-                        final CachedGroup current = it2.next();
+                    for (CachedGroup current : playerCurrentGroups) {
                         final Group currentGroup = getGroup(current.getGroupId());
                         if (currentGroup.getLadder().equalsIgnoreCase(ladder) && !current.willExpire() && !current.isNegated()) {
                             if (toUse == null) {
@@ -1599,10 +1587,8 @@ public abstract class PermissionManagerBase {
                     Entry<String, List<CachedGroup>> next = it.next();
                     final String server = next.getKey();
                     List<CachedGroup> playerCurrentGroups = next.getValue();
-                    Iterator<CachedGroup> it2 = playerCurrentGroups.iterator();
 
-                    while (it2.hasNext()) {
-                        final CachedGroup current = it2.next();
+                    for (CachedGroup current : playerCurrentGroups) {
                         final Group currentGroup = getGroup(current.getGroupId());
                         if (currentGroup.getLadder().equalsIgnoreCase(ladder) && !current.willExpire() && !current.isNegated()) {
                             if (toUse == null) {
@@ -1668,9 +1654,7 @@ public abstract class PermissionManagerBase {
         } finally {
             groupsLock.unlock();
         }
-        Iterator<Entry<Integer, Group>> it = groupsClone.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<Integer, Group> e = it.next();
+        for (Entry<Integer, Group> e : groupsClone.entrySet()) {
             if (e.getValue().getName().equalsIgnoreCase(name))
                 return new Response(false, "Group already exists.");
         }

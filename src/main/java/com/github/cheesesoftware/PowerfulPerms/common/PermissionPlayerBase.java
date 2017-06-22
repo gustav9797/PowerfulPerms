@@ -68,9 +68,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         LinkedHashMap<String, List<CachedGroup>> output = new LinkedHashMap<String, List<CachedGroup>>();
         asyncGroupLock.lock();
         try {
-            Iterator<Entry<String, List<CachedGroup>>> it = this.groups.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, List<CachedGroup>> entry = it.next();
+            for (Entry<String, List<CachedGroup>> entry : this.groups.entrySet()) {
                 output.put(entry.getKey(), new ArrayList<CachedGroup>(entry.getValue()));
             }
         } finally {
@@ -187,12 +185,8 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
             sortedGroups.put(group.getRank(), temp);
         }
 
-        Iterator<List<Group>> it = sortedGroups.descendingMap().values().iterator();
-        while (it.hasNext()) {
-            List<Group> tempGroups = it.next();
-            Iterator<Group> it2 = tempGroups.iterator();
-            while (it2.hasNext()) {
-                Group group = it2.next();
+        for (List<Group> tempGroups : sortedGroups.descendingMap().values()) {
+            for (Group group : tempGroups) {
                 if (group != null)
                     return group;
             }
@@ -223,12 +217,8 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         }
 
         // Return prefix from group with highest rank, if not found, move on to next rank
-        Iterator<List<Group>> it = sortedGroups.descendingMap().values().iterator();
-        while (it.hasNext()) {
-            List<Group> tempGroups = it.next();
-            Iterator<Group> it2 = tempGroups.iterator();
-            while (it2.hasNext()) {
-                Group group = it2.next();
+        for (List<Group> tempGroups : sortedGroups.descendingMap().values()) {
+            for (Group group : tempGroups) {
                 String prefix = group.getPrefix(PermissionManagerBase.serverName);
                 if (!prefix.isEmpty())
                     return prefix;
@@ -260,12 +250,8 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         }
 
         // Return suffix from group with highest rank, if not found, move on to next rank
-        Iterator<List<Group>> it = sortedGroups.descendingMap().values().iterator();
-        while (it.hasNext()) {
-            List<Group> tempGroups = it.next();
-            Iterator<Group> it2 = tempGroups.iterator();
-            while (it2.hasNext()) {
-                Group group = it2.next();
+        for (List<Group> tempGroups : sortedGroups.descendingMap().values()) {
+            for (Group group : tempGroups) {
                 String suffix = group.getSuffix(PermissionManagerBase.serverName);
                 if (!suffix.isEmpty())
                     return suffix;
@@ -347,12 +333,8 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         }
 
         // Add permissions from sorted groups
-        Iterator<List<Group>> it = sortedGroups.values().iterator();
-        while (it.hasNext()) {
-            List<Group> tempGroups = it.next();
-            Iterator<Group> it2 = tempGroups.iterator();
-            while (it2.hasNext()) {
-                Group group = it2.next();
+        for (List<Group> tempGroups : sortedGroups.values()) {
+            for (Group group : tempGroups) {
                 unprocessedPerms.addAll(group.getPermissions());
             }
         }
@@ -377,9 +359,7 @@ public class PermissionPlayerBase extends PermissionContainer implements Permiss
         }
 
         if (plugin.isDebug()) {
-            Iterator<String> it2 = output.iterator();
-            while (it2.hasNext()) {
-                String perm = it2.next();
+            for (String perm : output) {
                 plugin.debug("base added perm " + perm);
             }
         }
