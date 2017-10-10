@@ -6,12 +6,9 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
-      - run:
-        name: "Building PowerfulPerms"
-        command: |
-          mvn clean install
-          mkdir -p plugin/target/artifacts/
-          cp target/PowerfulPerms-*.jar target/artifacts/.
+      - run: mvn clean install
+      - run: mkdir -p target/artifacts/
+      - run: cp target/PowerfulPerms-*.jar target/artifacts/.
       - type: artifacts-store
-        path: plugin/target/artifacts
+        path: target/artifacts
         destination: artifacts
