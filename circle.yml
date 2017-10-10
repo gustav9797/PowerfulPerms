@@ -8,7 +8,8 @@ jobs:
       - checkout
       - run: mvn clean install
       - run: mkdir -p target/artifacts/
-      - run: cp target/PowerfulPerms-*.jar target/artifacts/.
+      - run: cp PowerfulPerms/target/PowerfulPerms-*.jar target/artifacts/.
+      - run: cp PowerfulPermsAPI/target/PowerfulPermsAPI-*.jar target/artifacts/.
       - type: artifacts-store
         path: target/artifacts
         destination: artifacts
