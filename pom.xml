@@ -6,7 +6,7 @@
   <groupId>com.github.gustav9797</groupId>
   <artifactId>PowerfulPerms-Parent</artifactId>
   <packaging>pom</packaging>
-  <version>4.5.2</version>
+  <version>4.5.3</version>
   <modules>
     <module>PowerfulPermsAPI</module>
     <module>PowerfulPerms</module>

@@ -26,7 +26,7 @@ If you would like to contribute to this repository, feel free to [fork the repo]
   <dependency>
     <groupId>com.github.gustav9797.PowerfulPerms</groupId>
     <artifactId>PowerfulPerms</artifactId>
-    <version>4.5.2</version>
+    <version>4.5.3</version>
   </dependency>
 </dependencies>
 ```
