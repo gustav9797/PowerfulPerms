@@ -16,6 +16,7 @@
       <groupId>com.github.gustav9797</groupId>
       <artifactId>PowerfulPermsAPI</artifactId>
       <version>${project.version}</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 
@@ -24,7 +25,7 @@
       <resource>
         <targetPath>.</targetPath>
         <filtering>true</filtering>
-        <directory>PowerfulPerms/src/main/resources</directory>
+        <directory>src/main/resources</directory>
         <includes>
           <include>plugin.yml</include>
           <include>bungee.yml</include>
@@ -56,7 +57,7 @@
                 <includes>
                   <include>org.apache.commons:commons-pool2</include>
                   <include>redis.clients:jedis</include>
-                  <include>com.github.cheesesoftware:PowerfulPermsAPI</include>
+                  <include>com.github.gustav9797:PowerfulPermsAPI</include>
                   <include>com.googlecode.json-simple:json-simple</include>
                   <include>com.sk89q:worldedit</include>
                 </includes>
@@ -72,23 +73,23 @@
               <relocations>
                 <relocation>
                   <pattern>redis.clients</pattern>
-                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.redis.clients</shadedPattern>
+                  <shadedPattern>com.github.gustav9797.PowerfulPerms.shaded.redis.clients</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>org.apache</pattern>
-                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.apache</shadedPattern>
+                  <shadedPattern>com.github.gustav9797.PowerfulPerms.shaded.org.apache</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>org.json</pattern>
-                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.json</shadedPattern>
+                  <shadedPattern>com.github.gustav9797.PowerfulPerms.shaded.org.json</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>com.sk89q.wepif</pattern>
-                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.com.sk89q.wepif</shadedPattern>
+                  <shadedPattern>com.github.gustav9797.PowerfulPerms.shaded.com.sk89q.wepif</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>org.mongodb</pattern>
-                  <shadedPattern>com.github.cheesesoftware.PowerfulPerms.shaded.org.mongodb</shadedPattern>
+                  <shadedPattern>com.github.gustav9797.PowerfulPerms.shaded.org.mongodb</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
