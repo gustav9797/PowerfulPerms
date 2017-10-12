@@ -1,5 +1,5 @@
 name: PowerfulPerms
-main: com.github.cheesesoftware.PowerfulPerms.PowerfulPerms
+main: com.github.gustav9797.PowerfulPerms.PowerfulPerms
 version: ${version}
 author: gustav9797
 softdepend: [Vault]
