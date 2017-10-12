@@ -4,9 +4,9 @@
 Next generation permission management, powering huge networks, max performance on any server.
 
 ## Server Owners
-For general information about PowerfulPerms **[go to www.spigotmc.org](https://www.spigotmc.org/resources/powerfulperms.8143/)**.
+For general information about PowerfulPerms go to [www.spigotmc.org](https://www.spigotmc.org/resources/powerfulperms.8143/).
 
-If you are experiencing any problems with PowerfulPerms, please open a new issue.
+If you are experiencing any problems with PowerfulPerms, please [join the Discord help chat](https://discord.gg/Hucw6hS).
 
 ## Developers
 ### Contributing to PowerfulPerms
