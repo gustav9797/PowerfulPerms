@@ -24,7 +24,7 @@ If you would like to contribute to this repository, feel free to [fork the repo]
 ```xml
 <dependencies>
   <dependency>
-    <groupId>com.github.gustav9797.PowerfulPerms</groupId>
+    <groupId>com.github.gustav9797</groupId>
     <artifactId>PowerfulPerms</artifactId>
     <version>4.5.2</version>
   </dependency>
