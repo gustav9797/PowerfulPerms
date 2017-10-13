@@ -1,0 +1,4 @@
+name: PowerfulPerms
+main: com.github.gustav9797.PowerfulPerms.Bungee.PowerfulPerms
+version: ${version}
+author: gustav9797

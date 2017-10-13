@@ -1,0 +1,15 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run: mvn clean install
+      - run: mkdir -p target/artifacts/
+      - run: cp PowerfulPerms/target/PowerfulPerms-*.jar target/artifacts/.
+      - run: cp PowerfulPermsAPI/target/PowerfulPermsAPI-*.jar target/artifacts/.
+      - type: artifacts-store
+        path: target/artifacts
+        destination: artifacts

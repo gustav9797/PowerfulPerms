@@ -1,0 +1,11 @@
+name: PowerfulPerms
+main: com.github.gustav9797.PowerfulPerms.PowerfulPerms
+version: ${version}
+author: gustav9797
+softdepend: [Vault]
+load: startup
+
+commands:
+ powerfulperms:
+  description: The global command of PowerfulPerms for modifying permissions.
+  aliases: [pp, pop, pow]
